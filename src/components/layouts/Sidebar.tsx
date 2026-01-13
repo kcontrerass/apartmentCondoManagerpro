@@ -68,23 +68,23 @@ export function Sidebar() {
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
+                                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
                                         isActive
                                             ? "bg-primary/10 text-primary font-medium"
                                             : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                                     )}
                                 >
                                     <span className={cn(
-                                        "material-symbols-outlined text-[20px] transition-transform duration-200",
+                                        "material-symbols-outlined text-[20px] transition-transform duration-200 shrink-0",
                                         !isActive && "group-hover:scale-110"
                                     )}>
                                         {item.icon}
                                     </span>
-                                    <div className="flex justify-between items-center w-full">
-                                        <span className="text-sm">{item.label}</span>
+                                    <div className="flex justify-between items-center w-full min-w-0">
+                                        <span className="text-sm truncate">{item.label}</span>
                                         {/* @ts-expect-error - badge is optional */}
                                         {item.badge && (
-                                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 animate-in zoom-in">
+                                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 animate-in zoom-in ml-2">
                                                 {/* @ts-expect-error - badge is optional */}
                                                 {item.badge}
                                             </span>
