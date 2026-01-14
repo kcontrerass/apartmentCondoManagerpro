@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { signOutAction } from '@/lib/actions/auth-actions';
+import { signOut } from 'next-auth/react';
 
 const navSections = [
     {
@@ -38,9 +38,7 @@ const navSections = [
 export function Sidebar({ user }: { user?: { name?: string | null; role?: string; image?: string | null } }) {
     const pathname = usePathname();
 
-    const handleSignOut = async () => {
-        await signOutAction();
-    };
+
 
     return (
         <aside className="hidden md:flex flex-col w-64 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-shrink-0 fixed left-0 top-0 z-40">
@@ -123,7 +121,7 @@ export function Sidebar({ user }: { user?: { name?: string | null; role?: string
                         <p className="text-xs text-slate-500 truncate">{user?.role || 'Resident'}</p>
                     </div>
                     <button
-                        onClick={handleSignOut}
+                        onClick={() => signOut({ callbackUrl: '/login' })}
                         className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                         title="Sign out"
                     >
