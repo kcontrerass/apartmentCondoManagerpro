@@ -85,10 +85,10 @@ export function Sidebar({ user }: { user?: { name?: string | null; role?: string
                                     </span>
                                     <div className="flex justify-between items-center w-full min-w-0">
                                         <span className="text-sm truncate">{item.label}</span>
-                                        {/* @ts-expect-error - badge is optional */}
+
                                         {item.badge && (
                                             <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 animate-in zoom-in ml-2">
-                                                {/* @ts-expect-error - badge is optional */}
+
                                                 {item.badge}
                                             </span>
                                         )}
