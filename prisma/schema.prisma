@@ -4,13 +4,11 @@ generator client {
 
 datasource db {
   provider = "mysql"
+  url      = env("DATABASE_URL")
 }
 
-// ========================================
-// AUTHENTICATION & USERS
-// ========================================
-
-enum UserRole {
+// Enums
+enum Role {
   SUPER_ADMIN
   ADMIN
   OPERATOR
@@ -24,116 +22,16 @@ enum UserStatus {
   SUSPENDED
 }
 
-model User {
-  id            String      @id @default(uuid())
-  email         String      @unique
-  password      String
-  name          String
-  phone         String?
-  avatar_url    String?
-  role          UserRole    @default(RESIDENT)
-  status        UserStatus  @default(ACTIVE)
-  
-  // Relations
-  complex_id    String?
-  complex       Complex?    @relation(fields: [complex_id], references: [id])
-  resident      Resident?
-  
-  // Notifications preferences
-  notifications Json?
-  
-  // Audit
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-  last_login    DateTime?
-  
-  @@index([email])
-  @@index([complex_id])
-  @@map("users")
-}
-
-// ========================================
-// COMPLEXES & PROPERTIES
-// ========================================
-
 enum ComplexType {
-  EDIFICIO
-  RESIDENCIAL
-  CONDOMINIO
-  CONJUNTO_CERRADO
-}
-
-model Complex {
-  id            String       @id @default(uuid())
-  name          String
-  address       String       @db.Text
-  type          ComplexType
-  logo_url      String?
-  description   String?      @db.Text
-  
-  // Settings (JSON)
-  settings      Json?
-  
-  // Relations
-  units         Unit[]
-  amenities     Amenity[]
-  services      Service[]
-  users         User[]
-  announcements Announcement[]
-  incidents     Incident[]
-  events        Event[]
-  documents     Document[]
-  
-  // Audit
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  
-  @@map("complexes")
-}
-
-enum UnitType {
-  APARTAMENTO
-  CASA
-  LOCAL_COMERCIAL
+  BUILDING    // Edificio Vertical
+  RESIDENTIAL // Residencial Horizontal
+  CONDO       // Condominio Mixto
 }
 
 enum UnitStatus {
   OCCUPIED
   VACANT
   MAINTENANCE
-  RESERVED
-}
-
-model Unit {
-  id            String       @id @default(uuid())
-  number        String       // A-101, Casa 5, etc.
-  type          UnitType
-  status        UnitStatus   @default(VACANT)
-  
-  // Details
-  bedrooms      Int?
-  bathrooms     Int?
-  area          Decimal?     @db.Decimal(10, 2) // m2
-  floor         String?
-  
-  // Relations
-  complex_id    String
-  complex       Complex      @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  residents     Resident[]
-  unit_services UnitService[]
-  invoices      Invoice[]
-  access_cards  AccessCard[]
-  parking_spots ParkingSpot[]
-  
-  // Audit
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  
-  @@unique([complex_id, number])
-  @@index([complex_id])
-  @@index([status])
-  @@map("units")
 }
 
 enum ResidentType {
@@ -141,737 +39,121 @@ enum ResidentType {
   TENANT
 }
 
-model Resident {
-  id                String       @id @default(uuid())
-  
-  // Personal Info
-  identification    String       @unique // DPI, Cédula, Passport
-  
-  // Relations
-  user_id           String       @unique
-  user              User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  unit_id           String
-  unit              Unit         @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  
-  type              ResidentType @default(OWNER)
-  
-  // Emergency Contact
-  emergency_name    String?
-  emergency_phone   String?
-  emergency_relation String?
-  
-  // Occupancy dates
-  start_date        DateTime     @default(now())
-  end_date          DateTime?
-  
-  // Relations
-  vehicles          Vehicle[]
-  visitors          Visitor[]
-  incidents         Incident[]
-  reservations      Reservation[]
-  
-  // Audit
-  created_at        DateTime     @default(now())
-  updated_at        DateTime     @updatedAt
-  
-  @@index([user_id])
-  @@index([unit_id])
-  @@map("residents")
-}
-
-// ========================================
-// SERVICES & BILLING
-// ========================================
-
-enum ServiceType {
-  MANTENIMIENTO
-  AGUA
-  BASURA
-  SEGURIDAD
-  LIMPIEZA
-  GAS
-  INTERNET
-  CABLE
-  OTROS
-}
-
-model Service {
-  id            String        @id @default(uuid())
-  name          String
-  type          ServiceType
-  description   String?       @db.Text
-  
-  // Pricing
-  monthly_cost  Decimal       @db.Decimal(10, 2)
-  is_mandatory  Boolean       @default(false)
-  
-  // Relations
-  complex_id    String
-  complex       Complex       @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  unit_services UnitService[]
-  
-  // Status
-  is_active     Boolean       @default(true)
-  
-  // Audit
-  created_at    DateTime      @default(now())
-  updated_at    DateTime      @updatedAt
-  
-  @@index([complex_id])
-  @@map("services")
-}
-
-model UnitService {
-  id            String   @id @default(uuid())
-  
-  // Relations
-  unit_id       String
-  unit          Unit     @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  
-  service_id    String
-  service       Service  @relation(fields: [service_id], references: [id], onDelete: Cascade)
-  
-  // Pricing override (if different from service base price)
-  custom_cost   Decimal? @db.Decimal(10, 2)
-  
-  // Status
-  is_active     Boolean  @default(true)
-  start_date    DateTime @default(now())
-  end_date      DateTime?
-  
-  // Audit
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  
-  @@unique([unit_id, service_id])
-  @@index([unit_id])
-  @@index([service_id])
-  @@map("unit_services")
-}
-
-// ========================================
-// INVOICING & PAYMENTS
-// ========================================
-
-enum InvoiceStatus {
-  PENDING
-  PAID
-  OVERDUE
-  CANCELLED
-}
-
-model Invoice {
-  id              String         @id @default(uuid())
-  invoice_number  String         @unique
-  
-  // Relations
-  unit_id         String
-  unit            Unit           @relation(fields: [unit_id], references: [id])
-  
-  // Amounts
-  subtotal        Decimal        @db.Decimal(10, 2)
-  tax             Decimal        @db.Decimal(10, 2) @default(0)
-  total           Decimal        @db.Decimal(10, 2)
-  
-  // Dates
-  issue_date      DateTime       @default(now())
-  due_date        DateTime
-  paid_date       DateTime?
-  
-  // Status
-  status          InvoiceStatus  @default(PENDING)
-  
-  // Relations
-  items           InvoiceItem[]
-  payments        Payment[]
-  
-  // Audit
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-  
-  @@index([unit_id])
-  @@index([status])
-  @@index([due_date])
-  @@map("invoices")
-}
-
-enum InvoiceItemType {
-  SERVICE
-  AMENITY_RESERVATION
-  FINE
+enum AmenityType {
+  POOL
+  GYM
+  CLUBHOUSE
+  COURT
+  BBQ
   OTHER
 }
 
-model InvoiceItem {
-  id            String           @id @default(uuid())
+// Models
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String // Hashed
+  name          String
+  phone         String?
+  image         String?   @db.Text
+  role          Role      @default(RESIDENT)
+  status        UserStatus @default(ACTIVE)
+  
+  resetPasswordToken   String?   @unique
+  resetPasswordExpires DateTime?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  residentProfile Resident?
+  managedComplexes Complex[] // For ADMIN role
+
+  @@map("users")
+}
+
+model Complex {
+  id          String      @id @default(cuid())
+  name        String
+  address     String      @db.Text
+  type        ComplexType @default(BUILDING)
+  logoUrl     String?     @map("logo_url")
+  settings    Json?       // Flexible settings (colors, rules, etc)
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
   
   // Relations
-  invoice_id    String
-  invoice       Invoice          @relation(fields: [invoice_id], references: [id], onDelete: Cascade)
-  
-  // Item details
-  type          InvoiceItemType
-  description   String
-  quantity      Int              @default(1)
-  unit_price    Decimal          @db.Decimal(10, 2)
-  total         Decimal          @db.Decimal(10, 2)
-  
-  // Optional reference to source
-  reference_id  String?          // ID of service, reservation, etc.
-  
-  // Audit
-  created_at    DateTime         @default(now())
-  
-  @@index([invoice_id])
-  @@map("invoice_items")
+  adminId     String?
+  admin       User?       @relation(fields: [adminId], references: [id])
+  units       Unit[]
+  amenities   Amenity[]
+
+  @@map("complexes")
 }
 
-enum PaymentStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-  CASH
-  CHECK
-}
-
-model Payment {
-  id                String        @id @default(uuid())
+model Unit {
+  id          String     @id @default(cuid())
+  number      String     // e.g. "101", "A-20"
+  type        String?    // e.g. "Apartment", "Penthouse"
+  bedrooms    Int        @default(1)
+  bathrooms   Float      @default(1.0)
+  area        Float?     // in sq meters
   
+  status      UnitStatus @default(VACANT)
+  
+  complexId   String     @map("complex_id")
+  complex     Complex    @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
   // Relations
-  invoice_id        String
-  invoice           Invoice       @relation(fields: [invoice_id], references: [id])
-  
-  // Payment details
-  amount            Decimal       @db.Decimal(10, 2)
-  method            PaymentMethod
-  status            PaymentStatus @default(PENDING)
-  
-  // Stripe/Payment Gateway
-  stripe_payment_id String?       @unique
-  stripe_customer   String?
-  
-  // Transaction info
-  transaction_id    String?
-  confirmation_code String?
-  receipt_url       String?
-  
-  // Dates
-  payment_date      DateTime      @default(now())
-  
-  // Audit
-  created_at        DateTime      @default(now())
-  updated_at        DateTime      @updatedAt
-  
-  @@index([invoice_id])
-  @@index([status])
-  @@map("payments")
+  residents   Resident[]
+
+  @@unique([complexId, number]) // Unit numbers must be unique within a complex
+  @@map("units")
 }
 
-// ========================================
-// AMENITIES & RESERVATIONS
-// ========================================
+model Resident {
+  id              String       @id @default(cuid())
+  type            ResidentType @default(TENANT)
+  
+  startDate       DateTime     @map("start_date")
+  endDate         DateTime?    @map("end_date")
+  
+  emergencyContact Json?       @map("emergency_contact") // {name, phone, relation}
+  
+  userId          String       @unique @map("user_id")
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  unitId          String       @map("unit_id")
+  unit            Unit         @relation(fields: [unitId], references: [id])
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-enum AmenityType {
-  PISCINA
-  GIMNASIO
-  CASA_CLUB
-  CANCHA_DEPORTIVA
-  SALON_EVENTOS
-  BBQ
-  PARQUE
-  COWORKING
-  OTROS
-}
-
-enum AmenityStatus {
-  AVAILABLE
-  MAINTENANCE
-  CLOSED
+  @@map("residents")
 }
 
 model Amenity {
-  id              String         @id @default(uuid())
-  name            String
-  type            AmenityType
-  description     String?        @db.Text
+  id             String      @id @default(cuid())
+  name           String
+  description    String?     @db.Text
+  type           AmenityType @default(OTHER)
   
-  // Relations
-  complex_id      String
-  complex         Complex        @relation(fields: [complex_id], references: [id], onDelete: Cascade)
+  capacity       Int?
+  operatingHours Json?       @map("operating_hours") // {open, close, days}
   
-  // Capacity & Hours
-  capacity        Int?
-  operating_hours Json?          // {monday: {start: "08:00", end: "20:00"}, ...}
+  costPerDay     Decimal?    @map("cost_per_day") @db.Decimal(10, 2)
+  costPerHour    Decimal?    @map("cost_per_hour") @db.Decimal(10, 2)
   
-  // Pricing
-  cost_per_day    Decimal?       @db.Decimal(10, 2)
-  cost_per_hour   Decimal?       @db.Decimal(10, 2)
+  complexId      String      @map("complex_id")
+  complex        Complex     @relation(fields: [complexId], references: [id], onDelete: Cascade)
   
-  // Images
-  images          String?        @db.Text // JSON array of S3 URLs
-  
-  // Status
-  status          AmenityStatus  @default(AVAILABLE)
-  
-  // Reservation settings
-  requires_approval Boolean      @default(false)
-  max_hours       Int?
-  advance_booking_days Int?
-  
-  // Relations
-  reservations    Reservation[]
-  
-  // Audit
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-  
-  @@index([complex_id])
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
   @@map("amenities")
-}
-
-enum ReservationType {
-  FULL_DAY
-  HOURLY
-}
-
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
-}
-
-model Reservation {
-  id            String            @id @default(uuid())
-  
-  // Relations
-  amenity_id    String
-  amenity       Amenity           @relation(fields: [amenity_id], references: [id], onDelete: Cascade)
-  
-  resident_id   String
-  resident      Resident          @relation(fields: [resident_id], references: [id])
-  
-  // Reservation details
-  type          ReservationType
-  date          DateTime          @db.Date
-  start_time    DateTime?
-  end_time      DateTime?
-  guests        Int               @default(1)
-  
-  // Pricing
-  total_cost    Decimal           @db.Decimal(10, 2)
-  
-  // Status
-  status        ReservationStatus @default(PENDING)
-  
-  // Notes
-  notes         String?           @db.Text
-  cancellation_reason String?     @db.Text
-  
-  // Audit
-  created_at    DateTime          @default(now())
-  updated_at    DateTime          @updatedAt
-  cancelled_at  DateTime?
-  
-  @@index([amenity_id])
-  @@index([resident_id])
-  @@index([date])
-  @@map("reservations")
-}
-
-// ========================================
-// ACCESS CONTROL
-// ========================================
-
-enum CardStatus {
-  ACTIVE
-  INACTIVE
-  LOST
-  STOLEN
-}
-
-model AccessCard {
-  id            String     @id @default(uuid())
-  card_number   String     @unique
-  
-  // Relations
-  unit_id       String
-  unit          Unit       @relation(fields: [unit_id], references: [id], onDelete: Cascade)
-  
-  // Details
-  holder_name   String
-  status        CardStatus @default(ACTIVE)
-  
-  // Dates
-  issued_date   DateTime   @default(now())
-  expiry_date   DateTime?
-  deactivated_at DateTime?
-  
-  // Audit
-  created_at    DateTime   @default(now())
-  updated_at    DateTime   @updatedAt
-  
-  @@index([unit_id])
-  @@index([card_number])
-  @@map("access_cards")
-}
-
-enum VisitorStatus {
-  AUTHORIZED
-  CHECKED_IN
-  CHECKED_OUT
-  CANCELLED
-}
-
-model Visitor {
-  id              String         @id @default(uuid())
-  
-  // Personal Info
-  name            String
-  identification  String?
-  phone           String?
-  vehicle_plate   String?
-  photo_url       String?
-  
-  // Relations
-  resident_id     String
-  resident        Resident       @relation(fields: [resident_id], references: [id])
-  
-  // Visit details
-  visit_date      DateTime       @db.Date
-  expected_time   DateTime?
-  purpose         String?
-  
-  // Status
-  status          VisitorStatus  @default(AUTHORIZED)
-  
-  // Relations
-  logs            VisitorLog[]
-  
-  // Audit
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-  
-  @@index([resident_id])
-  @@index([visit_date])
-  @@map("visitors")
-}
-
-enum LogType {
-  ENTRY
-  EXIT
-}
-
-model VisitorLog {
-  id            String   @id @default(uuid())
-  
-  // Relations
-  visitor_id    String
-  visitor       Visitor  @relation(fields: [visitor_id], references: [id], onDelete: Cascade)
-  
-  // Log details
-  type          LogType
-  timestamp     DateTime @default(now())
-  
-  // Guard info
-  guard_id      String?
-  guard_name    String?
-  
-  // Notes
-  notes         String?  @db.Text
-  
-  // Audit
-  created_at    DateTime @default(now())
-  
-  @@index([visitor_id])
-  @@index([timestamp])
-  @@map("visitor_logs")
-}
-
-// ========================================
-// VEHICLES & PARKING
-// ========================================
-
-model Vehicle {
-  id            String   @id @default(uuid())
-  
-  // Relations
-  resident_id   String
-  resident      Resident @relation(fields: [resident_id], references: [id], onDelete: Cascade)
-  
-  // Vehicle details
-  plate         String   @unique
-  brand         String?
-  model         String?
-  color         String?
-  year          Int?
-  
-  // Status
-  is_active     Boolean  @default(true)
-  
-  // Audit
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  
-  @@index([resident_id])
-  @@index([plate])
-  @@map("vehicles")
-}
-
-enum ParkingType {
-  ASSIGNED
-  VISITOR
-  DISABLED
-}
-
-model ParkingSpot {
-  id            String      @id @default(uuid())
-  number        String
-  type          ParkingType @default(ASSIGNED)
-  
-  // Relations
-  unit_id       String?
-  unit          Unit?       @relation(fields: [unit_id], references: [id])
-  
-  // Status
-  is_available  Boolean     @default(true)
-  
-  // Audit
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-  
-  @@index([unit_id])
-  @@map("parking_spots")
-}
-
-// ========================================
-// COMMUNICATION
-// ========================================
-
-enum AnnouncementPriority {
-  LOW
-  NORMAL
-  HIGH
-  URGENT
-}
-
-model Announcement {
-  id            String               @id @default(uuid())
-  title         String
-  content       String               @db.Text
-  priority      AnnouncementPriority @default(NORMAL)
-  
-  // Relations
-  complex_id    String
-  complex       Complex              @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  // Targeting
-  target_roles  Json?                // Array of roles to show to
-  
-  // Images
-  image_url     String?
-  
-  // Publishing
-  published_at  DateTime?
-  expires_at    DateTime?
-  
-  // Author
-  author_id     String
-  author_name   String
-  
-  // Audit
-  created_at    DateTime             @default(now())
-  updated_at    DateTime             @updatedAt
-  
-  @@index([complex_id])
-  @@index([published_at])
-  @@map("announcements")
-}
-
-model Event {
-  id            String   @id @default(uuid())
-  title         String
-  description   String   @db.Text
-  
-  // Relations
-  complex_id    String
-  complex       Complex  @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  // Event details
-  location      String?
-  event_date    DateTime
-  start_time    DateTime
-  end_time      DateTime
-  max_attendees Int?
-  
-  // Images
-  image_url     String?
-  
-  // RSVP
-  rsvps         EventRSVP[]
-  
-  // Author
-  organizer_id  String
-  organizer_name String
-  
-  // Audit
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
-  
-  @@index([complex_id])
-  @@index([event_date])
-  @@map("events")
-}
-
-enum RSVPStatus {
-  GOING
-  NOT_GOING
-  MAYBE
-}
-
-model EventRSVP {
-  id          String     @id @default(uuid())
-  
-  // Relations
-  event_id    String
-  event       Event      @relation(fields: [event_id], references: [id], onDelete: Cascade)
-  
-  user_id     String
-  status      RSVPStatus
-  guests      Int        @default(0)
-  
-  // Audit
-  created_at  DateTime   @default(now())
-  updated_at  DateTime   @updatedAt
-  
-  @@unique([event_id, user_id])
-  @@index([event_id])
-  @@map("event_rsvps")
-}
-
-// ========================================
-// INCIDENTS & REPORTS
-// ========================================
-
-enum IncidentCategory {
-  MANTENIMIENTO
-  SEGURIDAD
-  CONVIVENCIA
-  SERVICIOS
-  OTROS
-}
-
-enum IncidentStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-  CLOSED
-}
-
-model Incident {
-  id            String           @id @default(uuid())
-  title         String
-  description   String           @db.Text
-  category      IncidentCategory
-  
-  // Relations
-  complex_id    String
-  complex       Complex          @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  unit_id       String?
-  
-  resident_id   String
-  resident      Resident         @relation(fields: [resident_id], references: [id])
-  
-  // Status
-  status        IncidentStatus   @default(OPEN)
-  
-  // Evidence
-  images        String?          @db.Text // JSON array
-  
-  // Resolution
-  assigned_to   String?          // User ID of staff
-  resolution_notes String?       @db.Text
-  resolved_at   DateTime?
-  
-  // Audit
-  created_at    DateTime         @default(now())
-  updated_at    DateTime         @updatedAt
-  
-  @@index([complex_id])
-  @@index([resident_id])
-  @@index([status])
-  @@map("incidents")
-}
-
-model Report {
-  id            String   @id @default(uuid())
-  name          String
-  description   String?
-  
-  // Report config
-  type          String   // FINANCIERO, OPERATIVO, ETC
-  parameters    Json?
-  
-  // Generated file
-  file_url      String?
-  
-  // Author
-  generated_by  String
-  
-  // Audit
-  created_at    DateTime @default(now())
-  
-  @@map("reports")
-}
-
-// ========================================
-// DOCUMENTS
-// ========================================
-
-enum DocumentCategory {
-  REGLAMENTO
-  ACTA
-  MANUAL
-  FINANCIERO
-  OTRO
-}
-
-model Document {
-  id            String           @id @default(uuid())
-  title         String
-  description   String?
-  category      DocumentCategory
-  
-  // File info
-  file_url      String
-  file_type     String
-  file_size     Int
-  
-  // Relations
-  complex_id    String
-  complex       Complex          @relation(fields: [complex_id], references: [id], onDelete: Cascade)
-  
-  // Access control
-  visible_to    Json?            // Array of roles
-  
-  // Author
-  uploaded_by   String
-  
-  // Audit
-  created_at    DateTime         @default(now())
-  updated_at    DateTime         @updatedAt
-  
-  @@index([complex_id])
-  @@map("documents")
 }

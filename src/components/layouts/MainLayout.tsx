@@ -2,15 +2,19 @@ import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import { auth } from "@/auth";
 
 interface MainLayoutProps {
     children: ReactNode;
 }
 
-export function MainLayout({ children }: MainLayoutProps) {
+export async function MainLayout({ children }: MainLayoutProps) {
+    const session = await auth();
+    const user = session?.user;
+
     return (
         <div className="flex min-h-screen bg-background-light dark:bg-background-dark font-sans text-slate-900 dark:text-white">
-            <Sidebar />
+            <Sidebar user={user} />
             <div className="flex-1 flex flex-col ml-0 md:ml-64 transition-all duration-300">
                 <Header />
                 <main className="flex-1 p-6 md:p-8">

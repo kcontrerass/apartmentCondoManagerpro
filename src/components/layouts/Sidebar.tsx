@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { signOutAction } from '@/lib/actions/auth-actions';
 
 const navSections = [
     {
@@ -34,8 +35,12 @@ const navSections = [
     },
 ];
 
-export function Sidebar() {
+export function Sidebar({ user }: { user?: { name?: string | null; role?: string; image?: string | null } }) {
     const pathname = usePathname();
+
+    const handleSignOut = async () => {
+        await signOutAction();
+    };
 
     return (
         <aside className="hidden md:flex flex-col w-64 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-shrink-0 fixed left-0 top-0 z-40">
@@ -104,17 +109,25 @@ export function Sidebar() {
             {/* User Profile */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 mt-auto bg-slate-50/50 dark:bg-slate-900/50">
                 <div className="flex items-center gap-3 group cursor-pointer">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                        JA
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-2 ring-transparent group-hover:ring-primary/20 transition-all overflow-hidden">
+                        {user?.image ? (
+                            <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                        ) : (
+                            user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                        )}
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
-                            James Anderson
+                            {user?.name || 'User'}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">Super Admin</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.role || 'Resident'}</p>
                     </div>
-                    <button className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                        <span className="material-symbols-outlined text-[20px]">settings</span>
+                    <button
+                        onClick={handleSignOut}
+                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Sign out"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">logout</span>
                     </button>
                 </div>
             </div>
