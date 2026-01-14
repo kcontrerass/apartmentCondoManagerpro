@@ -23,7 +23,7 @@ export const authConfig = {
         jwt({ token, user }) {
             if (user) { // User is available during sign-in
                 token.role = (user.role as string) || 'RESIDENT';
-                token.id = user.id;
+                token.id = user.id as string;
             }
             return token;
         },
