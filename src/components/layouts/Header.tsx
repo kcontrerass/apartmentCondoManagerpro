@@ -1,16 +1,15 @@
 "use client";
 
 import { Button } from "@/components/ui/Button";
+import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 
 export function Header() {
     return (
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
-            {/* Complex Selector - Hide text on mobile, show icon only or truncate */}
-            <button className="flex items-center gap-2 text-slate-900 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-slate-800 p-2 rounded-lg transition-colors max-w-[200px] md:max-w-xs ring-offset-2 focus:ring-2 focus:ring-primary/20 outline-none">
-                <span className="material-symbols-outlined text-slate-500 shrink-0">domain</span>
-                <span className="truncate hidden sm:inline">Sunset Towers - Block A</span>
-                <span className="material-symbols-outlined text-slate-400 shrink-0">expand_more</span>
-            </button>
+            {/* Breadcrumbs */}
+            <div className="flex-1 lg:flex-none">
+                <Breadcrumbs />
+            </div>
 
             {/* Search Bar - Hide on small mobile, show expand button or make smaller */}
             <div className="flex-1 max-w-md mx-4 hidden md:block">

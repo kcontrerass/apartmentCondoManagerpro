@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient, Role, UserStatus, ComplexType, UnitStatus } from '@prisma/client';
+import { PrismaClient, Role, UserStatus, ComplexType, UnitStatus, AmenityType, ResidentType } from '@prisma/client';
 import { hash } from 'bcrypt';
 
 const prisma = new PrismaClient({
@@ -10,19 +10,60 @@ async function main() {
     console.log('🌱 Starting seed...');
 
     // 1. Create Super Admin
-    const adminPassword = await hash('admin123', 12);
-    const admin = await prisma.user.upsert({
+    const commonPassword = await hash('admin123', 12);
+
+    await prisma.user.upsert({
         where: { email: 'admin@condomanager.com' },
         update: {},
         create: {
             email: 'admin@condomanager.com',
             name: 'Super Admin',
-            password: adminPassword,
+            password: commonPassword,
             role: Role.SUPER_ADMIN,
             status: UserStatus.ACTIVE,
         },
     });
-    console.log(`👤 Super Admin created: ${admin.email}`);
+
+    // 2. Create Admin Test
+    await prisma.user.upsert({
+        where: { email: 'manager@condomanager.com' },
+        update: {},
+        create: {
+            email: 'manager@condomanager.com',
+            name: 'Complex Manager',
+            password: commonPassword,
+            role: Role.ADMIN,
+            status: UserStatus.ACTIVE,
+        },
+    });
+
+    // 3. Create Operator Test
+    await prisma.user.upsert({
+        where: { email: 'operator@condomanager.com' },
+        update: {},
+        create: {
+            email: 'operator@condomanager.com',
+            name: 'Staff Operator',
+            password: commonPassword,
+            role: Role.OPERATOR,
+            status: UserStatus.ACTIVE,
+        },
+    });
+
+    // 4. Create Guard Test
+    await prisma.user.upsert({
+        where: { email: 'guard@condomanager.com' },
+        update: {},
+        create: {
+            email: 'guard@condomanager.com',
+            name: 'Security Guard',
+            password: commonPassword,
+            role: Role.GUARD,
+            status: UserStatus.ACTIVE,
+        },
+    });
+
+    console.log('👤 Test users created (password: admin123)');
 
     // 2. Create Example Complex
     const complex = await prisma.complex.create({
@@ -48,6 +89,34 @@ async function main() {
         },
     });
     console.log(`🏢 Complex created: ${complex.name} with units and amenities`);
+
+    // 5. Create Resident User and Profile
+    const resident = await prisma.user.upsert({
+        where: { email: 'resident@example.com' },
+        update: {},
+        create: {
+            email: 'resident@example.com',
+            name: 'Juan Pérez',
+            password: commonPassword,
+            role: Role.RESIDENT,
+            status: UserStatus.ACTIVE,
+        },
+    });
+
+    const unit101 = await prisma.unit.findFirst({
+        where: { number: '101', complexId: complex.id }
+    });
+
+    if (unit101) {
+        await prisma.resident.create({
+            data: {
+                userId: resident.id,
+                unitId: unit101.id,
+                type: ResidentType.OWNER,
+                startDate: new Date(),
+            }
+        });
+    }
 
     console.log('✅ Seed finished.');
 }

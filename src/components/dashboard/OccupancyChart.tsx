@@ -22,7 +22,8 @@ interface OccupancyChartProps {
 }
 
 export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
-    const occupancyRate = Math.round(((data.owners + data.tenants) / totalUnits) * 100);
+    const total = totalUnits || 1;
+    const occupancyRate = Math.round(((data.owners + data.tenants) / total) * 100);
 
     const chartData = {
         labels: ['Owners', 'Tenants', 'Vacant'],

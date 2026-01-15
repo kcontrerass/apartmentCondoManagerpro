@@ -1,118 +1,134 @@
+import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
-import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/dashboard/PageHeader";
-import { StatCard } from "@/components/dashboard/StatCard";
-import { ActivityTable } from "@/components/dashboard/ActivityTable";
-import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
+import { Button } from "@/components/ui/Button";
+import { DashboardClient } from "@/components/dashboard/DashboardClient";
+import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 
-export default function DashboardPage() {
-    const activities = [
-        {
-            reference: 'Unit 402',
-            type: 'Maintenance Fee',
-            status: { label: 'Paid', variant: 'success' as const },
-            datetime: 'Today, 11:30 AM',
-            details: '$250.00',
-        },
-        {
-            reference: 'Unit 105',
-            type: 'Amenity Reservation',
-            status: { label: 'Pending', variant: 'warning' as const },
-            datetime: 'Today, 09:15 AM',
-            details: '$50.00',
-        },
-        {
-            reference: 'Visitor Log',
-            type: 'Access Control',
-            status: { label: 'Logged', variant: 'info' as const },
-            datetime: 'Today, 08:45 AM',
-            details: 'John Doe',
-        },
-        {
-            reference: 'Unit 203',
-            type: 'Incident Report',
-            status: { label: 'Urgent', variant: 'warning' as const },
-            datetime: 'Yesterday, 16:20 PM',
-            details: '#INC-2023-001',
-        },
-        {
-            reference: 'Unit 501',
-            type: 'Monthly Fee',
-            status: { label: 'Paid', variant: 'success' as const },
-            datetime: 'Yesterday, 10:00 AM',
-            details: '$250.00',
-        },
-    ];
-
-    const occupancyData = {
-        owners: 120,
-        tenants: 50,
-        vacant: 30,
+async function getStats(userId: string, role: string) {
+    const stats = {
+        totalComplexes: 0,
+        totalUnits: 0,
+        totalResidents: 0,
+        occupancyRate: 0,
+        occupiedByOwner: 0,
+        occupiedByTenant: 0,
+        vacantUnits: 0,
     };
 
+    if (role === Role.SUPER_ADMIN) {
+        stats.totalComplexes = await prisma.complex.count();
+        stats.totalUnits = await prisma.unit.count();
+        stats.totalResidents = await prisma.resident.count();
+    } else {
+        const managedComplexes = await prisma.complex.findMany({
+            where: { adminId: userId },
+            select: { id: true },
+        });
+        const complexIds = managedComplexes.map((c) => c.id);
+
+        stats.totalComplexes = complexIds.length;
+        stats.totalUnits = await prisma.unit.count({
+            where: { complexId: { in: complexIds } },
+        });
+        stats.totalResidents = await prisma.resident.count({
+            where: { unit: { complexId: { in: complexIds } } },
+        });
+    }
+
+    // Calculate detailed occupancy (mirroring API logic)
+    const unitStats = await prisma.unit.groupBy({
+        by: ['status'],
+        _count: true,
+        where: {
+            ...(role !== Role.SUPER_ADMIN ? {
+                complexId: {
+                    in: (await prisma.complex.findMany({
+                        where: { adminId: userId },
+                        select: { id: true }
+                    })).map(c => c.id)
+                }
+            } : {}),
+        }
+    });
+
+    unitStats.forEach(stat => {
+        if (stat.status === 'VACANT' || stat.status === 'MAINTENANCE') {
+            stats.vacantUnits += stat._count;
+        }
+    });
+
+    const residents = await prisma.resident.groupBy({
+        by: ['type'],
+        _count: true,
+        where: {
+            unit: {
+                ...(role !== Role.SUPER_ADMIN ? {
+                    complexId: {
+                        in: (await prisma.complex.findMany({
+                            where: { adminId: userId },
+                            select: { id: true }
+                        })).map(c => c.id)
+                    }
+                } : {}),
+            }
+        }
+    });
+
+    residents.forEach(res => {
+        if (res.type === 'OWNER') stats.occupiedByOwner = res._count;
+        if (res.type === 'TENANT') stats.occupiedByTenant = res._count;
+    });
+
+    const totalUnitsWithOccupiedStatus = await prisma.unit.count({
+        where: {
+            status: 'OCCUPIED',
+            ...(role !== Role.SUPER_ADMIN ? {
+                complexId: {
+                    in: (await prisma.complex.findMany({
+                        where: { adminId: userId },
+                        select: { id: true }
+                    })).map(c => c.id)
+                }
+            } : {}),
+        }
+    });
+
+    // Seed fallback: if units are occupied but no residents exist
+    const totalOccupied = stats.occupiedByOwner + stats.occupiedByTenant;
+    if (totalOccupied < totalUnitsWithOccupiedStatus) {
+        stats.occupiedByTenant += (totalUnitsWithOccupiedStatus - totalOccupied);
+    }
+
+    if (stats.totalUnits > 0) {
+        stats.occupancyRate = (totalUnitsWithOccupiedStatus / stats.totalUnits) * 100;
+    }
+
+    return stats;
+}
+
+export default async function DashboardPage() {
+    const session = await auth();
+    if (!session?.user) return null;
+
+    const stats = await getStats(session.user.id as string, session.user.role as string);
+
     return (
-        <MainLayout>
+        <MainLayout user={session.user}>
             <div className="space-y-8">
-                {/* Page Header */}
                 <PageHeader
-                    title="Dashboard Overview"
-                    subtitle="Welcome back, here's what's happening at Sunset Towers."
+                    title="Resumen del Dashboard"
+                    subtitle="Bienvenido, esto es lo que está sucediendo en tus complejos."
                     actions={
                         <>
-                            <Button variant="secondary" icon="mail">Send Notice</Button>
-                            <Button variant="secondary" icon="person_add">Register Visitor</Button>
-                            <Button variant="primary" icon="warning">New Incident</Button>
+                            <Button variant="secondary" icon="mail">Enviar Aviso</Button>
+                            <Button variant="secondary" icon="person_add">Registrar Visitante</Button>
                         </>
                     }
                 />
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatCard
-                        icon="payments"
-                        label="Total Debt"
-                        value="$12,450"
-                        subtitle="Vs last month"
-                        badge={{ text: '+2%', variant: 'success' }}
-                    />
-                    <StatCard
-                        icon="warning"
-                        iconBgColor="bg-orange-50 dark:bg-orange-900/20"
-                        iconColor="text-orange-500"
-                        label="Open Incidents"
-                        value="3"
-                        subtitle="Requires attention"
-                        badge={{ text: '1 High Priority', variant: 'warning' }}
-                    />
-                    <StatCard
-                        icon="event"
-                        iconBgColor="bg-purple-50 dark:bg-purple-900/20"
-                        iconColor="text-purple-500"
-                        label="Events Today"
-                        value="5"
-                        subtitle="2 Amenity bookings"
-                        badge={{ text: 'Active', variant: 'info' }}
-                    />
-                    <StatCard
-                        icon="group"
-                        iconBgColor="bg-emerald-50 dark:bg-emerald-900/20"
-                        iconColor="text-emerald-600"
-                        label="Active Residents"
-                        value="573"
-                        subtitle="+12 this month"
-                        badge={{ text: '+2%', variant: 'success' }}
-                    />
-                </div>
-
-                {/* Main Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2">
-                        <ActivityTable activities={activities} />
-                    </div>
-                    <div className="lg:col-span-1 h-full">
-                        <OccupancyChart data={occupancyData} totalUnits={200} />
-                    </div>
-                </div>
+                <DashboardClient stats={stats} />
             </div>
         </MainLayout>
     );

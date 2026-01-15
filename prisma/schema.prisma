@@ -129,7 +129,7 @@ model Resident {
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   unitId          String       @map("unit_id")
-  unit            Unit         @relation(fields: [unitId], references: [id])
+  unit            Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
   
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt

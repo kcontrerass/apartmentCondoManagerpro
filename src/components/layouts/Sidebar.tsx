@@ -5,32 +5,34 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
 
+import { Role } from '@prisma/client';
+
 const navSections = [
     {
         label: 'Main',
         items: [
-            { icon: 'dashboard', label: 'Dashboard', href: '/dashboard' },
-            { icon: 'domain', label: 'Complexes', href: '/dashboard/complexes' },
-            { icon: 'door_front', label: 'Units', href: '/dashboard/units' },
-            { icon: 'group', label: 'Neighbors', href: '/dashboard/residents' },
+            { icon: 'dashboard', label: 'Dashboard', href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+            { icon: 'domain', label: 'Complexes', href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+            { icon: 'door_front', label: 'Units', href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+            { icon: 'group', label: 'Neighbors', href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
         ],
     },
     {
         label: 'Management',
         items: [
-            { icon: 'pool', label: 'Amenities', href: '/dashboard/amenities' },
-            { icon: 'handyman', label: 'Services', href: '/dashboard/services' },
-            { icon: 'payments', label: 'Billing', href: '/dashboard/billing' },
-            { icon: 'badge', label: 'Access Control', href: '/dashboard/access' },
+            { icon: 'pool', label: 'Amenities', href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+            { icon: 'handyman', label: 'Services', href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+            { icon: 'payments', label: 'Billing', href: '/dashboard/billing', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
+            { icon: 'badge', label: 'Access Control', href: '/dashboard/access', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
         ],
     },
     {
         label: 'Support',
         items: [
-            { icon: 'forum', label: 'Communications', href: '/dashboard/communications' },
-            { icon: 'warning', label: 'Incidents', href: '/dashboard/incidents', badge: 3 },
-            { icon: 'bar_chart', label: 'Reports', href: '/dashboard/reports' },
-            { icon: 'description', label: 'Documents', href: '/dashboard/documents' },
+            { icon: 'forum', label: 'Communications', href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+            { icon: 'warning', label: 'Incidents', href: '/dashboard/incidents', badge: 3, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+            { icon: 'bar_chart', label: 'Reports', href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+            { icon: 'description', label: 'Documents', href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
         ],
     },
 ];
@@ -59,74 +61,93 @@ export function Sidebar({ user }: { user?: { name?: string | null; role?: string
 
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-1 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-                {navSections.map((section) => (
-                    <div key={section.label}>
-                        <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6 first:mt-2">
-                            {section.label}
-                        </p>
-                        {section.items.map((item) => {
-                            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
-                                        isActive
-                                            ? "bg-primary/10 text-primary font-medium"
-                                            : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
-                                    )}
-                                >
-                                    <span className={cn(
-                                        "material-symbols-outlined text-[20px] transition-transform duration-200 shrink-0",
-                                        !isActive && "group-hover:scale-110"
-                                    )}>
-                                        {item.icon}
-                                    </span>
-                                    <div className="flex justify-between items-center w-full min-w-0">
-                                        <span className="text-sm truncate">{item.label}</span>
+                {navSections.map((section) => {
+                    const filteredItems = section.items.filter(item =>
+                        !item.roles || (user?.role && item.roles.includes(user.role as Role))
+                    );
 
-                                        {item.badge && (
-                                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 animate-in zoom-in ml-2">
+                    if (filteredItems.length === 0) return null;
 
-                                                {item.badge}
-                                            </span>
+                    return (
+                        <div key={section.label}>
+                            <p className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-6 first:mt-2">
+                                {section.label}
+                            </p>
+                            {filteredItems.map((item) => {
+                                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={cn(
+                                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative overflow-hidden",
+                                            isActive
+                                                ? "bg-primary/10 text-primary font-medium"
+                                                : "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                                         )}
-                                    </div>
+                                    >
+                                        <span className={cn(
+                                            "material-symbols-outlined text-[20px] transition-transform duration-200 shrink-0",
+                                            !isActive && "group-hover:scale-110"
+                                        )}>
+                                            {item.icon}
+                                        </span>
+                                        <div className="flex justify-between items-center w-full min-w-0">
+                                            <span className="text-sm truncate">{item.label}</span>
 
-                                    {isActive && (
-                                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
-                                    )}
-                                </Link>
-                            );
-                        })}
-                    </div>
-                ))}
+                                            {item.badge && (
+                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 animate-in zoom-in ml-2">
+
+                                                    {item.badge}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {isActive && (
+                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
+                                        )}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    );
+                })}
             </nav>
 
             {/* User Profile */}
             <div className="p-4 border-t border-slate-200 dark:border-slate-800 mt-auto bg-slate-50/50 dark:bg-slate-900/50">
-                <div className="flex items-center gap-3 group cursor-pointer">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-2 ring-transparent group-hover:ring-primary/20 transition-all overflow-hidden">
-                        {user?.image ? (
-                            <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
-                        ) : (
-                            user?.name ? user.name.charAt(0).toUpperCase() : 'U'
-                        )}
+                <div className="flex items-center gap-3">
+                    <Link href="/dashboard/profile" className="flex items-center gap-3 group flex-1 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold ring-2 ring-transparent group-hover:ring-primary/20 transition-all overflow-hidden shrink-0">
+                            {user?.image ? (
+                                <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                            ) : (
+                                user?.name ? user.name.charAt(0).toUpperCase() : 'U'
+                            )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
+                                {user?.name || 'User'}
+                            </p>
+                            <p className="text-xs text-slate-500 truncate">{user?.role || 'Resident'}</p>
+                        </div>
+                    </Link>
+                    <div className="flex items-center gap-1">
+                        <Link
+                            href="/dashboard/profile"
+                            className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            title="Profile Settings"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">settings</span>
+                        </Link>
+                        <button
+                            onClick={() => signOut({ callbackUrl: '/login' })}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Sign out"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">logout</span>
+                        </button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate group-hover:text-primary transition-colors">
-                            {user?.name || 'User'}
-                        </p>
-                        <p className="text-xs text-slate-500 truncate">{user?.role || 'Resident'}</p>
-                    </div>
-                    <button
-                        onClick={() => signOut({ callbackUrl: '/login' })}
-                        className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        title="Sign out"
-                    >
-                        <span className="material-symbols-outlined text-[20px]">logout</span>
-                    </button>
                 </div>
             </div>
         </aside>

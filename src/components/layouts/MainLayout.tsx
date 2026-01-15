@@ -2,16 +2,13 @@ import { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
-import { auth } from "@/auth";
 
 interface MainLayoutProps {
     children: ReactNode;
+    user?: any; // Session user
 }
 
-export async function MainLayout({ children }: MainLayoutProps) {
-    const session = await auth();
-    const user = session?.user;
-
+export function MainLayout({ children, user }: MainLayoutProps) {
     return (
         <div className="flex min-h-screen bg-background-light dark:bg-background-dark font-sans text-slate-900 dark:text-white">
             <Sidebar user={user} />
