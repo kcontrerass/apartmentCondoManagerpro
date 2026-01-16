@@ -74,11 +74,10 @@ export async function PUT(
             return NextResponse.json({ error: "Complejo no encontrado" }, { status: 404 });
         }
 
-        if (
-            session.user.role !== Role.SUPER_ADMIN &&
-            session.user.role !== Role.ADMIN &&
-            existingComplex.adminId !== session.user.id
-        ) {
+        const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
+        const isAdminOwner = session.user.role === Role.ADMIN && existingComplex.adminId === session.user.id;
+
+        if (!isSuperAdmin && !isAdminOwner) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -101,6 +100,12 @@ export async function PUT(
     } catch (error: any) {
         if (error.name === "ZodError") {
             return NextResponse.json({ error: error.errors }, { status: 400 });
+        }
+        if (error.code === 'P2002' && error.meta?.target?.includes('adminId')) {
+            return NextResponse.json(
+                { error: "El administrador seleccionado ya está asignado a otro complejo." },
+                { status: 409 }
+            );
         }
         console.error("Error updating complex:", error);
         return NextResponse.json(
@@ -131,11 +136,8 @@ export async function DELETE(
             return NextResponse.json({ error: "Complejo no encontrado" }, { status: 404 });
         }
 
-        if (
-            session.user.role !== Role.SUPER_ADMIN &&
-            existingComplex.adminId !== session.user.id
-        ) {
-            return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
+        if (session.user.role !== Role.SUPER_ADMIN) {
+            return NextResponse.json({ error: "Solo el Super Administrador puede eliminar complejos" }, { status: 403 });
         }
 
         await prisma.complex.delete({

@@ -60,7 +60,7 @@ export function ComplexTable({ complexes, onDelete }: ComplexTableProps) {
                                             <img src={complex.logoUrl} alt={complex.name} className="w-8 h-8 rounded object-cover" />
                                         ) : (
                                             <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
-                                                <span className="material-symbols-rounded text-lg">apartment</span>
+                                                <span className="material-symbols-outlined text-lg">apartment</span>
                                             </div>
                                         )}
                                         {complex.name}

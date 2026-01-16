@@ -15,18 +15,32 @@ export async function GET(request: Request) {
         const search = searchParams.get("search") || "";
         const type = searchParams.get("type");
 
+        let whereClause: any = {
+            AND: [
+                {
+                    OR: [
+                        { name: { contains: search } },
+                        { address: { contains: search } },
+                    ],
+                },
+                type ? { type: type as any } : {},
+            ],
+        };
+
+        if (session.user.role === Role.ADMIN) {
+            const adminComplex = await prisma.complex.findFirst({
+                where: { adminId: session.user.id }
+            });
+
+            if (!adminComplex) {
+                return NextResponse.json([]);
+            }
+
+            whereClause.AND.push({ id: adminComplex.id });
+        }
+
         const complexes = await prisma.complex.findMany({
-            where: {
-                AND: [
-                    {
-                        OR: [
-                            { name: { contains: search } },
-                            { address: { contains: search } },
-                        ],
-                    },
-                    type ? { type: type as any } : {},
-                ],
-            },
+            where: whereClause,
             include: {
                 _count: {
                     select: {
@@ -57,13 +71,16 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        // Role check: Only SUPER_ADMIN and ADMIN can create complexes
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
-            return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
+        // Role check: Only SUPER_ADMIN can create complexes
+        if (session.user.role !== Role.SUPER_ADMIN) {
+            return NextResponse.json({ error: "Solo el Super Administrador puede crear complejos" }, { status: 403 });
         }
 
         const body = await request.json();
         const validatedData = ComplexCreateSchema.parse(body);
+
+        let adminIdToAssign = validatedData.adminId;
+
 
         const complex = await prisma.complex.create({
             data: {
@@ -72,7 +89,7 @@ export async function POST(request: Request) {
                 type: validatedData.type,
                 logoUrl: validatedData.logoUrl,
                 settings: validatedData.settings || {},
-                adminId: validatedData.adminId || session.user.id,
+                adminId: adminIdToAssign,
             },
         });
 
@@ -80,6 +97,13 @@ export async function POST(request: Request) {
     } catch (error: any) {
         if (error.name === "ZodError") {
             return NextResponse.json({ error: error.errors }, { status: 400 });
+        }
+        // Prisma unique constraint violation
+        if (error.code === 'P2002' && error.meta?.target?.includes('adminId')) {
+            return NextResponse.json(
+                { error: "El administrador seleccionado ya está asignado a otro complejo. Un administrador solo puede gestionar un complejo." },
+                { status: 409 }
+            );
         }
         console.error("Error creating complex:", error);
         return NextResponse.json(

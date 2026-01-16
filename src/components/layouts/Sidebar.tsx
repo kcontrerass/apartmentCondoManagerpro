@@ -1,46 +1,45 @@
 "use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
 import { signOut } from 'next-auth/react';
-
+import { useTranslations, useLocale } from 'next-intl';
 import { Role } from '@prisma/client';
 
-const navSections = [
-    {
-        label: 'Main',
-        items: [
-            { icon: 'dashboard', label: 'Dashboard', href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-            { icon: 'domain', label: 'Complexes', href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
-            { icon: 'door_front', label: 'Units', href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-            { icon: 'group', label: 'Neighbors', href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-        ],
-    },
-    {
-        label: 'Management',
-        items: [
-            { icon: 'pool', label: 'Amenities', href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-            { icon: 'handyman', label: 'Services', href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-            { icon: 'payments', label: 'Billing', href: '/dashboard/billing', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
-            { icon: 'badge', label: 'Access Control', href: '/dashboard/access', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-        ],
-    },
-    {
-        label: 'Support',
-        items: [
-            { icon: 'forum', label: 'Communications', href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-            { icon: 'warning', label: 'Incidents', href: '/dashboard/incidents', badge: 3, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-            { icon: 'bar_chart', label: 'Reports', href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
-            { icon: 'description', label: 'Documents', href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-        ],
-    },
-];
-
-export function Sidebar({ user }: { user?: { name?: string | null; role?: string; image?: string | null } }) {
+export function Sidebar({ user, complexName }: { user?: { name?: string | null; role?: string; image?: string | null }; complexName?: string | null }) {
     const pathname = usePathname();
+    const t = useTranslations('Common');
+    const locale = useLocale();
 
-
+    const navSections = [
+        {
+            label: t('main'),
+            items: [
+                { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'domain', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                { icon: 'door_front', label: t('units'), href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+                { icon: 'group', label: t('residents'), href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+            ],
+        },
+        {
+            label: t('management'),
+            items: [
+                { icon: 'pool', label: t('amenities'), href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+                { icon: 'payments', label: t('billing'), href: '/dashboard/billing', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
+                { icon: 'badge', label: t('access'), href: '/dashboard/access', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+            ],
+        },
+        {
+            label: t('support'),
+            items: [
+                { icon: 'forum', label: t('communications'), href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', badge: 3, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'bar_chart', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                { icon: 'description', label: t('documents'), href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+            ],
+        },
+    ];
 
     return (
         <aside className="hidden md:flex flex-col w-64 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-shrink-0 fixed left-0 top-0 z-40">
@@ -51,7 +50,7 @@ export function Sidebar({ user }: { user?: { name?: string | null; role?: string
                 </div>
                 <div className="flex flex-col">
                     <h1 className="text-slate-900 dark:text-white text-base font-bold leading-none tracking-tight">
-                        CondoManager
+                        {user?.role === Role.ADMIN && complexName ? complexName : "CondoManager"}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
                         Admin Console
@@ -136,14 +135,14 @@ export function Sidebar({ user }: { user?: { name?: string | null; role?: string
                         <Link
                             href="/dashboard/profile"
                             className="p-1.5 text-slate-400 hover:text-primary rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                            title="Profile Settings"
+                            title={t('settings')}
                         >
                             <span className="material-symbols-outlined text-[20px]">settings</span>
                         </Link>
                         <button
                             onClick={() => signOut({ callbackUrl: '/login' })}
                             className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Sign out"
+                            title={t('logout')}
                         >
                             <span className="material-symbols-outlined text-[20px]">logout</span>
                         </button>

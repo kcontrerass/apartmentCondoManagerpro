@@ -13,10 +13,19 @@ interface ModalProps {
     children: ReactNode;
     footer?: ReactNode;
     className?: string;
+    size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
-export function Modal({ isOpen, onClose, title, children, footer, className }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, footer, className, size = "md" }: ModalProps) {
     const [mounted, setMounted] = useState(false);
+
+    const sizes = {
+        sm: "max-w-sm",
+        md: "max-w-md",
+        lg: "max-w-lg",
+        xl: "max-w-2xl",
+        full: "max-w-[95vw]",
+    };
 
     useEffect(() => {
         setMounted(true);
@@ -35,7 +44,7 @@ export function Modal({ isOpen, onClose, title, children, footer, className }: M
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <Card className={cn("w-full max-w-lg shadow-xl animate-in zoom-in-95 duration-200", className)}>
+            <Card className={cn("w-full shadow-xl animate-in zoom-in-95 duration-200", sizes[size], className)}>
                 <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                     <CardTitle>{title}</CardTitle>
                     <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">

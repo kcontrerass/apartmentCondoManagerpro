@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ComplexType } from "@prisma/client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Alert } from "@/components/ui/Alert";
 
 interface ComplexFormProps {
@@ -21,6 +21,7 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [admins, setAdmins] = useState<{ id: string; name: string }[]>([]);
 
     const {
         register,
@@ -32,20 +33,42 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
         resolver: zodResolver(ComplexCreateSchema) as any,
         defaultValues: (initialData as any) || {
             type: ComplexType.BUILDING,
+            adminId: "",
         },
     });
+
+    useEffect(() => {
+        const fetchAdmins = async () => {
+            try {
+                let url = "/api/users/admins?unassigned=true";
+                if (isEditing && id) {
+                    url += `&currentComplexId=${id}`;
+                }
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    setAdmins(data);
+                }
+            } catch (error) {
+                console.error("Error fetching admins", error);
+            }
+        }
+        fetchAdmins();
+    }, [isEditing, id]);
 
     const onSubmit = async (data: ComplexCreateInput) => {
         setLoading(true);
         setError(null);
         try {
+            const payload = { ...data };
+
             const url = isEditing ? `/api/complexes/${id}` : "/api/complexes";
             const method = isEditing ? "PUT" : "POST";
 
             const response = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
@@ -102,6 +125,26 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
                         ]}
                         error={errors.type?.message}
                     />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Administrador
+                    </label>
+                    <Select
+                        {...register("adminId")}
+                        options={[
+                            { label: "Seleccionar administrador", value: "" },
+                            ...admins.map((admin) => ({
+                                label: admin.name,
+                                value: admin.id,
+                            })),
+                        ]}
+                        error={errors.adminId?.message}
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                        Solo se muestran administradores disponibles.
+                    </p>
                 </div>
 
                 <div>

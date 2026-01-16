@@ -18,7 +18,7 @@ export const ComplexCreateSchema = z.object({
     type: z.nativeEnum(ComplexType).default(ComplexType.BUILDING),
     logoUrl: z.string().url("URL de logo inválida").or(z.literal("")).optional().nullable(),
     settings: z.record(z.string(), z.any()).optional().nullable(),
-    adminId: z.string().optional().nullable(),
+    adminId: z.string().min(1, "El administrador es obligatorio"),
 });
 
 export const ComplexUpdateSchema = ComplexCreateSchema.partial();

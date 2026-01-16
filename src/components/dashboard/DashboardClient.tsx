@@ -3,6 +3,7 @@
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { useTranslations } from 'next-intl';
 
 interface DashboardStats {
     totalComplexes: number;
@@ -19,6 +20,8 @@ interface DashboardClientProps {
 }
 
 export function DashboardClient({ stats }: DashboardClientProps) {
+    const t = useTranslations('Dashboard');
+
     const activities = [
         {
             reference: 'Unit 402',
@@ -68,10 +71,10 @@ export function DashboardClient({ stats }: DashboardClientProps) {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
-                    icon="apartment"
-                    label="Total Complejos"
+                    icon="domain"
+                    label={t('totalComplexes')}
                     value={stats.totalComplexes.toString()}
-                    subtitle="Gestionados actualmente"
+                    subtitle={t('managedCurrently')}
                     iconBgColor="bg-indigo-50 dark:bg-indigo-900/20"
                     iconColor="text-indigo-600"
                 />
@@ -79,26 +82,26 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                     icon="door_front"
                     iconBgColor="bg-orange-50 dark:bg-orange-900/20"
                     iconColor="text-orange-500"
-                    label="Total Unidades"
+                    label={t('totalUnits')}
                     value={stats.totalUnits.toString()}
-                    subtitle="En todos los complejos"
+                    subtitle={t('allComplexes')}
                 />
                 <StatCard
                     icon="group"
                     iconBgColor="bg-emerald-50 dark:bg-emerald-900/20"
                     iconColor="text-emerald-600"
-                    label="Residentes Activos"
+                    label={t('activeResidents')}
                     value={stats.totalResidents.toString()}
-                    subtitle="Registrados en el sistema"
+                    subtitle={t('registeredSystem')}
                 />
                 <StatCard
                     icon="pie_chart"
-                    label="Ocupación"
+                    label={t('occupancy')}
                     value={`${Math.round(stats.occupancyRate)}%`}
-                    subtitle="Promedio general"
+                    subtitle={t('generalAverage')}
                     iconBgColor="bg-purple-50 dark:bg-purple-900/20"
                     iconColor="text-purple-500"
-                    badge={{ text: 'En tiempo real', variant: 'info' }}
+                    badge={{ text: t('realTime'), variant: 'info' }}
                 />
             </div>
 

@@ -60,7 +60,9 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                             <Link href={`/dashboard/complexes/${id}/edit`}>
                                 <Button variant="secondary" icon="edit">Editar</Button>
                             </Link>
-                            <Button variant="primary" icon="add">Agregar Unidad</Button>
+                            <Link href={`/dashboard/units?complexId=${id}`}>
+                                <Button variant="primary" icon="add">Agregar Unidad</Button>
+                            </Link>
                         </div>
                     }
                 />

@@ -268,9 +268,75 @@ git log --oneline --since="today"
 
 ---
 
-### Día 4 - [Fecha] - Gestión de Unidades y Residentes
+### Día 4 - 2026-01-16 - Gestión de Unidades y Residentes
 
-[Copiar estructura de días anteriores]
+#### Dev A - Antigravity
+**Horas trabajadas**: 8/8
+
+**Tareas Completadas** ✅
+- [x] Schema Prisma (verificado para Units y Residents)
+- [x] APIs CRUD Unidades (`/api/units`, `/api/complexes/[id]/units`)
+- [x] APIs CRUD Residentes (`/api/residents`)
+- [x] Validaciones Zod (`unit.ts`, `resident.ts`)
+- [x] Sistema RBAC para Unidades y Residentes
+
+**En Progreso** 🚧
+- Ninguno
+
+**Bloqueadores** ⚠️
+- Ninguno
+
+**Commits Realizados**:
+```bash
+feat: implement units and residents api with zod validation
+feat: add rbac checks for units and residents management
+```
+
+**Pull Requests**:
+- [x] #4: Gestión de Unidades y Residentes (Backend)
+
+**Notas del Día**:
+Se implementó toda la lógica de backend para gestionar unidades habitacionales y la asignación de residentes. Se corrigió un error de Next.js 15 relacionado con el acceso sincrónico a `params` en las rutas dinámicas. También se resolvieron errores de integridad referencial (P2003) en la creación de residentes mediante validaciones de existencia de IDs y control de duplicados.
+
+---
+
+#### Dev B - Antigravity
+**Horas trabajadas**: 8/8
+
+**Tareas Completadas** ✅
+- [x] UI Gestión de Unidades (`UnitsClient`, `UnitDetailPage`)
+- [x] UI Gestión de Residentes (`ResidentsClient`, `ResidentDetailPage`)
+- [x] Componentes Reutilizables (`UnitTable`, `UnitForm`, `ResidentTable`, `ResidentForm`)
+- [x] Navegación para Unidades y Residentes integrada en Sidebar y Complejos
+
+**En Progreso** 🚧
+- Ninguno
+
+**Bloqueadores** ⚠️
+- Ninguno
+
+**Commits Realizados**:
+```bash
+feat: create units and residents management ui
+style: update button and modal components with new props
+```
+
+**Pull Requests**:
+- [x] #5: UI Gestión de Unidades y Residentes
+
+**Notas del Día**:
+Se crearon las interfaces de usuario para el dashboard que permiten listar, crear, editar y ver detalles de unidades y residentes. Se agregó el contexto del complejo en la tabla de unidades y se habilitó la creación global de unidades con un selector de complejo integrado. En la parte de residentes, se implementaron selectores (dropdowns) para elegir usuarios (filtrados por rol de residente) y unidades fácilmente, mostrando el contexto del complejo. Se implementó la validación para evitar números de unidad duplicados dentro del mismo complejo.
+
+---
+
+#### ✅ Entregables del Día 4
+- [x] CRUD completo de Unidades
+- [x] CRUD completo de Residentes
+- [x] Asignación de residentes a unidades
+- [x] UI funcional para gestión de ambos
+- [x] Permisos por rol verificados
+
+**Estado**: ✅ Completado
 
 ---
 

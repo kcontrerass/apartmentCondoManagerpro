@@ -9,8 +9,16 @@ export const authConfig = {
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
-            const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-            const isOnAuth = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
+            const pathname = nextUrl.pathname;
+
+            // Regex to match /dashboard or /es/dashboard, /en/dashboard
+            const isOnDashboard = pathname.startsWith('/dashboard') ||
+                /^\/(es|en)\/dashboard/.test(pathname);
+
+            // Regex to match /login, /register or /es/login, /en/register etc
+            const isOnAuth = pathname.startsWith('/login') ||
+                pathname.startsWith('/register') ||
+                /^\/(es|en)\/(login|register)/.test(pathname);
 
             if (isOnDashboard) {
                 if (isLoggedIn) return true;

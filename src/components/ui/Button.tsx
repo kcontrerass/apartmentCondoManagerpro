@@ -6,6 +6,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     size?: 'sm' | 'md' | 'lg' | 'icon';
     icon?: string;
     iconPosition?: 'left' | 'right';
+    isLoading?: boolean;
 }
 
 export function Button({
@@ -13,8 +14,10 @@ export function Button({
     size = 'md',
     icon,
     iconPosition = 'left',
+    isLoading = false,
     children,
     className,
+    disabled,
     ...props
 }: ButtonProps) {
     const variants = {
@@ -34,6 +37,7 @@ export function Button({
 
     return (
         <button
+            disabled={disabled || isLoading}
             className={cn(
                 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/20 active:scale-95',
                 variants[variant],
@@ -42,11 +46,14 @@ export function Button({
             )}
             {...props}
         >
-            {icon && iconPosition === 'left' && (
+            {isLoading && (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1" />
+            )}
+            {!isLoading && icon && iconPosition === 'left' && (
                 <span className="material-symbols-outlined text-[20px] leading-none select-none">{icon}</span>
             )}
             {children}
-            {icon && iconPosition === 'right' && (
+            {!isLoading && icon && iconPosition === 'right' && (
                 <span className="material-symbols-outlined text-[20px] leading-none select-none">{icon}</span>
             )}
         </button>

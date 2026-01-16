@@ -85,7 +85,7 @@ model Complex {
   updatedAt   DateTime    @updatedAt
   
   // Relations
-  adminId     String?
+  adminId     String?     @unique
   admin       User?       @relation(fields: [adminId], references: [id])
   units       Unit[]
   amenities   Amenity[]

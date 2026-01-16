@@ -16,9 +16,11 @@ export default async function ComplexesPage() {
                     title="Complejos Habitacionales"
                     subtitle="Gestiona los edificios y residenciales del sistema."
                     actions={
-                        <Link href="/dashboard/complexes/new">
-                            <Button variant="primary" icon="add">Nuevo Complejo</Button>
-                        </Link>
+                        session.user.role === "SUPER_ADMIN" ? (
+                            <Link href="/dashboard/complexes/new">
+                                <Button variant="primary" icon="add">Nuevo Complejo</Button>
+                            </Link>
+                        ) : null
                     }
                 />
 
