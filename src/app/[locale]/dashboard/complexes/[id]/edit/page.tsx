@@ -42,7 +42,7 @@ export default async function EditComplexPage({ params }: RouteParams) {
                             type: complex.type,
                             logoUrl: complex.logoUrl,
                             settings: complex.settings as any,
-                            adminId: complex.adminId,
+                            adminId: complex.adminId ?? undefined,
                         }}
                     />
                 </Card>
