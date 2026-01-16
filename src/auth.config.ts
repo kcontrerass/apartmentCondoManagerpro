@@ -11,14 +11,11 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user;
             const pathname = nextUrl.pathname;
 
-            // Regex to match /dashboard or /es/dashboard, /en/dashboard
-            const isOnDashboard = pathname.startsWith('/dashboard') ||
-                /^\/(es|en)\/dashboard/.test(pathname);
+            // Match /dashboard or /locale/dashboard and all subpaths
+            const isOnDashboard = pathname.includes('/dashboard');
 
-            // Regex to match /login, /register or /es/login, /en/register etc
-            const isOnAuth = pathname.startsWith('/login') ||
-                pathname.startsWith('/register') ||
-                /^\/(es|en)\/(login|register)/.test(pathname);
+            // Match /login, /register, etc. and their translated versions
+            const isOnAuth = pathname.includes('/login') || pathname.includes('/register');
 
             if (isOnDashboard) {
                 if (isLoggedIn) return true;
