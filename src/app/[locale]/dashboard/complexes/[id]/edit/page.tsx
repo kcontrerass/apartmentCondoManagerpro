@@ -4,15 +4,20 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ComplexForm } from "@/components/complexes/ComplexForm";
 import { Card } from "@/components/ui/Card";
 import { prisma } from "@/lib/prisma";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 interface RouteParams {
-    params: Promise<{ id: string }>;
+    params: Promise<{ id: string; locale: string }>;
 }
 
 export default async function EditComplexPage({ params }: RouteParams) {
     const session = await auth();
     if (!session?.user) return null;
+
+    if (session.user.role !== "SUPER_ADMIN") {
+        const { locale } = await params;
+        return redirect(`/${locale}/dashboard`);
+    }
 
     const { id } = await params;
 

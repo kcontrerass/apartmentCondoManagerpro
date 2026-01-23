@@ -5,6 +5,7 @@
         "units": "Unidades",
         "residents": "Residentes",
         "amenities": "Amenidades",
+        "reservations": "Reservas",
         "settings": "Configuración",
         "logout": "Cerrar Sesión",
         "loading": "Cargando...",
@@ -28,7 +29,8 @@
         "communications": "Comunicaciones",
         "incidents": "Incidentes",
         "reports": "Reportes",
-        "documents": "Documentos"
+        "documents": "Documentos",
+        "close": "Cerrar"
     },
     "Dashboard": {
         "title": "Panel de Control",
@@ -76,5 +78,162 @@
         "type_family": "Familiar",
         "unit": "Unidad",
         "startDate": "Fecha de Inicio"
+    },
+    "Services": {
+        "title": "Servicios",
+        "subtitle": "Gestión de servicios base (Agua, Mantenimiento, etc.)",
+        "newService": "Nuevo Servicio",
+        "editService": "Editar Servicio",
+        "name": "Nombre",
+        "description": "Descripción",
+        "basePrice": "Precio Base",
+        "frequency": "Frecuencia",
+        "complex": "Complejo",
+        "assignedUnits": "Unidades Asignadas",
+        "allServices": "Todos los servicios registrados",
+        "deleteConfirm": "¿Está seguro de eliminar este servicio?",
+        "errorSaving": "Ocurrió un error al guardar el servicio",
+        "assignService": "Asignar Servicio",
+        "unitServices": "Servicios de la Unidad",
+        "customPrice": "Precio Personalizado",
+        "startDate": "Fecha de Inicio",
+        "endDate": "Fecha de Finalización"
+    },
+    "Invoices": {
+        "title": "Facturación",
+        "subtitle": "Gestión de cobros y facturas",
+        "generate": "Generar Facturas",
+        "table": {
+            "number": "Número",
+            "unit": "Unidad",
+            "complex": "Complejo",
+            "period": "Periodo",
+            "total": "Total",
+            "status": "Estado",
+            "dueDate": "Vencimiento",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "view": "Ver Detalle",
+            "pay": "Pagar Ahora",
+            "markPaid": "Marcar como Pagada"
+        },
+        "status": {
+            "PENDING": "Pendiente",
+            "PAID": "Pagada",
+            "OVERDUE": "Vencida",
+            "CANCELLED": "Anulada"
+        },
+        "modal": {
+            "generateTitle": "Generar Facturas Mensuales",
+            "selectMonth": "Mes",
+            "selectYear": "Año",
+            "dueDate": "Fecha de Vencimiento",
+            "generateButton": "Generar Ahora",
+            "generating": "Generando..."
+        },
+        "detail": {
+            "title": "Detalle de Factura",
+            "client": "Cliente",
+            "items": "Ítems",
+            "description": "Descripción",
+            "amount": "Monto",
+            "total": "Total Facturado"
+        },
+        "noInvoices": "No se encontraron facturas.",
+        "successGenerate": "Se generaron {count} facturas exitosamente ({skipped} omitidas)."
+    },
+    "Payments": {
+        "success": {
+            "title": "¡Pago Exitoso!",
+            "message": "Tu pago ha sido procesado correctamente. Muchas gracias.",
+            "backToInvoices": "Volver a Facturas",
+            "note": "El estado de tu factura se actualizará en unos minutos."
+        },
+        "cancel": {
+            "title": "Pago Cancelado",
+            "message": "El proceso de pago fue cancelado. No se ha realizado ningún cargo.",
+            "backToInvoices": "Reintentar Pago"
+        }
+    },
+    "Amenities": {
+        "title": "Amenidades",
+        "subtitle": "Gestión de áreas comunes y servicios del complejo",
+        "new": "Nueva Amenidad",
+        "edit": "Editar Amenidad",
+        "table": {
+            "name": "Nombre",
+            "type": "Tipo",
+            "capacity": "Capacidad",
+            "cost": "Costo",
+            "complex": "Complejo"
+        },
+        "types": {
+            "POOL": "Piscina",
+            "GYM": "Gimnasio",
+            "CLUBHOUSE": "Casa Club",
+            "COURT": "Cancha Deportiva",
+            "BBQ": "Área de Parrilla",
+            "OTHER": "Otro"
+        },
+        "form": {
+            "name": "Nombre de la Amenidad",
+            "description": "Descripción",
+            "type": "Tipo de Amenidad",
+            "capacity": "Capacidad Máxima",
+            "costPerDay": "Costo por Día",
+            "costPerHour": "Costo por Hora",
+            "operatingHours": "Horario de Operación",
+            "openTime": "Apertura",
+            "closeTime": "Cierre",
+            "selectComplex": "Seleccionar Complejo"
+        },
+        "deleteConfirm": "¿Estás seguro de eliminar esta amenidad?",
+        "successSave": "Amenidad guardada correctamente",
+        "errorSaving": "Error al guardar la amenidad",
+        "unexpectedError": "Ocurrió un error inesperado",
+        "noAmenities": "No se encontraron amenidades."
+    },
+    "Reservations": {
+        "title": "Reservas",
+        "subtitle": "Gestión de reservaciones de áreas comunes",
+        "new": "Nueva Reserva",
+        "book": "Reservar",
+        "myReservations": "Mis Reservas",
+        "table": {
+            "amenity": "Amenidad",
+            "resident": "Residente",
+            "start": "Inicio",
+            "end": "Fin",
+            "status": "Estado",
+            "cost": "Costo",
+            "date": "Fecha"
+        },
+        "status": {
+            "PENDING": "Pendiente",
+            "APPROVED": "Aprobada",
+            "CANCELLED": "Cancelada",
+            "REJECTED": "Rechazada",
+            "COMPLETED": "Completada"
+        },
+        "form": {
+            "startTime": "Fecha y Hora de Inicio",
+            "endTime": "Fecha y Hora de Fin",
+            "notes": "Notas (opcional)",
+            "submit": "Confirmar Reserva",
+            "success": "Reserva creada con éxito",
+            "errorConflict": "La amenidad no está disponible en este horario",
+            "errorGeneral": "Ocurrió un error al crear la reserva"
+        },
+        "actions": {
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "cancel": "Cancelar",
+            "delete": "Eliminar"
+        },
+        "deleteConfirm": "¿Seguro que deseas eliminar esta reserva?",
+        "cancelConfirm": "¿Deseas cancelar tu reserva?",
+        "noReservations": "No se encontraron reservaciones.",
+        "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo."
     }
 }

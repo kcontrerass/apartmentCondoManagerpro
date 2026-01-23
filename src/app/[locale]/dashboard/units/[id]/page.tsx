@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { UnitServicesManager } from "@/components/units/UnitServicesManager";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -76,6 +77,10 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                     <p className="text-sm text-slate-500 mb-1">Área</p>
                                     <p className="font-medium">{unit.area || 0} m²</p>
                                 </div>
+                                <div>
+                                    <p className="text-sm text-slate-500 mb-1">Parqueos</p>
+                                    <p className="font-medium">{unit.parkingSpots}</p>
+                                </div>
                             </div>
                         </Card>
 
@@ -133,6 +138,11 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                 </div>
                             )}
                         </Card>
+
+                        <UnitServicesManager
+                            unitId={unit.id}
+                            complexId={unit.complexId}
+                        />
                     </div>
                 </div>
             </div>

@@ -15,9 +15,11 @@ interface ComplexWithCount extends Complex {
 interface ComplexTableProps {
     complexes: ComplexWithCount[];
     onDelete?: (id: string) => void;
+    userRole?: string;
 }
 
-export function ComplexTable({ complexes, onDelete }: ComplexTableProps) {
+export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProps) {
+    const isSuperAdmin = userRole === "SUPER_ADMIN";
     const getTypeBadgeVariant = (type: ComplexType) => {
         switch (type) {
             case ComplexType.BUILDING:
@@ -84,17 +86,21 @@ export function ComplexTable({ complexes, onDelete }: ComplexTableProps) {
                                     <Link href={`/dashboard/complexes/${complex.id}`}>
                                         <Button variant="secondary" size="sm">Ver</Button>
                                     </Link>
-                                    <Link href={`/dashboard/complexes/${complex.id}/edit`}>
-                                        <Button variant="secondary" size="sm">Editar</Button>
-                                    </Link>
-                                    {onDelete && (
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => onDelete(complex.id)}
-                                        >
-                                            Eliminar
-                                        </Button>
+                                    {isSuperAdmin && (
+                                        <>
+                                            <Link href={`/dashboard/complexes/${complex.id}/edit`}>
+                                                <Button variant="secondary" size="sm">Editar</Button>
+                                            </Link>
+                                            {onDelete && (
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => onDelete(complex.id)}
+                                                >
+                                                    Eliminar
+                                                </Button>
+                                            )}
+                                        </>
                                     )}
                                 </td>
                             </tr>

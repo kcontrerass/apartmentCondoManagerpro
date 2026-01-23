@@ -58,8 +58,10 @@ export async function PATCH(
         const body = await request.json();
         const validatedData = unitSchema.partial().parse(body);
 
+        const { services, serviceIds, ...unitData } = validatedData as any;
+
         // If number is changing, check for collision
-        if (validatedData.number) {
+        if (unitData.number) {
             const currentUnit = await prisma.unit.findUnique({
                 where: { id },
                 select: { complexId: true }
@@ -70,7 +72,7 @@ export async function PATCH(
                     where: {
                         complexId_number: {
                             complexId: currentUnit.complexId,
-                            number: validatedData.number,
+                            number: unitData.number,
                         }
                     }
                 });
@@ -84,9 +86,65 @@ export async function PATCH(
             }
         }
 
-        const unit = await prisma.unit.update({
-            where: { id },
-            data: validatedData,
+        const unit = await prisma.$transaction(async (tx) => {
+            // 1. Update unit details
+            const updatedUnit = await tx.unit.update({
+                where: { id },
+                data: unitData,
+                include: { complex: true }
+            });
+
+            // 2. Handle Services Update if provided
+            if (services || serviceIds) {
+                // Get mandatory services
+                const mandatoryServices = await tx.service.findMany({
+                    where: {
+                        complexId: updatedUnit.complexId,
+                        isRequired: true,
+                    },
+                    select: { id: true }
+                });
+
+                // Prepare Map of ServiceId -> Quantity
+                const servicesToAssign = new Map<string, number>();
+
+                // 1. Add mandatory services (default qty 1)
+                mandatoryServices.forEach(s => servicesToAssign.set(s.id, 1));
+
+                // 2. Add/Overwrite with provided services
+                if (Array.isArray(services)) {
+                    services.forEach((s: any) => {
+                        servicesToAssign.set(s.id, s.quantity || 1);
+                    });
+                }
+
+                if (Array.isArray(serviceIds)) {
+                    serviceIds.forEach((id: string) => {
+                        if (!servicesToAssign.has(id)) {
+                            servicesToAssign.set(id, 1);
+                        }
+                    });
+                }
+
+                // 3. Sync UnitServices
+                await tx.unitService.deleteMany({
+                    where: { unitId: id }
+                });
+
+                if (servicesToAssign.size > 0) {
+                    await tx.unitService.createMany({
+                        data: Array.from(servicesToAssign.entries()).map(([serviceId, quantity]) => ({
+                            unitId: id,
+                            serviceId,
+                            quantity,
+                            status: "ACTIVE",
+                            startDate: new Date(),
+                        }))
+                    });
+                }
+            }
+
+            return updatedUnit;
         });
 
         return NextResponse.json(unit);

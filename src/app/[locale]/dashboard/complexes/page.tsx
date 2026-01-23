@@ -24,7 +24,7 @@ export default async function ComplexesPage() {
                     }
                 />
 
-                <ComplexesClient />
+                <ComplexesClient userRole={session.user.role} />
             </div>
         </MainLayout>
     );

@@ -8,7 +8,11 @@ import { useComplexes } from "@/hooks/useComplexes";
 import { useState } from "react";
 import { ComplexType } from "@prisma/client";
 
-export function ComplexesClient() {
+interface ComplexesClientProps {
+    userRole?: string;
+}
+
+export function ComplexesClient({ userRole }: ComplexesClientProps) {
     const { complexes, loading, deleteComplex, fetchComplexes } = useComplexes();
     const [search, setSearch] = useState("");
     const [type, setType] = useState("");
@@ -58,7 +62,7 @@ export function ComplexesClient() {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
             ) : (
-                <ComplexTable complexes={complexes} onDelete={handleDelete} />
+                <ComplexTable complexes={complexes} onDelete={handleDelete} userRole={userRole} />
             )}
         </div>
     );

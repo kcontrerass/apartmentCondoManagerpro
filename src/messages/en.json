@@ -5,6 +5,7 @@
         "units": "Units",
         "residents": "Residents",
         "amenities": "Amenities",
+        "reservations": "Reservations",
         "settings": "Settings",
         "logout": "Logout",
         "loading": "Loading...",
@@ -28,7 +29,8 @@
         "communications": "Communications",
         "incidents": "Incidents",
         "reports": "Reports",
-        "documents": "Documents"
+        "documents": "Documents",
+        "close": "Close"
     },
     "Dashboard": {
         "title": "Control Panel",
@@ -76,5 +78,162 @@
         "type_family": "Family Member",
         "unit": "Unit",
         "startDate": "Start Date"
+    },
+    "Services": {
+        "title": "Services",
+        "subtitle": "Base services management (Water, Maintenance, etc.)",
+        "newService": "New Service",
+        "editService": "Edit Service",
+        "name": "Name",
+        "description": "Description",
+        "basePrice": "Base Price",
+        "frequency": "Frequency",
+        "complex": "Complex",
+        "assignedUnits": "Assigned Units",
+        "allServices": "All registered services",
+        "deleteConfirm": "Are you sure you want to delete this service?",
+        "errorSaving": "An error occurred while saving the service",
+        "assignService": "Assign Service",
+        "unitServices": "Unit Services",
+        "customPrice": "Custom Price",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+    },
+    "Invoices": {
+        "title": "Billing",
+        "subtitle": "Invoice management",
+        "generate": "Generate Invoices",
+        "table": {
+            "number": "Number",
+            "unit": "Unit",
+            "complex": "Complex",
+            "period": "Period",
+            "total": "Total",
+            "status": "Status",
+            "dueDate": "Due Date",
+            "actions": "Actions"
+        },
+        "actions": {
+            "view": "View Detail",
+            "pay": "Pay Now",
+            "markPaid": "Mark as Paid"
+        },
+        "status": {
+            "PENDING": "Pending",
+            "PAID": "Paid",
+            "OVERDUE": "Overdue",
+            "CANCELLED": "Cancelled"
+        },
+        "modal": {
+            "generateTitle": "Generate Monthly Invoices",
+            "selectMonth": "Month",
+            "selectYear": "Year",
+            "dueDate": "Due Date",
+            "generateButton": "Generate Now",
+            "generating": "Generating..."
+        },
+        "detail": {
+            "title": "Invoice Details",
+            "client": "Client",
+            "items": "Items",
+            "description": "Description",
+            "amount": "Amount",
+            "total": "Total Billed"
+        },
+        "noInvoices": "No invoices found.",
+        "successGenerate": "Generated {count} invoices successfully ({skipped} skipped)."
+    },
+    "Payments": {
+        "success": {
+            "title": "Payment Successful!",
+            "message": "Your payment has been processed correctly. Thank you.",
+            "backToInvoices": "Back to Invoices",
+            "note": "The status of your invoice will be updated in a few minutes."
+        },
+        "cancel": {
+            "title": "Payment Cancelled",
+            "message": "The payment process was cancelled. No charges were made.",
+            "backToInvoices": "Retry Payment"
+        }
+    },
+    "Amenities": {
+        "title": "Amenities",
+        "subtitle": "Management of common areas and complex services",
+        "new": "New Amenity",
+        "edit": "Edit Amenity",
+        "table": {
+            "name": "Name",
+            "type": "Type",
+            "capacity": "Capacity",
+            "cost": "Cost",
+            "complex": "Complex"
+        },
+        "types": {
+            "POOL": "Pool",
+            "GYM": "Gym",
+            "CLUBHOUSE": "Clubhouse",
+            "COURT": "Sports Court",
+            "BBQ": "BBQ Area",
+            "OTHER": "Other"
+        },
+        "form": {
+            "name": "Amenity Name",
+            "description": "Description",
+            "type": "Amenity Type",
+            "capacity": "Maximum Capacity",
+            "costPerDay": "Cost per Day",
+            "costPerHour": "Cost per Hour",
+            "operatingHours": "Operating Hours",
+            "openTime": "Opening Time",
+            "closeTime": "Closing Time",
+            "selectComplex": "Select Complex"
+        },
+        "deleteConfirm": "Are you sure you want to delete this amenity?",
+        "successSave": "Amenity saved successfully",
+        "errorSaving": "Error saving amenity",
+        "unexpectedError": "An unexpected error occurred",
+        "noAmenities": "No amenities found."
+    },
+    "Reservations": {
+        "title": "Reservations",
+        "subtitle": "Management of common area reservations",
+        "new": "New Reservation",
+        "book": "Book Now",
+        "myReservations": "My Reservations",
+        "table": {
+            "amenity": "Amenity",
+            "resident": "Resident",
+            "start": "Start",
+            "end": "End",
+            "status": "Status",
+            "cost": "Cost",
+            "date": "Date"
+        },
+        "status": {
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "CANCELLED": "Cancelled",
+            "REJECTED": "Rejected",
+            "COMPLETED": "Completed"
+        },
+        "form": {
+            "startTime": "Start Date & Time",
+            "endTime": "End Date & Time",
+            "notes": "Notes (optional)",
+            "submit": "Confirm Reservation",
+            "success": "Reservation created successfully",
+            "errorConflict": "The amenity is not available at this time",
+            "errorGeneral": "An error occurred while creating the reservation"
+        },
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject",
+            "cancel": "Cancel",
+            "delete": "Delete"
+        },
+        "deleteConfirm": "Are you sure you want to delete this reservation?",
+        "cancelConfirm": "Do you want to cancel your reservation?",
+        "noReservations": "No reservations found.",
+        "adminPlaceholder": "Admin manual creation functionality under development."
     }
 }

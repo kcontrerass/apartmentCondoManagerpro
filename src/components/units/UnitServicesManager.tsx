@@ -1,0 +1,163 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Spinner } from "@/components/ui/Spinner";
+import { Modal } from "@/components/ui/Modal";
+import { useTranslations } from "next-intl";
+
+interface UnitServicesManagerProps {
+    unitId: string;
+    complexId: string;
+}
+
+export function UnitServicesManager({ unitId, complexId }: UnitServicesManagerProps) {
+    const t = useTranslations("Services");
+    const [unitServices, setUnitServices] = useState<any[]>([]);
+    const [availableServices, setAvailableServices] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const fetchUnitServices = async () => {
+        try {
+            const response = await fetch(`/api/units/${unitId}/services`);
+            const data = await response.json();
+            if (response.ok) setUnitServices(data);
+        } catch (error) {
+            console.error("Error fetching unit services:", error);
+        }
+    };
+
+    const fetchAvailableServices = async () => {
+        try {
+            const response = await fetch(`/api/services?complexId=${complexId}`);
+            const data = await response.json();
+            if (response.ok) setAvailableServices(data);
+        } catch (error) {
+            console.error("Error fetching available services:", error);
+        }
+    };
+
+    useEffect(() => {
+        const load = async () => {
+            setIsLoading(true);
+            await Promise.all([fetchUnitServices(), fetchAvailableServices()]);
+            setIsLoading(false);
+        };
+        load();
+    }, [unitId, complexId]);
+
+    const handleAssign = async (serviceId: string) => {
+        setIsSubmitting(true);
+        try {
+            const response = await fetch(`/api/units/${unitId}/services`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ serviceId }),
+            });
+
+            if (response.ok) {
+                await fetchUnitServices();
+                setIsModalOpen(false);
+            } else {
+                const errorData = await response.json();
+                alert(errorData.error || t("errorSaving"));
+            }
+        } catch (error) {
+            console.error("Error assigning service:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleRemove = async (assignmentId: string) => {
+        if (!confirm(t("deleteConfirm"))) return;
+
+        try {
+            const response = await fetch(`/api/unit-services/${assignmentId}`, {
+                method: "DELETE",
+            });
+            if (response.ok) {
+                await fetchUnitServices();
+            }
+        } catch (error) {
+            console.error("Error removing service:", error);
+        }
+    };
+
+    if (isLoading) return <Spinner />;
+
+    const assignedServiceIds = new Set(unitServices.map((us) => us.serviceId));
+    const unassignedServices = availableServices.filter((s) => !assignedServiceIds.has(s.id));
+
+    return (
+        <Card className="p-6">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold">{t("unitServices")}</h3>
+                <Button variant="secondary" size="sm" icon="add" onClick={() => setIsModalOpen(true)}>
+                    {t("assignService")}
+                </Button>
+            </div>
+
+            {unitServices.length > 0 ? (
+                <div className="space-y-4">
+                    {unitServices.map((us) => (
+                        <div key={us.id} className="flex justify-between items-center p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                            <div>
+                                <p className="font-medium">{us.service.name}</p>
+                                <p className="text-xs text-slate-500">
+                                    ${Number(us.customPrice || us.service.basePrice).toFixed(2)} • {us.service.frequency}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <Badge variant={us.status === "ACTIVE" ? "success" : "neutral"}>
+                                    {us.status}
+                                </Badge>
+                                <button
+                                    onClick={() => handleRemove(us.id)}
+                                    className="p-1 te-slate-400 hover:text-red-600 transition-colors"
+                                >
+                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                    <p className="text-sm text-slate-500">No hay servicios asignados.</p>
+                </div>
+            )}
+
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t("assignService")}>
+                <div className="space-y-4">
+                    {unassignedServices.length > 0 ? (
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {unassignedServices.map((service) => (
+                                <div key={service.id} className="py-3 flex justify-between items-center">
+                                    <div>
+                                        <p className="font-medium">{service.name}</p>
+                                        <p className="text-xs text-slate-500">${Number(service.basePrice).toFixed(2)}</p>
+                                    </div>
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => handleAssign(service.id)}
+                                        isLoading={isSubmitting}
+                                    >
+                                        Asignar
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-center py-4 text-slate-500">No hay más servicios disponibles para este complejo.</p>
+                    )}
+                </div>
+            </Modal>
+        </Card>
+    );
+}

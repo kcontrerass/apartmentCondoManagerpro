@@ -75,10 +75,9 @@ export async function PUT(
         }
 
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
-        const isAdminOwner = session.user.role === Role.ADMIN && existingComplex.adminId === session.user.id;
 
-        if (!isSuperAdmin && !isAdminOwner) {
-            return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
+        if (!isSuperAdmin) {
+            return NextResponse.json({ error: "Solo el Super Administrador puede actualizar complejos" }, { status: 403 });
         }
 
         const body = await request.json();

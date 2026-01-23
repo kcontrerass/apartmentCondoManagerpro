@@ -10,6 +10,8 @@ export const metadata: Metadata = {
   description: "Sistema Integral de Gestión de Condominios",
 };
 
+import { AuthProvider } from "@/components/providers/AuthProvider";
+
 export default async function LocaleLayout({
   children,
   params
@@ -36,9 +38,11 @@ export default async function LocaleLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className="antialiased">
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
-        </NextIntlClientProvider>
+        <AuthProvider>
+          <NextIntlClientProvider messages={messages} locale={locale}>
+            {children}
+          </NextIntlClientProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -83,9 +83,10 @@ export async function POST(request: Request) {
 
         const body = await request.json();
         const validatedData = unitSchema.parse(body);
+        const { serviceIds, ...unitData } = validatedData;
 
-        const { complexId } = body;
-        if (!complexId) {
+        const complexIdToUse = body.complexId || unitData.complexId;
+        if (!complexIdToUse) {
             return NextResponse.json({ error: "complexId es requerido" }, { status: 400 });
         }
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
         const existingUnit = await prisma.unit.findUnique({
             where: {
                 complexId_number: {
-                    complexId,
+                    complexId: complexIdToUse,
                     number: validatedData.number,
                 },
             },
@@ -106,11 +107,62 @@ export async function POST(request: Request) {
             );
         }
 
-        const unit = await prisma.unit.create({
-            data: {
-                ...validatedData,
-                complexId,
-            },
+        const unit = await prisma.$transaction(async (tx) => {
+            const createdUnit = await tx.unit.create({
+                data: {
+                    number: unitData.number,
+                    type: unitData.type,
+                    bedrooms: unitData.bedrooms,
+                    bathrooms: unitData.bathrooms,
+                    area: unitData.area,
+                    status: unitData.status,
+                    complexId: complexIdToUse,
+                },
+            });
+
+            // 1. Fetch mandatory services for this complex
+            const mandatoryServicesList = await tx.service.findMany({
+                where: {
+                    complexId: complexIdToUse,
+                    isRequired: true,
+                },
+                select: { id: true },
+            });
+
+            // 2. Combine and resolve quantities
+            // Map: serviceId -> quantity
+            const servicesToAssign = new Map<string, number>();
+
+            // All mandatory services get quantity 1 (initial default)
+            mandatoryServicesList.forEach((s) => servicesToAssign.set(s.id, 1));
+
+            // services (from body) is an array of {id, quantity}
+            const bodyServices = (body.services || []) as { id: string, quantity?: number }[];
+            bodyServices.forEach((s) => {
+                servicesToAssign.set(s.id, s.quantity || 1);
+            });
+
+            // serviceIds (legacy) can also be used
+            const bodyServiceIds = (body.serviceIds || []) as string[];
+            bodyServiceIds.forEach((id) => {
+                if (!servicesToAssign.has(id)) {
+                    servicesToAssign.set(id, 1);
+                }
+            });
+
+            if (servicesToAssign.size > 0) {
+                await tx.unitService.createMany({
+                    data: Array.from(servicesToAssign.entries()).map(([serviceId, quantity]) => ({
+                        unitId: createdUnit.id,
+                        serviceId,
+                        quantity,
+                        status: "ACTIVE",
+                        startDate: new Date(),
+                    })),
+                });
+            }
+
+            return createdUnit;
         });
 
         return NextResponse.json(unit, { status: 201 });

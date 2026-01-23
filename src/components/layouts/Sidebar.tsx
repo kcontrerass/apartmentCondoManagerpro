@@ -25,8 +25,9 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
             label: t('management'),
             items: [
                 { icon: 'pool', label: t('amenities'), href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
                 { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-                { icon: 'payments', label: t('billing'), href: '/dashboard/billing', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
+                { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
                 { icon: 'badge', label: t('access'), href: '/dashboard/access', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
             ],
         },
@@ -53,7 +54,7 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
                         {user?.role === Role.ADMIN && complexName ? complexName : "CondoManager"}
                     </h1>
                     <p className="text-slate-500 dark:text-slate-400 text-xs font-medium mt-1">
-                        Admin Console
+                        {user?.role === Role.RESIDENT ? "Resident Portal" : "Admin Console"}
                     </p>
                 </div>
             </div>
