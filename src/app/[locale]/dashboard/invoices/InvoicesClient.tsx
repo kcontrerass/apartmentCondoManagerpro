@@ -29,6 +29,13 @@ export function InvoicesClient() {
     const isResident = session?.user?.role === Role.RESIDENT;
     const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN;
 
+    console.log('InvoicesClient Debug:', {
+        role: session?.user?.role,
+        isResident,
+        isAdmin,
+        expectedResident: Role.RESIDENT
+    });
+
     useEffect(() => {
         const fetchComplexes = async () => {
             try {

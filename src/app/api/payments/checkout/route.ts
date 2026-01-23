@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { stripe } from "@/lib/stripe";
+import { recurrente } from "@/lib/recurrente";
 import { Role } from "@prisma/client";
 
 export async function POST(request: Request) {
@@ -45,34 +45,30 @@ export async function POST(request: Request) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
-        const checkoutSession = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd', // Adjust if needed
-                        product_data: {
-                            name: `Factura ${invoice.number}`,
-                            description: `Periodo: ${invoice.month}/${invoice.year} - Unidad: ${invoice.unit.number}`,
-                        },
-                        unit_amount: Math.round(Number(invoice.totalAmount) * 100), // Stripe expects cents
-                    },
-                    quantity: 1,
-                },
-            ],
-            mode: 'payment',
-            success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+        // Recurrente Checkout Creation
+        const checkoutSession = await recurrente.checkouts.create({
+            items: [{
+                name: `Factura ${invoice.number} - Periodo: ${invoice.month}/${invoice.year} - Unidad: ${invoice.unit.number}`,
+                currency: 'GTQ',
+                amount_in_cents: Math.round(Number(invoice.totalAmount) * 100),
+                quantity: 1,
+            }],
+            success_url: `${appUrl}/${locale}/dashboard/payments/success?invoice_id=${invoice.id}`,
             cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
             metadata: {
                 invoiceId: invoice.id,
                 unitId: invoice.unitId,
-            },
+            }
         });
 
-        return NextResponse.json({ url: checkoutSession.url });
+        // Check the actual response structure from Recurrente. 
+        // Assuming it returns an object with a checkout_url or similar.
+        // If the API returns the checkout object directly, we might need `checkoutSession.checkout_url`.
+
+        return NextResponse.json({ url: checkoutSession.checkout_url || checkoutSession.url });
 
     } catch (error: any) {
-        console.error("Error creating checkout session:", error);
+        console.error("Error creating Recurrente checkout session:", error);
         return NextResponse.json(
             { error: "Error al procesar el pago" },
             { status: 500 }

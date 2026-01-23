@@ -27,7 +27,7 @@ export default async function LocaleLayout({
   }
 
   // Providing all messages to the client-side
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale}>

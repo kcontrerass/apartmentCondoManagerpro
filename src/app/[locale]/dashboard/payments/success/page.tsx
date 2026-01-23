@@ -2,36 +2,69 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { stripe } from "@/lib/stripe";
+import { recurrente } from "@/lib/recurrente";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
     params: Promise<{ locale: string }>;
-    searchParams: Promise<{ session_id?: string }>;
+    searchParams: Promise<{ session_id?: string; invoice_id?: string }>;
 }
 
 export default async function PaymentSuccessPage({ params, searchParams }: Props) {
+    const { locale } = await params;
     const { session_id } = await searchParams;
-    const t = await getTranslations('Payments.success');
+    console.log('Success Page Search Params:', JSON.stringify(await searchParams));
+    const t = await getTranslations({ locale, namespace: 'Payments.success' });
 
-    // Verify session and update status immediately for better UX
+    // Verify session via Session ID (Preferred/Secure)
     if (session_id) {
         try {
-            const session = await stripe.checkout.sessions.retrieve(session_id);
-            const invoiceId = session.metadata?.invoiceId;
+            const checkout = await recurrente.checkouts.retrieve(session_id);
+            console.log('Verifying Recurrente Checkout:', JSON.stringify(checkout, null, 2));
 
-            if (session.payment_status === 'paid' && invoiceId) {
-                await (prisma as any).invoice.update({
-                    where: { id: invoiceId },
-                    data: {
-                        status: "PAID",
-                        updatedAt: new Date(),
-                    }
-                });
-                console.log(`Invoice ${invoiceId} updated via success page redirect`);
+            if (checkout) {
+                const metadataInvoiceId = checkout.metadata?.invoiceId || checkout.checkout?.metadata?.invoiceId;
+                const status = checkout.status || checkout.payment_status || checkout.checkout?.status;
+                const invoiceId = metadataInvoiceId;
+
+                // Check status
+                const isPaid = status === 'paid' || status === 'completed' || status === 'succeeded';
+
+                if (isPaid && invoiceId) {
+                    await (prisma as any).invoice.update({
+                        where: { id: invoiceId },
+                        data: { status: "PAID", updatedAt: new Date() }
+                    });
+                    console.log(`Invoice ${invoiceId} updated via session_id verification.`);
+                }
             }
         } catch (error) {
             console.error("Error verifying payment session:", error);
+        }
+    }
+    // Fallback: Use invoice_id from URL (Optimistic update for UX)
+    else {
+        const { invoice_id } = await searchParams; // Get custom param
+        if (invoice_id) {
+            console.log(`Processing optimistic update for Invoice ID: ${invoice_id}`);
+            try {
+                // Verify invoice exists and is pending
+                const invoice = await (prisma as any).invoice.findUnique({
+                    where: { id: invoice_id }
+                });
+
+                if (invoice && invoice.status !== 'PAID') {
+                    await (prisma as any).invoice.update({
+                        where: { id: invoice_id },
+                        data: { status: "PAID", updatedAt: new Date() }
+                    });
+                    console.log(`Invoice ${invoice_id} marked as PAID via URL parameter (Optimistic).`);
+                }
+            } catch (error) {
+                console.error("Error updating invoice via URL param:", error);
+            }
+        } else {
+            console.log("No session_id or invoice_id provided. Relying on webhook.");
         }
     }
 

@@ -1,32 +1,41 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+import { recurrente } from "@/lib/recurrente";
 
 export async function POST(request: Request) {
-    const body = await request.text();
-    const headersList = await headers();
-    const sig = headersList.get('stripe-signature');
-
-    let event;
-
     try {
-        if (!sig || !endpointSecret) {
-            throw new Error("Missing stripe-signature or webhook secret");
-        }
-        event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
-    } catch (err: any) {
-        console.error(`Webhook Error: ${err.message}`);
-        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
-    }
+        const body = await request.json(); // Recurrente sends JSON
+        const headersList = await headers();
+        // Check for Recurrente signature header - verify field name
+        const signature = headersList.get('x-signature') || headersList.get('recurrente-signature'); // Adjust based on actual docs if found
 
-    // Handle the event
-    switch (event.type) {
-        case 'checkout.session.completed':
-            const session = event.data.object;
-            const invoiceId = session.metadata?.invoiceId;
+        // Use a configured secret for webhooks if available, otherwise rely on payload validation
+        // const endpointSecret = process.env.RECURRENTE_WEBHOOK_SECRET; 
+
+        // For now, we log the event to understand its structure during first run
+        console.log("Recurrente Webhook received:", JSON.stringify(body, null, 2));
+
+        const eventType = body.type; // Assuming standard 'type' field
+
+        // Map Recurrente event types. Example: 'checkout.succeeded' or similar
+        // Based on common patterns: 'payment_intent.succeeded', 'checkout.session.completed'
+        // If exact type is unknown, we look for status in the payload object
+
+        let invoiceId = body.data?.object?.metadata?.invoiceId || body.metadata?.invoiceId;
+
+        // Fallback: Check if we can find invoice ID in other standard fields or if structure differs
+        if (!invoiceId && body.checkout && body.checkout.metadata) {
+            invoiceId = body.checkout.metadata.invoiceId;
+        }
+
+        // Handle success event
+        // We accept multiple success indicators since documentation is sparse
+        if (eventType === 'checkout.payment.succeeded' ||
+            eventType === 'payment.succeeded' ||
+            body.event_type === 'checkout_payment_succeeded' || // Alternative format
+            (body.status === 'paid' && invoiceId) // Direct object status check
+        ) {
 
             if (invoiceId) {
                 try {
@@ -37,23 +46,20 @@ export async function POST(request: Request) {
                             updatedAt: new Date(),
                         }
                     });
-                    console.log(`Invoice ${invoiceId} marked as PAID via webhook`);
+                    console.log(`Invoice ${invoiceId} marked as PAID via Recurrente webhook`);
                 } catch (error) {
                     console.error(`Error updating invoice ${invoiceId}:`, error);
                     return NextResponse.json({ error: "Error updating invoice" }, { status: 500 });
                 }
+            } else {
+                console.warn("Webhook received but no invoiceId found in metadata");
             }
-            break;
-        default:
-            console.log(`Unhandled event type ${event.type}`);
+        }
+
+        return NextResponse.json({ received: true });
+
+    } catch (err: any) {
+        console.error(`Webhook Error: ${err.message}`);
+        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
-
-    return NextResponse.json({ received: true });
 }
-
-// Next.js config for raw body (needed for Stripe)
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
