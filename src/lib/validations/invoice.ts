@@ -10,7 +10,7 @@ export const generateInvoicesSchema = z.object({
     complexId: z.string().min(1, "Complex ID is required"),
     month: z.number().min(1).max(12),
     year: z.number().min(2024),
-    dueDate: z.coerce.date(),
+    dueDate: z.date().or(z.string()),
 });
 
 export type UpdateInvoiceSchema = z.infer<typeof updateInvoiceSchema>;
