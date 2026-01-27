@@ -88,10 +88,18 @@ export async function POST(
             );
         }
 
+        const { services, ...unitData } = validatedData;
+
         const unit = await prisma.unit.create({
             data: {
-                ...validatedData,
+                ...unitData,
                 complexId: id,
+                services: services ? {
+                    create: services.map(s => ({
+                        serviceId: s.id,
+                        quantity: s.quantity || 1,
+                    }))
+                } : undefined,
             },
         });
 
