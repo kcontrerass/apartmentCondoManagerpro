@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Resident, User, Unit, Complex } from "@prisma/client";
+import { Resident, User, Unit, Complex, Role } from "@prisma/client";
 
 interface ResidentWithExtras extends Resident {
     user: {
@@ -19,12 +19,13 @@ interface ResidentWithExtras extends Resident {
 
 interface ResidentTableProps {
     residents: ResidentWithExtras[];
+    userRole?: Role;
     onEdit?: (resident: ResidentWithExtras) => void;
     onDelete?: (residentId: string) => void;
     onView?: (residentId: string) => void;
 }
 
-export function ResidentTable({ residents, onEdit, onDelete, onView }: ResidentTableProps) {
+export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }: ResidentTableProps) {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -78,12 +79,17 @@ export function ResidentTable({ residents, onEdit, onDelete, onView }: ResidentT
                                         <Button variant="secondary" size="sm" onClick={() => onView?.(resident.id)}>
                                             <span className="material-symbols-outlined text-[18px]">visibility</span>
                                         </Button>
-                                        <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)}>
-                                            <span className="material-symbols-outlined text-[18px]">edit</span>
-                                        </Button>
-                                        <Button variant="danger" size="sm" onClick={() => onDelete?.(resident.id)}>
-                                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                                        </Button>
+
+                                        {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                            <>
+                                                <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)}>
+                                                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                                                </Button>
+                                                <Button variant="danger" size="sm" onClick={() => onDelete?.(resident.id)}>
+                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

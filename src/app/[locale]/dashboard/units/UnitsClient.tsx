@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { UnitTable } from "@/components/units/UnitTable";
 import { UnitForm } from "@/components/units/UnitForm";
 import { UnitInput } from "@/lib/validations/unit";
-import { Unit, Resident } from "@prisma/client";
+import { Unit, Resident, Role } from "@prisma/client";
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 
@@ -19,7 +19,7 @@ interface UnitWithResidents extends Unit {
     complex?: { name: string };
 }
 
-export function UnitsClient() {
+export function UnitsClient({ userRole }: { userRole?: Role }) {
     const t = useTranslations('Units');
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -122,16 +122,18 @@ export function UnitsClient() {
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('managingUnits') : t('allRegistered')}
                 actions={
-                    <Button
-                        variant="primary"
-                        icon="add"
-                        onClick={() => {
-                            setEditingUnit(null);
-                            setIsModalOpen(true);
-                        }}
-                    >
-                        {t('newUnit')}
-                    </Button>
+                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                        <Button
+                            variant="primary"
+                            icon="add"
+                            onClick={() => {
+                                setEditingUnit(null);
+                                setIsModalOpen(true);
+                            }}
+                        >
+                            {t('newUnit')}
+                        </Button>
+                    )
                 }
             />
 
@@ -143,6 +145,7 @@ export function UnitsClient() {
                 ) : (
                     <UnitTable
                         units={units}
+                        userRole={userRole}
                         onEdit={(unit) => {
                             setEditingUnit(unit);
                             setIsModalOpen(true);

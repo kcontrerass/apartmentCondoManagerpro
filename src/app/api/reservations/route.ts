@@ -88,6 +88,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
+        // RBAC: Only Residents can create reservations
+        if (session.user.role !== Role.RESIDENT) {
+            return NextResponse.json({ error: "Solo los residentes pueden crear reservaciones" }, { status: 403 });
+        }
+
         const body = await request.json();
 
         // Validation - Default userId to session if missing

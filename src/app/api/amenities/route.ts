@@ -49,8 +49,18 @@ export async function GET(request: Request) {
                 where.complex = { adminId: session.user.id };
                 console.log(`[API Amenities] Admin ${session.user.id} filtering by managed complexes`);
             }
+        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (!user?.complexId) {
+                return NextResponse.json([]);
+            }
+            where.complexId = user.complexId;
+            console.log(`[API Amenities] Staff ${session.user.id} filtering by complex: ${where.complexId}`);
         } else if (complexId) {
-            // Other roles (SUPER_ADMIN, OPERATOR) filter by complex if provided
+            // Other roles (SUPER_ADMIN) filter by complex if provided
             where.complexId = complexId;
             console.log(`[API Amenities] Other role filtering by complex: ${where.complexId}`);
         }

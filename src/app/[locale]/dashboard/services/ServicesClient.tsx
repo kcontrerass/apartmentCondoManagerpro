@@ -11,8 +11,9 @@ import { ServiceTable } from "@/components/services/ServiceTable";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { ServiceSchema } from "@/lib/validations/service";
 import { useTranslations } from 'next-intl';
+import { Role } from "@prisma/client";
 
-export function ServicesClient() {
+export function ServicesClient({ userRole }: { userRole: Role }) {
     const t = useTranslations('Services');
     const searchParams = useSearchParams();
     const complexIdFromQuery = searchParams.get("complexId");
@@ -112,16 +113,18 @@ export function ServicesClient() {
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('subtitle') : t('allServices')}
                 actions={
-                    <Button
-                        variant="primary"
-                        icon="add"
-                        onClick={() => {
-                            setEditingService(null);
-                            setIsModalOpen(true);
-                        }}
-                    >
-                        {t('newService')}
-                    </Button>
+                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                        <Button
+                            variant="primary"
+                            icon="add"
+                            onClick={() => {
+                                setEditingService(null);
+                                setIsModalOpen(true);
+                            }}
+                        >
+                            {t('newService')}
+                        </Button>
+                    )
                 }
             />
 
@@ -133,6 +136,7 @@ export function ServicesClient() {
                 ) : (
                     <ServiceTable
                         services={services}
+                        userRole={userRole}
                         onEdit={(service) => {
                             setEditingService(service);
                             setIsModalOpen(true);

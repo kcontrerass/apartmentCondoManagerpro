@@ -56,6 +56,13 @@ enum AmenityType {
   OTHER
 }
 
+enum VisitorStatus {
+  SCHEDULED
+  ARRIVED
+  DEPARTED
+  CANCELLED
+}
+
 // Models
 
 model User {
@@ -78,6 +85,11 @@ model User {
   residentProfile Resident?
   managedComplexes Complex[] // For ADMIN role
   reservations     Reservation[]
+  visitorLogs      VisitorLog[]  @relation("CreatedVisitorLogs")
+
+  // For Staff (GUARDS/OPERATORS)
+  complexId        String?       @map("complex_id")
+  assignedComplex  Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
 
   @@map("users")
 }
@@ -100,6 +112,8 @@ model Complex {
   amenities   Amenity[]
   services    Service[]
   invoices    Invoice[]
+  visitorLogs VisitorLog[]
+  staff       User[]      @relation("StaffComplex")
 
   @@map("complexes")
 }
@@ -125,6 +139,7 @@ model Unit {
   residents   Resident[]
   services    UnitService[]
   invoices    Invoice[]
+  visitorLogs VisitorLog[]
 
   @@unique([complexId, number]) // Unit numbers must be unique within a complex
   @@map("units")
@@ -298,4 +313,32 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+}
+
+model VisitorLog {
+  id            String        @id @default(cuid())
+  visitorName   String        @map("visitor_name")
+  visitorId     String?       @map("visitor_id_card") // Documento de identidad
+  reason        String?       @db.Text
+  
+  status        VisitorStatus @default(SCHEDULED)
+  
+  entryTime     DateTime?     @map("entry_time")
+  exitTime      DateTime?     @map("exit_time")
+  scheduledDate DateTime      @map("scheduled_date")
+
+  // Relations
+  unitId        String        @map("unit_id")
+  unit          Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  
+  complexId     String        @map("complex_id")
+  complex       Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  
+  createdById   String        @map("created_by_id")
+  createdBy     User          @relation("CreatedVisitorLogs", fields: [createdById], references: [id])
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("visitor_logs")
 }

@@ -57,9 +57,6 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                     subtitle={`Detalle del complejo habitacional`}
                     actions={
                         <div className="flex gap-3">
-                            <Link href={`/dashboard/complexes/${id}/edit`}>
-                                <Button variant="secondary" icon="edit">Editar</Button>
-                            </Link>
                             <Link href={`/dashboard/units?complexId=${id}`}>
                                 <Button variant="primary" icon="add">Agregar Unidad</Button>
                             </Link>
@@ -184,7 +181,9 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                             <p className="text-sm text-slate-500">
                                 Personaliza las reglas y apariencia de este complejo.
                             </p>
-                            <Button variant="secondary" className="w-full mt-4">Configurar complejo</Button>
+                            <Link href={`/dashboard/complexes/${id}/edit`} className="block w-full mt-4">
+                                <Button variant="secondary" className="w-full">Configurar complejo</Button>
+                            </Link>
                         </Card>
                     </div>
                 </div>

@@ -27,6 +27,8 @@ export function AmenitiesClient() {
     const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
     const [amenityIdToBook, setAmenityIdToBook] = useState<string | null>(null);
 
+    const isResident = session?.user?.role === Role.RESIDENT;
+
     const fetchAmenities = async () => {
         setIsLoading(true);
         try {
@@ -111,7 +113,7 @@ export function AmenitiesClient() {
         setIsBookingModalOpen(true);
     };
 
-    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN || session?.user?.role === Role.OPERATOR;
+    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN;
 
     return (
         <div className="space-y-6">
@@ -144,7 +146,7 @@ export function AmenitiesClient() {
                         amenities={amenities}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        onBook={handleBook}
+                        onBook={isResident ? handleBook : undefined}
                         isAdmin={isAdmin}
                     />
                 )}

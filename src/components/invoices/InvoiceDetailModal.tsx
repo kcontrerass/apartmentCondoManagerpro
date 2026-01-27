@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatPrice } from "@/lib/utils";
 
 interface InvoiceDetailModalProps {
     invoice: any;
@@ -64,14 +65,14 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                             {invoice.items?.map((item: any) => (
                                 <tr key={item.id}>
                                     <td className="py-2 px-3 text-slate-600 dark:text-slate-400">{item.description}</td>
-                                    <td className="py-2 px-3 text-right text-slate-900 dark:text-white">${Number(item.amount).toFixed(2)}</td>
+                                    <td className="py-2 px-3 text-right text-slate-900 dark:text-white">{formatPrice(item.amount)}</td>
                                 </tr>
                             ))}
                         </tbody>
                         <tfoot className="bg-slate-50/50 dark:bg-slate-800/30 font-bold">
                             <tr>
                                 <td className="py-2 px-3 text-slate-900 dark:text-white">{t('total')}</td>
-                                <td className="py-2 px-3 text-right text-slate-primary">${Number(invoice.totalAmount).toFixed(2)}</td>
+                                <td className="py-2 px-3 text-right text-slate-primary">{formatPrice(invoice.totalAmount)}</td>
                             </tr>
                         </tfoot>
                     </table>

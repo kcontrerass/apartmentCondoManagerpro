@@ -10,7 +10,7 @@ export default async function ProfilePage() {
     const session = await auth();
     if (!session?.user) return null;
 
-    const user = await prisma.user.findUnique({
+    const user = await (prisma as any).user.findUnique({
         where: { id: session.user.id },
         include: {
             managedComplexes: {
@@ -27,6 +27,9 @@ export default async function ProfilePage() {
                         }
                     }
                 }
+            },
+            assignedComplex: {
+                select: { name: true }
             }
         }
     });
@@ -37,7 +40,7 @@ export default async function ProfilePage() {
 
     const complexName = user.role === 'RESIDENT'
         ? user.residentProfile?.unit?.complex?.name
-        : user.managedComplexes[0]?.name;
+        : user.assignedComplex?.name || user.managedComplexes[0]?.name;
 
     return (
         <MainLayout user={session.user}>

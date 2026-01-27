@@ -7,13 +7,16 @@ import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { useTranslations } from "next-intl";
+import { formatPrice } from "@/lib/utils";
+import { Role } from "@prisma/client";
 
 interface UnitServicesManagerProps {
     unitId: string;
     complexId: string;
+    userRole: Role;
 }
 
-export function UnitServicesManager({ unitId, complexId }: UnitServicesManagerProps) {
+export function UnitServicesManager({ unitId, complexId, userRole }: UnitServicesManagerProps) {
     const t = useTranslations("Services");
     const [unitServices, setUnitServices] = useState<any[]>([]);
     const [availableServices, setAvailableServices] = useState<any[]>([]);
@@ -97,9 +100,11 @@ export function UnitServicesManager({ unitId, complexId }: UnitServicesManagerPr
         <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold">{t("unitServices")}</h3>
-                <Button variant="secondary" size="sm" icon="add" onClick={() => setIsModalOpen(true)}>
-                    {t("assignService")}
-                </Button>
+                {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                    <Button variant="secondary" size="sm" icon="add" onClick={() => setIsModalOpen(true)}>
+                        {t("assignService")}
+                    </Button>
+                )}
             </div>
 
             {unitServices.length > 0 ? (
@@ -109,19 +114,21 @@ export function UnitServicesManager({ unitId, complexId }: UnitServicesManagerPr
                             <div>
                                 <p className="font-medium">{us.service.name}</p>
                                 <p className="text-xs text-slate-500">
-                                    ${Number(us.customPrice || us.service.basePrice).toFixed(2)} • {us.service.frequency}
+                                    {formatPrice(us.customPrice || us.service.basePrice)} • {us.service.frequency}
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
                                 <Badge variant={us.status === "ACTIVE" ? "success" : "neutral"}>
                                     {us.status}
                                 </Badge>
-                                <button
-                                    onClick={() => handleRemove(us.id)}
-                                    className="p-1 te-slate-400 hover:text-red-600 transition-colors"
-                                >
-                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                </button>
+                                {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                    <button
+                                        onClick={() => handleRemove(us.id)}
+                                        className="p-1 te-slate-400 hover:text-red-600 transition-colors"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -140,7 +147,7 @@ export function UnitServicesManager({ unitId, complexId }: UnitServicesManagerPr
                                 <div key={service.id} className="py-3 flex justify-between items-center">
                                     <div>
                                         <p className="font-medium">{service.name}</p>
-                                        <p className="text-xs text-slate-500">${Number(service.basePrice).toFixed(2)}</p>
+                                        <p className="text-xs text-slate-500">{formatPrice(service.basePrice)}</p>
                                     </div>
                                     <Button
                                         variant="primary"

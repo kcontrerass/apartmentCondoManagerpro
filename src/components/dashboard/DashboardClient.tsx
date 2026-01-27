@@ -4,6 +4,7 @@ import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useTranslations } from 'next-intl';
+import { formatPrice } from "@/lib/utils";
 
 interface DashboardStats {
     totalComplexes: number;
@@ -35,7 +36,7 @@ export function DashboardClient({ stats }: DashboardClientProps) {
             type: 'Amenity Reservation',
             status: { label: 'Pending', variant: 'warning' as const },
             datetime: 'Today, 09:15 AM',
-            details: '$50.00',
+            details: formatPrice(50.00),
         },
         {
             reference: 'Visitor Log',

@@ -43,6 +43,21 @@ export async function GET(request: Request) {
             }
 
             whereClause.complexId = complex.id;
+        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+
+            if (!user?.complexId) {
+                return NextResponse.json([]);
+            }
+
+            if (complexId && complexId !== user.complexId) {
+                return NextResponse.json({ error: "No tiene permiso para ver servicios de este complejo" }, { status: 403 });
+            }
+
+            whereClause.complexId = user.complexId;
         }
 
         const services = await prisma.service.findMany({

@@ -4,6 +4,7 @@ import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { prisma } from "@/lib/prisma";
 import { Role } from "@prisma/client";
+import { Toaster } from "sonner";
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -18,9 +19,16 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
             select: { name: true },
         });
         complexName = complex?.name ?? null;
+    } else if (user?.role === Role.GUARD || user?.role === Role.OPERATOR) {
+        const staffUser = await (prisma as any).user.findUnique({
+            where: { id: user.id },
+            select: { assignedComplex: { select: { name: true } } }
+        });
+        complexName = staffUser?.assignedComplex?.name ?? null;
     }
     return (
         <div className="flex min-h-screen bg-background-light dark:bg-background-dark font-sans text-slate-900 dark:text-white">
+            <Toaster position="top-right" richColors />
             <Sidebar user={user} complexName={complexName} />
             <div className="flex-1 flex flex-col ml-0 md:ml-64 transition-all duration-300">
                 <Header />

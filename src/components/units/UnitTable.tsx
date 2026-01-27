@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Unit, Resident, User } from "@prisma/client";
+import { Unit, Resident, User, Role } from "@prisma/client";
 import { useState } from "react";
 
 interface UnitWithResidents extends Unit {
@@ -12,12 +12,13 @@ interface UnitWithResidents extends Unit {
 
 interface UnitTableProps {
     units: UnitWithResidents[];
+    userRole?: Role;
     onEdit?: (unit: UnitWithResidents) => void;
     onDelete?: (unitId: string) => void;
     onView?: (unitId: string) => void;
 }
 
-export function UnitTable({ units, onEdit, onDelete, onView }: UnitTableProps) {
+export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTableProps) {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -71,22 +72,27 @@ export function UnitTable({ units, onEdit, onDelete, onView }: UnitTableProps) {
                                     >
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => onEdit?.(unit)}
-                                        title="Editar"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">edit</span>
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        size="sm"
-                                        onClick={() => onDelete?.(unit.id)}
-                                        title="Eliminar"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                                    </Button>
+
+                                    {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                        <>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => onEdit?.(unit)}
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => onDelete?.(unit.id)}
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </td>
                         </tr>

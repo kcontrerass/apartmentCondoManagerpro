@@ -10,7 +10,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { ResidentTable } from "@/components/residents/ResidentTable";
 import { ResidentForm } from "@/components/residents/ResidentForm";
 import { ResidentInput } from "@/lib/validations/resident";
-import { Resident, Unit, User } from "@prisma/client";
+import { Resident, Unit, User, Role } from "@prisma/client";
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 
@@ -27,7 +27,7 @@ interface ResidentWithExtras extends Resident {
     };
 }
 
-export function ResidentsClient() {
+export function ResidentsClient({ userRole }: { userRole?: Role }) {
     const t = useTranslations('Residents');
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -126,16 +126,18 @@ export function ResidentsClient() {
                 title={t('title')}
                 subtitle={t('subtitle')}
                 actions={
-                    <Button
-                        variant="primary"
-                        icon="add"
-                        onClick={() => {
-                            setEditingResident(null);
-                            setIsModalOpen(true);
-                        }}
-                    >
-                        {t('newResident')}
-                    </Button>
+                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                        <Button
+                            variant="primary"
+                            icon="add"
+                            onClick={() => {
+                                setEditingResident(null);
+                                setIsModalOpen(true);
+                            }}
+                        >
+                            {t('newResident')}
+                        </Button>
+                    )
                 }
             />
 
@@ -147,6 +149,7 @@ export function ResidentsClient() {
                 ) : (
                     <ResidentTable
                         residents={residents}
+                        userRole={userRole}
                         onEdit={(resident) => {
                             setEditingResident(resident);
                             setIsModalOpen(true);

@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { ServicesClient } from "./ServicesClient";
+import { Role } from "@prisma/client";
 
 export default async function ServicesPage() {
     const session = await auth();
@@ -8,7 +9,7 @@ export default async function ServicesPage() {
 
     return (
         <MainLayout user={session.user}>
-            <ServicesClient />
+            <ServicesClient userRole={session.user.role as Role} />
         </MainLayout>
     );
 }

@@ -49,7 +49,9 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                             <Link href={`/dashboard/units?complexId=${unit.complexId}`}>
                                 <Button variant="secondary" icon="arrow_back">Volver a lista</Button>
                             </Link>
-                            <Button variant="primary" icon="edit">Editar Unidad</Button>
+                            {session.user.role !== 'GUARD' && session.user.role !== 'OPERATOR' && (
+                                <Button variant="primary" icon="edit">Editar Unidad</Button>
+                            )}
                         </div>
                     }
                 />
@@ -132,9 +134,11 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                             ) : (
                                 <div className="text-center py-4">
                                     <p className="text-sm text-slate-500">Sin residente activo</p>
-                                    <Link href={`/dashboard/residents?unitId=${unit.id}`}>
-                                        <Button variant="secondary" size="sm" className="mt-2">Asignar uno</Button>
-                                    </Link>
+                                    {session.user.role !== 'GUARD' && session.user.role !== 'OPERATOR' && (
+                                        <Link href={`/dashboard/residents?unitId=${unit.id}`}>
+                                            <Button variant="secondary" size="sm" className="mt-2">Asignar uno</Button>
+                                        </Link>
+                                    )}
                                 </div>
                             )}
                         </Card>
@@ -142,6 +146,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                         <UnitServicesManager
                             unitId={unit.id}
                             complexId={unit.complexId}
+                            userRole={session.user.role as any}
                         />
                     </div>
                 </div>

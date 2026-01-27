@@ -2,6 +2,8 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { formatPrice } from "@/lib/utils";
+import { Role } from "@prisma/client";
 
 interface ServiceWithCount {
     id: string;
@@ -18,6 +20,7 @@ interface ServiceWithCount {
 
 interface ServiceTableProps {
     services: ServiceWithCount[];
+    userRole?: Role;
     onEdit?: (service: ServiceWithCount) => void;
     onDelete?: (serviceId: string) => void;
 }
@@ -30,7 +33,7 @@ const frequencyMap: Record<string, string> = {
     YEARLY: "Anual",
 };
 
-export function ServiceTable({ services, onEdit, onDelete }: ServiceTableProps) {
+export function ServiceTable({ services, userRole, onEdit, onDelete }: ServiceTableProps) {
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -78,7 +81,7 @@ export function ServiceTable({ services, onEdit, onDelete }: ServiceTableProps) 
                                 {service.complex?.name || "N/A"}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-medium">
-                                ${Number(service.basePrice).toFixed(2)}
+                                {formatPrice(service.basePrice)}
                             </td>
                             <td className="py-4 px-4">
                                 <Badge variant="neutral">
@@ -90,26 +93,30 @@ export function ServiceTable({ services, onEdit, onDelete }: ServiceTableProps) 
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex justify-end gap-2">
-                                    <Button
-                                        variant="secondary"
-                                        size="sm"
-                                        onClick={() => onEdit?.(service)}
-                                        title="Editar"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">
-                                            edit
-                                        </span>
-                                    </Button>
-                                    <Button
-                                        variant="danger"
-                                        size="sm"
-                                        onClick={() => onDelete?.(service.id)}
-                                        title="Eliminar"
-                                    >
-                                        <span className="material-symbols-outlined text-[18px]">
-                                            delete
-                                        </span>
-                                    </Button>
+                                    {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                        <>
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => onEdit?.(service)}
+                                                title="Editar"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    edit
+                                                </span>
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => onDelete?.(service.id)}
+                                                title="Eliminar"
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    delete
+                                                </span>
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </td>
                         </tr>

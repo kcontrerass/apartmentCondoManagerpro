@@ -28,16 +28,21 @@ export async function GET(request: Request) {
                 where: { adminId: session.user.id }
             });
 
-            if (!complex) {
-                // Admin assigned to no complex sees nothing
-                return NextResponse.json([]);
-            }
+            if (!complex) return NextResponse.json([]);
 
             whereClause = {
-                AND: [
-                    whereClause,
-                    { complexId: complex.id }
-                ]
+                AND: [whereClause, { complexId: complex.id }]
+            };
+        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+
+            if (!user?.complexId) return NextResponse.json([]);
+
+            whereClause = {
+                AND: [whereClause, { complexId: user.complexId }]
             };
         }
 

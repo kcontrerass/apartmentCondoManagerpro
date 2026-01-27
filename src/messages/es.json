@@ -44,7 +44,31 @@
         "allComplexes": "En todos los complejos",
         "registeredSystem": "Registrados en el sistema",
         "generalAverage": "Promedio general",
-        "realTime": "En tiempo real"
+        "realTime": "En tiempo real",
+        "residentDashboard": {
+            "myUnit": "Mi Unidad",
+            "unitNumber": "Número de Unidad",
+            "complex": "Complejo",
+            "type": "Tipo",
+            "nextPayment": "Próximo Pago",
+            "dueOn": "Vence el",
+            "payNow": "Pagar Ahora",
+            "allClear": "¡Estás al día con tus pagos!",
+            "myReservations": "Mis Reservas",
+            "viewAll": "Ver todas",
+            "noReservations": "No tienes reservas próximas.",
+            "bookAmenity": "Reservar Amenidad",
+            "recentInvoices": "Facturas Recientes",
+            "recentActivity": "Actividad Reciente"
+        },
+        "operatorDashboard": {
+            "todayVisitors": "Visitantes de Hoy",
+            "recentIncidents": "Incidentes Recientes"
+        },
+        "pendingReservations": "Reservas Pendientes",
+        "inComplex": "En el complejo",
+        "unitsOccupied": "Unidades ocupadas",
+        "toReview": "Por revisar"
     },
     "Units": {
         "title": "Unidades",
@@ -235,5 +259,26 @@
         "cancelConfirm": "¿Deseas cancelar tu reserva?",
         "noReservations": "No se encontraron reservaciones.",
         "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo."
+    },
+    "AccessControl": {
+        "title": "Control de Acceso",
+        "subtitle": "Gestión de ingresos y visitas al complejo",
+        "newVisitor": "Registrar Visita",
+        "visitorName": "Nombre del Visitante",
+        "visitorId": "Documento de Identidad",
+        "reason": "Motivo",
+        "scheduledDate": "Fecha Programada",
+        "unit": "Unidad",
+        "complex": "Complejo",
+        "status": "Estado",
+        "entry": "Entrada",
+        "exit": "Salida",
+        "actions": "Acciones",
+        "checkIn": "Marcar Entrada",
+        "checkOut": "Marcar Salida",
+        "cancel": "Cancelar Registro",
+        "noVisitors": "No hay visitantes registrados para hoy.",
+        "successSave": "Visita registrada exitosamente",
+        "errorSaving": "Error al registrar visita"
     }
 }

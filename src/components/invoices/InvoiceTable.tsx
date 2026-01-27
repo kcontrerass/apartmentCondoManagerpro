@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useTranslations } from "next-intl";
+import { formatPrice } from "@/lib/utils";
 
 interface InvoiceTableProps {
     invoices: any[];
@@ -67,7 +68,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                 {`${invoice.month}/${invoice.year}`}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-semibold">
-                                ${Number(invoice.totalAmount).toFixed(2)}
+                                {formatPrice(invoice.totalAmount)}
                             </td>
                             <td className="py-4 px-4">
                                 <Badge variant={getStatusVariant(invoice.status)}>

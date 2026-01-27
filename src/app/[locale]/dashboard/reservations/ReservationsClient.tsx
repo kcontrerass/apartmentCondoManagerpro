@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import ReservationTable from "@/components/dashboard/reservations/ReservationTable";
 import ReservationList from "@/components/dashboard/reservations/ReservationList";
+import ReservationForm from "@/components/dashboard/reservations/ReservationForm";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { getReservations, updateReservation } from "@/lib/api/reservations";
@@ -56,7 +57,7 @@ export function ReservationsClient() {
                 title={t('title')}
                 subtitle={t('subtitle')}
                 actions={
-                    isAdmin && (
+                    isResident && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -95,12 +96,12 @@ export function ReservationsClient() {
                 title={t('new')}
             >
                 <div className="p-4">
-                    <p className="text-sm text-slate-500 mb-4">
-                        {t('adminPlaceholder')}
-                    </p>
-                    <Button variant="secondary" onClick={() => setIsModalOpen(false)} className="w-full">
-                        {tCommon('close')}
-                    </Button>
+                    <ReservationForm
+                        onSuccess={() => {
+                            setIsModalOpen(false);
+                            fetchReservations();
+                        }}
+                    />
                 </div>
             </Modal>
         </div>

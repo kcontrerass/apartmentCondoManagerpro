@@ -37,6 +37,17 @@ export async function GET(request: Request) {
             }
 
             whereClause.AND.push({ id: adminComplex.id });
+        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+
+            if (!user?.complexId) {
+                return NextResponse.json([]);
+            }
+
+            whereClause.AND.push({ id: user.complexId });
         }
 
         const complexes = await prisma.complex.findMany({

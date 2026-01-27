@@ -44,7 +44,31 @@
         "allComplexes": "In all complexes",
         "registeredSystem": "Registered in the system",
         "generalAverage": "General average",
-        "realTime": "In real time"
+        "realTime": "In real time",
+        "residentDashboard": {
+            "myUnit": "My Unit",
+            "unitNumber": "Unit Number",
+            "complex": "Complex",
+            "type": "Type",
+            "nextPayment": "Next Payment",
+            "dueOn": "Due on",
+            "payNow": "Pay Now",
+            "allClear": "You are up to date with your payments!",
+            "myReservations": "My Reservations",
+            "viewAll": "View all",
+            "noReservations": "You have no upcoming reservations.",
+            "bookAmenity": "Book Amenity",
+            "recentInvoices": "Recent Invoices",
+            "recentActivity": "Recent Activity"
+        },
+        "operatorDashboard": {
+            "todayVisitors": "Today's Visitors",
+            "recentIncidents": "Recent Incidents"
+        },
+        "pendingReservations": "Pending Reservations",
+        "inComplex": "In the complex",
+        "unitsOccupied": "Units occupied",
+        "toReview": "To review"
     },
     "Units": {
         "title": "Units",
@@ -235,5 +259,26 @@
         "cancelConfirm": "Do you want to cancel your reservation?",
         "noReservations": "No reservations found.",
         "adminPlaceholder": "Admin manual creation functionality under development."
+    },
+    "AccessControl": {
+        "title": "Access Control",
+        "subtitle": "Management of entries and visits to the complex",
+        "newVisitor": "Register Visit",
+        "visitorName": "Visitor Name",
+        "visitorId": "Identity Document",
+        "reason": "Reason",
+        "scheduledDate": "Scheduled Date",
+        "unit": "Unit",
+        "complex": "Complex",
+        "status": "Status",
+        "entry": "Entry",
+        "exit": "Exit",
+        "actions": "Actions",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "cancel": "Cancel Registration",
+        "noVisitors": "No visitors registered for today.",
+        "successSave": "Visit registered successfully",
+        "errorSaving": "Error registering visit"
     }
 }

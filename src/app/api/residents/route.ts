@@ -25,6 +25,15 @@ export async function GET(request: Request) {
                 return NextResponse.json([]);
             }
             complexId = adminComplex.id;
+        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (!user?.complexId) {
+                return NextResponse.json([]);
+            }
+            complexId = user.complexId;
         }
 
         const residents = await prisma.resident.findMany({

@@ -28,7 +28,7 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
                 { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
                 { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
                 { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
-                { icon: 'badge', label: t('access'), href: '/dashboard/access', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+                { icon: 'badge', label: t('access'), href: '/dashboard/access-control', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.RESIDENT] },
             ],
         },
         {
