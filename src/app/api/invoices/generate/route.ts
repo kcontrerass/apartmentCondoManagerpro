@@ -104,7 +104,7 @@ export async function POST(request: Request) {
                         number: invoiceNumber,
                         month,
                         year,
-                        dueDate,
+                        dueDate: new Date(dueDate),
                         totalAmount: total,
                         status: "PENDING",
                         unitId: unit.id,

@@ -11,6 +11,7 @@ export const createAmenitySchema = z.object({
     name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
     description: z.string().optional(),
     type: z.nativeEnum(AmenityType),
+    requiresPayment: z.boolean().default(false).optional(),
     capacity: z.number().int().positive("La capacidad debe ser un número positivo").optional(),
     operatingHours: operatingHoursSchema.optional(),
     costPerDay: z.number().nonnegative("El costo debe ser 0 o más").optional(),

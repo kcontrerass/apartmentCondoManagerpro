@@ -130,12 +130,17 @@
         "table": {
             "number": "Número",
             "unit": "Unidad",
-            "complex": "Complejo",
-            "period": "Periodo",
+            "period": "Período",
             "total": "Total",
             "status": "Estado",
+            "payment": "Método de Pago",
             "dueDate": "Vencimiento",
             "actions": "Acciones"
+        },
+        "paymentMethod": {
+            "CARD": "Tarjeta",
+            "CASH": "Efectivo",
+            "TRANSFER": "Transferencia"
         },
         "actions": {
             "view": "Ver Detalle",
@@ -146,7 +151,8 @@
             "PENDING": "Pendiente",
             "PAID": "Pagada",
             "OVERDUE": "Vencida",
-            "CANCELLED": "Anulada"
+            "CANCELLED": "Anulada",
+            "PROCESSING": "En Proceso"
         },
         "modal": {
             "generateTitle": "Generar Facturas Mensuales",
@@ -165,7 +171,8 @@
             "total": "Total Facturado"
         },
         "noInvoices": "No se encontraron facturas.",
-        "successGenerate": "Se generaron {count} facturas exitosamente ({skipped} omitidas)."
+        "successGenerate": "Se generaron {count} facturas exitosamente ({skipped} omitidas).",
+        "successPaymentSelected": "Solicitud de pago registrada. Por favor procede con el pago en efectivo o transferencia."
     },
     "Payments": {
         "success": {
@@ -178,6 +185,12 @@
             "title": "Pago Cancelado",
             "message": "El proceso de pago fue cancelado. No se ha realizado ningún cargo.",
             "backToInvoices": "Reintentar Pago"
+        },
+        "methods": {
+            "CARD": "Tarjeta de Crédito/Débito",
+            "CASH": "Efectivo",
+            "TRANSFER": "Transferencia Bancaria",
+            "select": "Seleccionar Método de Pago"
         }
     },
     "Amenities": {
@@ -210,7 +223,10 @@
             "operatingHours": "Horario de Operación",
             "openTime": "Apertura",
             "closeTime": "Cierre",
-            "selectComplex": "Seleccionar Complejo"
+            "selectComplex": "Seleccionar Complejo",
+            "requiresPayment": "Requiere Pago",
+            "costs": "Costos de Reserva",
+            "costsHelp": "Define el costo por reserva (por día o por hora). Si es 0, la reserva será gratuita."
         },
         "deleteConfirm": "¿Estás seguro de eliminar esta amenidad?",
         "successSave": "Amenidad guardada correctamente",
@@ -231,20 +247,28 @@
             "end": "Fin",
             "status": "Estado",
             "cost": "Costo",
+            "payment": "Método de Pago",
             "date": "Fecha"
+        },
+        "paymentMethod": {
+            "CARD": "Tarjeta",
+            "CASH": "Efectivo",
+            "TRANSFER": "Transferencia"
         },
         "status": {
             "PENDING": "Pendiente",
             "APPROVED": "Aprobada",
             "CANCELLED": "Cancelada",
             "REJECTED": "Rechazada",
-            "COMPLETED": "Completada"
+            "COMPLETED": "Completada",
+            "PROCESSING": "En Proceso"
         },
         "form": {
             "startTime": "Fecha y Hora de Inicio",
             "endTime": "Fecha y Hora de Fin",
             "notes": "Notas (opcional)",
             "submit": "Confirmar Reserva",
+            "close": "Cerrar",
             "success": "Reserva creada con éxito",
             "errorConflict": "La amenidad no está disponible en este horario",
             "errorGeneral": "Ocurrió un error al crear la reserva"
@@ -258,7 +282,23 @@
         "deleteConfirm": "¿Seguro que deseas eliminar esta reserva?",
         "cancelConfirm": "¿Deseas cancelar tu reserva?",
         "noReservations": "No se encontraron reservaciones.",
-        "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo."
+        "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo.",
+        "paymentInstructions": {
+            "transfer": {
+                "title": "Datos para Transferencia",
+                "bankName": "Banco Industrial",
+                "accountName": "Condominio Las Praderas",
+                "accountNumber": "123-456789-0",
+                "instructions": "Realiza la transferencia y envía el comprobante por WhatsApp.",
+                "whatsapp": "Enviar Comprobante",
+                "whatsappNumber": "50212345678"
+            },
+            "cash": {
+                "title": "Pago en Efectivo",
+                "instructions": "Pagar al administrador del lugar.",
+                "note": "Tu reserva quedará pendiente hasta confirmar el pago."
+            }
+        }
     },
     "AccessControl": {
         "title": "Control de Acceso",

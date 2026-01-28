@@ -3,11 +3,12 @@ import { z } from "zod";
 const baseReservationSchema = z.object({
     startTime: z.coerce.date(),
     endTime: z.coerce.date(),
-    status: z.enum(["PENDING", "APPROVED", "CANCELLED", "REJECTED", "COMPLETED"]).optional(),
+    status: z.enum(["PENDING", "APPROVED", "CANCELLED", "REJECTED", "COMPLETED", "PROCESSING"]).optional(),
     notes: z.string().max(500).optional(),
     amenityId: z.string().min(1),
     userId: z.string().min(1),
     totalCost: z.number().optional(),
+    paymentMethod: z.enum(["CARD", "CASH", "TRANSFER"]).optional(),
 });
 
 export const reservationSchema = baseReservationSchema.refine((data) => data.endTime > data.startTime, {

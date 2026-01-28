@@ -9,7 +9,8 @@ const ReservationStatus = {
     APPROVED: 'APPROVED',
     CANCELLED: 'CANCELLED',
     REJECTED: 'REJECTED',
-    COMPLETED: 'COMPLETED'
+    COMPLETED: 'COMPLETED',
+    PROCESSING: 'PROCESSING'
 } as const;
 type ReservationStatus = typeof ReservationStatus[keyof typeof ReservationStatus];
 
@@ -80,6 +81,7 @@ export default function ReservationTable() {
             case ReservationStatus.CANCELLED: return 'error';
             case ReservationStatus.REJECTED: return 'error';
             case ReservationStatus.COMPLETED: return 'info';
+            case ReservationStatus.PROCESSING: return 'info';
             default: return 'neutral';
         }
     };
@@ -100,6 +102,7 @@ export default function ReservationTable() {
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.start')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.end')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.status')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.payment')}</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">{tCommon('actions')}</th>
                     </tr>
                 </thead>
@@ -124,6 +127,20 @@ export default function ReservationTable() {
                                     {t(`status.${r.status}` as any)}
                                 </Badge>
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                {r.paymentMethod ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-slate-500">
+                                            {r.paymentMethod === 'CARD' ? 'credit_card' : r.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                        </span>
+                                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                                            {t(`paymentMethod.${r.paymentMethod}` as any)}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                )}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                 {session?.user?.role !== Role.RESIDENT && r.status === ReservationStatus.PENDING && (
                                     <>
@@ -143,31 +160,12 @@ export default function ReservationTable() {
                                         </Button>
                                     </>
                                 )}
-                                {r.status !== ReservationStatus.CANCELLED && r.status !== ReservationStatus.REJECTED && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => handleStatusChange(r.id, ReservationStatus.CANCELLED)}
-                                    >
-                                        {t('actions.cancel')}
-                                    </Button>
-                                )}
-                                {session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                        onClick={() => handleDelete(r.id)}
-                                    >
-                                        <span className="material-symbols-outlined">delete</span>
-                                    </Button>
-                                ) : null}
                             </td>
                         </tr>
                     ))}
                     {reservations.length === 0 && (
                         <tr>
-                            <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                            <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                 {t('noReservations' as any)}
                             </td>
                         </tr>

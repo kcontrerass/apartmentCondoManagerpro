@@ -66,6 +66,18 @@ export function AmenityForm({ onSubmit, initialData, isLoading, complexes }: Ame
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2 pt-8">
+                    <input
+                        type="checkbox"
+                        id="requiresPayment"
+                        {...register("requiresPayment")}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="requiresPayment" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {t('form.requiresPayment')}
+                    </label>
+                </div>
+
                 <Input
                     label={t('form.capacity')}
                     type="number"
@@ -73,6 +85,29 @@ export function AmenityForm({ onSubmit, initialData, isLoading, complexes }: Ame
                     error={errors.capacity?.message}
                 />
             </div>
+
+            {/* Conditionally render cost fields based on requiresPayment - React Hook Form's watch would be ideal here but for now just showing them all is safer or we can check form values */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                <div className="col-span-2">
+                    <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('form.costs')}</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{t('form.costsHelp')}</p>
+                </div>
+                <Input
+                    label={t('form.costPerDay')}
+                    type="number"
+                    step="0.01"
+                    {...register("costPerDay", { valueAsNumber: true })}
+                    error={errors.costPerDay?.message}
+                />
+                <Input
+                    label={t('form.costPerHour')}
+                    type="number"
+                    step="0.01"
+                    {...register("costPerHour", { valueAsNumber: true })}
+                    error={errors.costPerHour?.message}
+                />
+            </div>
+
 
             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg space-y-3">
                 <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('form.operatingHours')}</h4>

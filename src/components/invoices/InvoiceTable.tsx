@@ -23,6 +23,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
             case "PENDING": return "warning";
             case "OVERDUE": return "error";
             case "CANCELLED": return "neutral";
+            case "PROCESSING": return "info";
             default: return "neutral";
         }
     };
@@ -46,6 +47,9 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
                             {t('table.status')}
+                        </th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
+                            {t('table.payment')}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
                             {t('table.dueDate')}
@@ -75,6 +79,20 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                     {t(`status.${invoice.status}`)}
                                 </Badge>
                             </td>
+                            <td className="py-4 px-4">
+                                {invoice.paymentMethod ? (
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-sm text-slate-500">
+                                            {invoice.paymentMethod === 'CARD' ? 'credit_card' : invoice.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                        </span>
+                                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                                            {t(`paymentMethod.${invoice.paymentMethod}` as any)}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                )}
+                            </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
                                 {format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
                             </td>
@@ -89,7 +107,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {invoice.status === "PENDING" && onPay && (
+                                    {invoice.status === "PENDING" && onPay && !invoice.reservation && (
                                         <Button
                                             variant="primary"
                                             size="sm"

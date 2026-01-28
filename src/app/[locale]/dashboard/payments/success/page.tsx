@@ -35,6 +35,20 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                         where: { id: invoiceId },
                         data: { status: "PAID", updatedAt: new Date() }
                     });
+
+                    // Update linked reservation if exists
+                    const linkedReservation = await (prisma as any).reservation.findUnique({
+                        where: { invoiceId }
+                    });
+
+                    if (linkedReservation) {
+                        await (prisma as any).reservation.update({
+                            where: { id: linkedReservation.id },
+                            data: { status: 'APPROVED' }
+                        });
+                        console.log(`Reservation ${linkedReservation.id} approved via session_id verification.`);
+                    }
+
                     console.log(`Invoice ${invoiceId} updated via session_id verification.`);
                 }
             }
@@ -58,6 +72,20 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                         where: { id: invoice_id },
                         data: { status: "PAID", updatedAt: new Date() }
                     });
+
+                    // Update linked reservation if exists
+                    const linkedReservation = await (prisma as any).reservation.findUnique({
+                        where: { invoiceId: invoice_id }
+                    });
+
+                    if (linkedReservation) {
+                        await (prisma as any).reservation.update({
+                            where: { id: linkedReservation.id },
+                            data: { status: 'APPROVED' }
+                        });
+                        console.log(`Reservation ${linkedReservation.id} approved via URL param (Optimistic).`);
+                    }
+
                     console.log(`Invoice ${invoice_id} marked as PAID via URL parameter (Optimistic).`);
                 }
             } catch (error) {

@@ -24,6 +24,9 @@ export function InvoicesClient() {
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
+    const [paymentInvoice, setPaymentInvoice] = useState<any | null>(null);
+    const [selectedMethod, setSelectedMethod] = useState<'CARD' | 'CASH' | 'TRANSFER'>('CARD');
     const { data: session } = useSession();
 
     const isResident = session?.user?.role === Role.RESIDENT;
@@ -108,18 +111,34 @@ export function InvoicesClient() {
         }
     };
 
-    const handlePay = async (invoice: any) => {
+    const handlePay = (invoice: any) => {
+        setPaymentInvoice(invoice);
+        setIsPaymentMethodModalOpen(true);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!paymentInvoice) return;
+
         setIsSubmitting(true);
         try {
             const response = await fetch("/api/payments/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ invoiceId: invoice.id }),
+                body: JSON.stringify({
+                    invoiceId: paymentInvoice.id,
+                    method: selectedMethod
+                }),
             });
 
             const data = await response.json();
-            if (response.ok && data.url) {
-                window.location.href = data.url;
+            if (response.ok) {
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert(t('successPaymentSelected') || "Solicitud de pago registrada. Por favor procede con el pago en efectivo o transferencia.");
+                    setIsPaymentMethodModalOpen(false);
+                    fetchInvoices();
+                }
             } else {
                 alert(data.error || "Error al iniciar el pago");
             }
@@ -201,6 +220,57 @@ export function InvoicesClient() {
                 title={t('detail.title')}
             >
                 <InvoiceDetailModal invoice={selectedInvoice} />
+            </Modal>
+
+            <Modal
+                isOpen={isPaymentMethodModalOpen}
+                onClose={() => setIsPaymentMethodModalOpen(false)}
+                title={useTranslations('Payments.methods')('select')}
+            >
+                <div className="p-6 space-y-6">
+                    <div className="space-y-4">
+                        <div
+                            onClick={() => setSelectedMethod('CARD')}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                        >
+                            <span className="material-symbols-outlined text-primary">credit_card</span>
+                            <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">Tarjeta de Crédito/Débito</p>
+                                <p className="text-xs text-slate-500">Pago instantáneo seguro vía Recurrente</p>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => setSelectedMethod('CASH')}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                        >
+                            <span className="material-symbols-outlined text-primary">payments</span>
+                            <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">Efectivo</p>
+                                <p className="text-xs text-slate-500">Paga en la administración del complejo</p>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => setSelectedMethod('TRANSFER')}
+                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
+                        >
+                            <span className="material-symbols-outlined text-primary">account_balance</span>
+                            <div>
+                                <p className="font-semibold text-slate-900 dark:text-white">Transferencia Bancaria</p>
+                                <p className="text-xs text-slate-500">Envía el comprobante a administración</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button
+                        onClick={handleConfirmPayment}
+                        isLoading={isSubmitting}
+                        className="w-full"
+                    >
+                        Confirmar Selección
+                    </Button>
+                </div>
             </Modal>
         </div>
     );

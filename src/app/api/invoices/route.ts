@@ -51,6 +51,9 @@ export async function GET(request: Request) {
                 },
                 complex: {
                     select: { name: true }
+                },
+                reservation: {
+                    select: { id: true }
                 }
             },
             orderBy: {

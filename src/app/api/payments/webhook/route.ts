@@ -46,6 +46,20 @@ export async function POST(request: Request) {
                             updatedAt: new Date(),
                         }
                     });
+
+                    // Update linked reservation if exists
+                    const linkedReservation = await (prisma as any).reservation.findUnique({
+                        where: { invoiceId }
+                    });
+
+                    if (linkedReservation) {
+                        await (prisma as any).reservation.update({
+                            where: { id: linkedReservation.id },
+                            data: { status: 'APPROVED' }
+                        });
+                        console.log(`Reservation ${linkedReservation.id} approved via Recurrente webhook`);
+                    }
+
                     console.log(`Invoice ${invoiceId} marked as PAID via Recurrente webhook`);
                 } catch (error) {
                     console.error(`Error updating invoice ${invoiceId}:`, error);

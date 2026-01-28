@@ -45,6 +45,13 @@ enum ReservationStatus {
   CANCELLED
   REJECTED
   COMPLETED
+  PROCESSING
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  TRANSFER
 }
 
 enum AmenityType {
@@ -171,6 +178,7 @@ model Amenity {
   name           String
   description    String?     @db.Text
   type           AmenityType @default(OTHER)
+  requiresPayment Boolean    @default(false) @map("requires_payment")
   
   capacity       Int?
   operatingHours Json?       @map("operating_hours") // {open, close, days}
@@ -196,12 +204,16 @@ model Reservation {
   status         ReservationStatus @default(PENDING)
   notes          String?           @db.Text
   totalCost      Decimal?          @map("total_cost") @db.Decimal(10, 2)
+  paymentMethod  PaymentMethod?    @map("payment_method")
 
   userId         String            @map("user_id")
   user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   amenityId      String            @map("amenity_id")
   amenity        Amenity           @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+
+  invoiceId      String?           @unique @map("invoice_id")
+  invoice        Invoice?          @relation(fields: [invoiceId], references: [id])
 
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
@@ -277,6 +289,7 @@ model Invoice {
   
   totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
   status         InvoiceStatus @default(PENDING)
+  paymentMethod  PaymentMethod? @map("payment_method")
   
   unitId         String        @map("unit_id")
   unit           Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
@@ -285,6 +298,7 @@ model Invoice {
   complex        Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
   
   items          InvoiceItem[]
+  reservation    Reservation?
   
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -313,6 +327,7 @@ enum InvoiceStatus {
   PAID
   OVERDUE
   CANCELLED
+  PROCESSING
 }
 
 model VisitorLog {

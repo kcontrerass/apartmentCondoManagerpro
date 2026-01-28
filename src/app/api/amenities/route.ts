@@ -117,6 +117,7 @@ export async function POST(request: Request) {
                 name: validatedData.name,
                 description: validatedData.description,
                 type: validatedData.type,
+                requiresPayment: validatedData.requiresPayment,
                 capacity: validatedData.capacity,
                 operatingHours: validatedData.operatingHours ? {
                     ...validatedData.operatingHours,

@@ -4,3 +4,8 @@ export async function getAmenities(complexId?: string) {
     if (!res.ok) throw new Error('Failed to fetch amenities');
     return res.json();
 }
+export async function getAmenity(id: string) {
+    const res = await fetch(`/api/amenities/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch amenity');
+    return res.json();
+}

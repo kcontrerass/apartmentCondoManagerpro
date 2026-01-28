@@ -79,6 +79,7 @@ export async function PATCH(
                 name: validatedData.name,
                 description: validatedData.description,
                 type: validatedData.type,
+                requiresPayment: validatedData.requiresPayment,
                 capacity: validatedData.capacity,
                 operatingHours: validatedData.operatingHours ? {
                     ...validatedData.operatingHours,

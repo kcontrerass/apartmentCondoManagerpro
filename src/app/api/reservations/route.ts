@@ -160,7 +160,20 @@ export async function POST(request: Request) {
             );
         }
 
-        // 3. Create reservation
+        // 3. Calculate Cost
+        let totalCost = 0;
+        const start = new Date(validatedData.startTime);
+        const end = new Date(validatedData.endTime);
+        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+        const days = Math.ceil(hours / 24);
+
+        if (amenity.costPerHour) {
+            totalCost = hours * Number(amenity.costPerHour);
+        } else if (amenity.costPerDay) {
+            totalCost = days * Number(amenity.costPerDay);
+        }
+
+        // 4. Create reservation
         const reservation = await (prisma as any).reservation.create({
             data: {
                 startTime: validatedData.startTime,
@@ -168,12 +181,54 @@ export async function POST(request: Request) {
                 notes: validatedData.notes,
                 userId: validatedData.userId,
                 amenityId: validatedData.amenityId,
-                totalCost: 0,
+                totalCost: totalCost,
+                paymentMethod: (body as any).paymentMethod,
                 status: session.user.role === Role.RESIDENT ? ReservationStatus.PENDING : ReservationStatus.APPROVED
             }
         });
 
-        return NextResponse.json(reservation, { status: 201 });
+        // 5. Create Invoice if cost > 0
+        let invoiceId = null;
+        if (totalCost > 0) {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: validatedData.userId },
+                include: { unit: true }
+            });
+
+            if (resident && resident.unit) {
+                const now = new Date();
+                const invoiceNumber = `RES-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+                const invoice = await (prisma as any).invoice.create({
+                    data: {
+                        number: invoiceNumber,
+                        month: now.getMonth() + 1,
+                        year: now.getFullYear(),
+                        dueDate: now, // Due immediately
+                        totalAmount: totalCost,
+                        status: ReservationStatus.PENDING, // Initial status
+                        unitId: resident.unit.id,
+                        complexId: resident.unit.complexId,
+                        paymentMethod: (body as any).paymentMethod,
+                        items: {
+                            create: {
+                                description: `Reserva Amenidad: ${amenity.name}`,
+                                amount: totalCost
+                            }
+                        }
+                    }
+                });
+                invoiceId = invoice.id;
+
+                // Link Invoice to Reservation
+                await (prisma as any).reservation.update({
+                    where: { id: reservation.id },
+                    data: { invoiceId: invoice.id }
+                });
+            }
+        }
+
+        return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
     } catch (error: any) {
         if (error.name === "ZodError") {
             return NextResponse.json({ error: error.errors }, { status: 400 });
