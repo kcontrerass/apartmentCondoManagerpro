@@ -132,7 +132,17 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-bold text-sm">{formatPrice(inv.totalAmount)}</p>
-                                    <Badge variant="warning">PENDING</Badge>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <Badge variant={inv.status === 'PAID' ? 'success' : 'warning'}>{inv.status}</Badge>
+                                        {inv.paymentMethod && (
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                                                <span className="material-symbols-outlined text-xs">
+                                                    {inv.paymentMethod === 'CARD' ? 'credit_card' : inv.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                                </span>
+                                                <span>{inv.paymentMethod}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

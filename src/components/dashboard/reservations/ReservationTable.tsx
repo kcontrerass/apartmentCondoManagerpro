@@ -142,7 +142,7 @@ export default function ReservationTable() {
                                 )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                {session?.user?.role !== Role.RESIDENT && r.status === ReservationStatus.PENDING && (
+                                {session?.user?.role !== Role.RESIDENT && (r.status === ReservationStatus.PENDING || r.status === ReservationStatus.PROCESSING) && (
                                     <>
                                         <Button
                                             variant="primary"

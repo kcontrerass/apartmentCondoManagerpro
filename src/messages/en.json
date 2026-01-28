@@ -172,6 +172,9 @@
             "total": "Total Billed"
         },
         "noInvoices": "No invoices found.",
+        "form": {
+            "success": "Payment registered successfully"
+        },
         "successGenerate": "Generated {count} invoices successfully ({skipped} skipped).",
         "successPaymentSelected": "Payment request registered. Please proceed with cash or transfer payment."
     },

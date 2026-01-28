@@ -171,6 +171,9 @@
             "total": "Total Facturado"
         },
         "noInvoices": "No se encontraron facturas.",
+        "form": {
+            "success": "Pago registrado con éxito"
+        },
         "successGenerate": "Se generaron {count} facturas exitosamente ({skipped} omitidas).",
         "successPaymentSelected": "Solicitud de pago registrada. Por favor procede con el pago en efectivo o transferencia."
     },

@@ -5,7 +5,8 @@ const ReservationStatus = {
     APPROVED: 'APPROVED',
     CANCELLED: 'CANCELLED',
     REJECTED: 'REJECTED',
-    COMPLETED: 'COMPLETED'
+    COMPLETED: 'COMPLETED',
+    PROCESSING: 'PROCESSING'
 } as const;
 type ReservationStatus = typeof ReservationStatus[keyof typeof ReservationStatus];
 import { useTranslations, useLocale } from 'next-intl';
@@ -32,6 +33,7 @@ export default function ReservationList({ reservations, onCancel }: ReservationL
             case ReservationStatus.CANCELLED: return 'error';
             case ReservationStatus.REJECTED: return 'error';
             case ReservationStatus.COMPLETED: return 'info';
+            case ReservationStatus.PROCESSING: return 'warning';
             default: return 'neutral';
         }
     };
@@ -70,6 +72,14 @@ export default function ReservationList({ reservations, onCancel }: ReservationL
                                     {format(new Date(r.startTime), 'p', { locale: dateLocale })} - {format(new Date(r.endTime), 'p', { locale: dateLocale })}
                                 </span>
                             </div>
+                            {r.paymentMethod && (
+                                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
+                                    <span className="material-symbols-outlined text-sm">
+                                        {r.paymentMethod === 'CARD' ? 'credit_card' : r.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                    </span>
+                                    <span>{t(`paymentMethod.${r.paymentMethod}` as any)}</span>
+                                </div>
+                            )}
                             {r.notes && (
                                 <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded italic text-xs">
                                     "{r.notes}"

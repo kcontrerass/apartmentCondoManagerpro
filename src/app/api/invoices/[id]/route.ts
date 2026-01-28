@@ -100,6 +100,21 @@ export async function PATCH(
             }
         });
 
+        // If marked as PAID, find linked reservation and approve it
+        if (validatedData.status === "PAID") {
+            const linkedReservation = await (prisma as any).reservation.findUnique({
+                where: { invoiceId: id }
+            });
+
+            if (linkedReservation) {
+                await (prisma as any).reservation.update({
+                    where: { id: linkedReservation.id },
+                    data: { status: 'APPROVED' }
+                });
+                console.log(`Reservation ${linkedReservation.id} approved via invoice update`);
+            }
+        }
+
         return NextResponse.json(updatedInvoice);
     } catch (error: any) {
         if (error.name === "ZodError") {

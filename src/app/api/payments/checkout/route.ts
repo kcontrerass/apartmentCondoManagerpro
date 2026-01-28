@@ -26,8 +26,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 });
         }
 
-        if (invoice.status !== "PENDING") {
-            return NextResponse.json({ error: "Esta factura ya no está pendiente" }, { status: 400 });
+        if (invoice.status !== "PENDING" && invoice.status !== "PROCESSING") {
+            return NextResponse.json({ error: "Esta factura ya no está pendiente de pago" }, { status: 400 });
         }
 
         // RBAC: Only the resident of the unit or an admin can pay
@@ -60,6 +60,12 @@ export async function POST(request: Request) {
                     invoiceId: invoice.id,
                     unitId: invoice.unitId,
                 }
+            });
+
+            // Update invoice with intended payment method
+            await (prisma as any).invoice.update({
+                where: { id: invoice.id },
+                data: { paymentMethod: 'CARD' }
             });
 
             return NextResponse.json({ url: checkoutSession.checkout_url || checkoutSession.url });

@@ -53,7 +53,7 @@ export async function GET(request: Request) {
                     select: { name: true }
                 },
                 reservation: {
-                    select: { id: true }
+                    select: { id: true, paymentMethod: true }
                 }
             },
             orderBy: {

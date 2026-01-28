@@ -79,19 +79,24 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                     {t(`status.${invoice.status}`)}
                                 </Badge>
                             </td>
-                            <td className="py-4 px-4">
-                                {invoice.paymentMethod ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sm text-slate-500">
-                                            {invoice.paymentMethod === 'CARD' ? 'credit_card' : invoice.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
-                                        </span>
-                                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                                            {t(`paymentMethod.${invoice.paymentMethod}` as any)}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
-                                )}
+                            <td className="py-4 px-4 text-sm">
+                                {(() => {
+                                    const method = invoice.paymentMethod || invoice.reservation?.paymentMethod;
+
+                                    if (method) {
+                                        return (
+                                            <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm text-slate-500">
+                                                    {method === 'CARD' ? 'credit_card' : method === 'CASH' ? 'payments' : 'account_balance'}
+                                                </span>
+                                                <span className="text-slate-600 dark:text-slate-400">
+                                                    {t(`paymentMethod.${method}` as any)}
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+                                    return <span className="text-slate-400 dark:text-slate-500">-</span>;
+                                })()}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
                                 {format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
@@ -107,7 +112,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {invoice.status === "PENDING" && onPay && !invoice.reservation && (
+                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING") && onPay && (
                                         <Button
                                             variant="primary"
                                             size="sm"
@@ -118,7 +123,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         </Button>
                                     )}
 
-                                    {invoice.status === "PENDING" && !onPay && (
+                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING") && !onPay && (
                                         <Button
                                             variant="primary"
                                             size="sm"
