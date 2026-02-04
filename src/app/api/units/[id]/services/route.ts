@@ -59,8 +59,19 @@ export async function POST(
             return NextResponse.json({ error: "Unidad no encontrada" }, { status: 404 });
         }
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the complex
-        if (session.user.role === Role.ADMIN && unit.complex.adminId !== session.user.id) {
+        // RBAC: Only SUPER_ADMIN, complex ADMIN, or RESIDENT for their own unit
+        if (session.user.role === Role.RESIDENT) {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+            if (!resident || resident.unitId !== unitId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para asignar servicios a esta unidad" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role === Role.ADMIN && unit.complex.adminId !== session.user.id) {
             return NextResponse.json(
                 { error: "No tiene permiso para asignar servicios a esta unidad" },
                 { status: 403 }
@@ -88,15 +99,50 @@ export async function POST(
             );
         }
 
-        const unitService = await prisma.unitService.create({
-            data: {
-                unitId,
-                serviceId: validatedData.serviceId,
-                customPrice: validatedData.customPrice,
-                status: validatedData.status,
-                startDate: validatedData.startDate,
-                endDate: validatedData.endDate,
-            },
+        if (session.user.role === Role.RESIDENT && service.isRequired) {
+            return NextResponse.json(
+                { error: "No puede contratar manualmente un servicio obligatorio" },
+                { status: 400 }
+            );
+        }
+
+        const unitService = await (prisma as any).$transaction(async (tx: any) => {
+            // 1. Create the unit service assignment
+            const newUnitService = await tx.unitService.create({
+                data: {
+                    unitId,
+                    serviceId: validatedData.serviceId,
+                    customPrice: validatedData.customPrice,
+                    quantity: validatedData.quantity,
+                    status: validatedData.status,
+                    startDate: validatedData.startDate,
+                    endDate: validatedData.endDate,
+                },
+            });
+
+            // 2. Check for existing invoice for the current month/year
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            // Debug logging to a file
+            const logMsg = `[${now.toISOString()}] Unit: ${unitId}, Month: ${currentMonth}, Year: ${currentYear}\n`;
+            try { require('fs').appendFileSync('billing_debug.log', logMsg); } catch (e) { }
+
+            const existingInvoice = await tx.invoice.findFirst({
+                where: {
+                    unitId,
+                    month: currentMonth,
+                    year: currentYear,
+                    status: { not: 'CANCELLED' }
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+
+            // 3. (REMOVED) Immediate invoice generation.
+            // Invoices are now only generated manually by the Admin via the /api/invoices/generate endpoint.
+
+            return newUnitService;
         });
 
         return NextResponse.json(unitService, { status: 201 });

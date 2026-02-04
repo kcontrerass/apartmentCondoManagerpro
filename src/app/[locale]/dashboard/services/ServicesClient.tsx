@@ -13,7 +13,7 @@ import { ServiceSchema } from "@/lib/validations/service";
 import { useTranslations } from 'next-intl';
 import { Role } from "@prisma/client";
 
-export function ServicesClient({ userRole }: { userRole: Role }) {
+export function ServicesClient({ userRole, userId }: { userRole: Role, userId: string }) {
     const t = useTranslations('Services');
     const searchParams = useSearchParams();
     const complexIdFromQuery = searchParams.get("complexId");
@@ -24,6 +24,8 @@ export function ServicesClient({ userRole }: { userRole: Role }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingService, setEditingService] = useState<any | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [subscribingId, setSubscribingId] = useState<string | null>(null);
+    const [residentUnitId, setResidentUnitId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchComplexes = async () => {
@@ -36,7 +38,22 @@ export function ServicesClient({ userRole }: { userRole: Role }) {
             }
         };
         fetchComplexes();
-    }, []);
+
+        if (userRole === Role.RESIDENT) {
+            const fetchResidentData = async () => {
+                try {
+                    const response = await fetch(`/api/residents?userId=${userId}`);
+                    const data = await response.json();
+                    if (response.ok && data.length > 0) {
+                        setResidentUnitId(data[0].unitId);
+                    }
+                } catch (error) {
+                    console.error("Error fetching resident data:", error);
+                }
+            };
+            fetchResidentData();
+        }
+    }, [userRole, userId]);
 
     const fetchServices = async () => {
         setIsLoading(true);
@@ -94,6 +111,83 @@ export function ServicesClient({ userRole }: { userRole: Role }) {
         }
     };
 
+    const handleSubscribe = async (service: any, quantity: number = 1) => {
+        if (!residentUnitId) {
+            alert(t('errorNoUnit'));
+            return;
+        }
+
+        if (!confirm(`¿Desea contratar el servicio ${service.name}${service.hasQuantity ? ` (Cantidad: ${quantity})` : ''}?`)) return;
+
+        setSubscribingId(service.id);
+        try {
+            const response = await fetch(`/api/units/${residentUnitId}/services`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    serviceId: service.id,
+                    quantity: quantity,
+                    status: "ACTIVE",
+                }),
+            });
+
+            if (response.ok) {
+                fetchServices();
+            } else {
+                const errorData = await response.json();
+                alert(errorData.error || t('errorSaving'));
+            }
+        } catch (error) {
+            console.error("Error subscribing to service:", error);
+        } finally {
+            setSubscribingId(null);
+        }
+    };
+
+    const handleUnsubscribe = async (unitServiceId: string) => {
+        if (!confirm('¿Seguro que desea dar de baja este servicio?')) return;
+
+        setSubscribingId(unitServiceId);
+        try {
+            const response = await fetch(`/api/unit-services/${unitServiceId}`, {
+                method: "DELETE",
+            });
+
+            if (response.ok) {
+                fetchServices();
+            } else {
+                const errorData = await response.json();
+                alert(errorData.error || t('errorSaving'));
+            }
+        } catch (error) {
+            console.error("Error unsubscribing from service:", error);
+        } finally {
+            setSubscribingId(null);
+        }
+    };
+
+    const handleUpdateQuantity = async (unitServiceId: string, quantity: number) => {
+        setSubscribingId(unitServiceId);
+        try {
+            const response = await fetch(`/api/unit-services/${unitServiceId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quantity }),
+            });
+
+            if (response.ok) {
+                fetchServices();
+            } else {
+                const errorData = await response.json();
+                alert(errorData.error || t('errorSaving'));
+            }
+        } catch (error) {
+            console.error("Error updating service quantity:", error);
+        } finally {
+            setSubscribingId(null);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         if (!confirm(t('deleteConfirm'))) return;
 
@@ -113,7 +207,7 @@ export function ServicesClient({ userRole }: { userRole: Role }) {
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('subtitle') : t('allServices')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && userRole !== Role.RESIDENT && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -142,6 +236,10 @@ export function ServicesClient({ userRole }: { userRole: Role }) {
                             setIsModalOpen(true);
                         }}
                         onDelete={handleDelete}
+                        onSubscribe={handleSubscribe}
+                        onUpdateQuantity={handleUpdateQuantity}
+                        onUnsubscribe={handleUnsubscribe}
+                        isSubmitting={subscribingId}
                     />
                 )}
             </Card>

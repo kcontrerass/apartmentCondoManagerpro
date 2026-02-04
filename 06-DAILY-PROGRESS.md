@@ -24,11 +24,11 @@ Este documento debe actualizarse **al final de cada día** con el progreso reali
 - [ ] Gestión de Unidades
 - [ ] Gestión de Residentes
 - [ ] Sistema de Servicios
-- [ ] Sistema de Facturación
-- [ ] Integración de Pagos
-- [ ] Gestión de Amenidades
-- [ ] Sistema de Reservas
-- [ ] Control de Acceso
+- [x] Sistema de Facturación
+- [x] Integración de Pagos
+- [x] Gestión de Amenidades
+- [x] Sistema de Reservas
+- [x] Control de Acceso
 - [ ] Avisos y Eventos
 - [ ] Reportes e Incidentes
 - [ ] Módulo de Documentos

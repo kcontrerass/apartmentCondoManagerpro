@@ -15,6 +15,7 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
+        const complexId = searchParams.get("complexId"); // For filtering by specific complex
 
         let whereClause: any = {
             OR: [
@@ -23,7 +24,12 @@ export async function GET(request: Request) {
             ],
         };
 
-        if (session.user.role === Role.ADMIN) {
+        // If complexId is provided in query, filter by it (for RESIDENT search)
+        if (complexId) {
+            whereClause = {
+                AND: [whereClause, { complexId: complexId }]
+            };
+        } else if (session.user.role === Role.ADMIN) {
             const complex = await prisma.complex.findFirst({
                 where: { adminId: session.user.id }
             });

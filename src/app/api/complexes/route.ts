@@ -14,6 +14,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const search = searchParams.get("search") || "";
         const type = searchParams.get("type");
+        const complexId = searchParams.get("complexId"); // For filtering by specific complex
 
         let whereClause: any = {
             AND: [
@@ -27,7 +28,10 @@ export async function GET(request: Request) {
             ],
         };
 
-        if (session.user.role === Role.ADMIN) {
+        // If complexId is provided in query, filter by it (for RESIDENT search)
+        if (complexId) {
+            whereClause.AND.push({ id: complexId });
+        } else if (session.user.role === Role.ADMIN) {
             const adminComplex = await prisma.complex.findFirst({
                 where: { adminId: session.user.id }
             });
@@ -93,15 +97,26 @@ export async function POST(request: Request) {
         let adminIdToAssign = validatedData.adminId;
 
 
-        const complex = await prisma.complex.create({
-            data: {
-                name: validatedData.name,
-                address: validatedData.address,
-                type: validatedData.type,
-                logoUrl: validatedData.logoUrl,
-                settings: validatedData.settings || {},
-                adminId: adminIdToAssign,
-            },
+        const complex = await prisma.$transaction(async (tx) => {
+            const newComplex = await tx.complex.create({
+                data: {
+                    name: validatedData.name,
+                    address: validatedData.address,
+                    type: validatedData.type,
+                    logoUrl: validatedData.logoUrl,
+                    settings: validatedData.settings || {},
+                    adminId: adminIdToAssign,
+                },
+            });
+
+            if (adminIdToAssign) {
+                await tx.user.update({
+                    where: { id: adminIdToAssign },
+                    data: { complexId: newComplex.id }
+                });
+            }
+
+            return newComplex;
         });
 
         return NextResponse.json(complex, { status: 201 });

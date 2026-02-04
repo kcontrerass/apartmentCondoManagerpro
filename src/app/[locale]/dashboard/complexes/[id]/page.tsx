@@ -118,7 +118,9 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                         <Card className="p-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-lg font-semibold">Amenidades</h3>
-                                <Button variant="secondary" size="sm">Gestionar</Button>
+                                <Link href={`/dashboard/amenities?complexId=${id}`}>
+                                    <Button variant="secondary" size="sm">Gestionar</Button>
+                                </Link>
                             </div>
 
                             {complex.amenities.length > 0 ? (
@@ -153,7 +155,7 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600">
-                                            <span className="material-symbols-rounded">apartment</span>
+                                            <span className="material-symbols-outlined">apartment</span>
                                         </div>
                                         <div>
                                             <p className="text-sm font-medium">Total Unidades</p>
@@ -165,7 +167,7 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600">
-                                            <span className="material-symbols-rounded">pool</span>
+                                            <span className="material-symbols-outlined">pool</span>
                                         </div>
                                         <div>
                                             <p className="text-sm font-medium">Amenidades</p>

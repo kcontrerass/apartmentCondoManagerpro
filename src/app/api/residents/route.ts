@@ -15,31 +15,36 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const unitId = searchParams.get("unitId");
+        const userIdFilter = searchParams.get("userId");
         let complexId = searchParams.get("complexId");
 
-        if (session.user.role === Role.ADMIN) {
-            const adminComplex = await prisma.complex.findFirst({
-                where: { adminId: session.user.id }
-            });
-            if (!adminComplex) {
-                return NextResponse.json([]);
+        // Only apply RBAC if complexId is not already provided (e.g., from search)
+        if (!complexId) {
+            if (session.user.role === Role.ADMIN) {
+                const adminComplex = await prisma.complex.findFirst({
+                    where: { adminId: session.user.id }
+                });
+                if (!adminComplex) {
+                    return NextResponse.json([]);
+                }
+                complexId = adminComplex.id;
+            } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+                const user = await (prisma as any).user.findUnique({
+                    where: { id: session.user.id },
+                    select: { complexId: true }
+                });
+                if (!user?.complexId) {
+                    return NextResponse.json([]);
+                }
+                complexId = user.complexId;
             }
-            complexId = adminComplex.id;
-        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
-            const user = await (prisma as any).user.findUnique({
-                where: { id: session.user.id },
-                select: { complexId: true }
-            });
-            if (!user?.complexId) {
-                return NextResponse.json([]);
-            }
-            complexId = user.complexId;
         }
 
         const residents = await prisma.resident.findMany({
             where: {
                 AND: [
                     unitId ? { unitId } : {},
+                    userIdFilter ? { userId: userIdFilter } : {},
                     complexId ? { unit: { complexId } } : {},
                 ],
             },

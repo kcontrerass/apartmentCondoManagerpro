@@ -58,6 +58,17 @@ export async function GET(request: Request) {
             }
 
             whereClause.complexId = user.complexId;
+        } else if (session.user.role === Role.RESIDENT) {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unit: { select: { complexId: true, id: true } } }
+            });
+
+            if (!resident?.unit) {
+                return NextResponse.json([]);
+            }
+
+            whereClause.complexId = resident.unit.complexId;
         }
 
         const services = await prisma.service.findMany({
@@ -73,6 +84,23 @@ export async function GET(request: Request) {
                         unitServices: true,
                     },
                 },
+                unitServices: session.user.role === Role.RESIDENT ? {
+                    where: {
+                        unit: {
+                            residents: {
+                                some: {
+                                    userId: session.user.id
+                                }
+                            }
+                        }
+                    },
+                    select: {
+                        id: true,
+                        status: true,
+                        quantity: true,
+                        startDate: true
+                    }
+                } : false,
             },
             orderBy: {
                 createdAt: "desc",
@@ -152,6 +180,55 @@ export async function POST(request: Request) {
                     })),
                     skipDuplicates: true,
                 });
+
+                // 3. New: Check if invoices already exist for this month and complex
+                const now = new Date();
+                const currentMonth = now.getMonth() + 1;
+                const currentYear = now.getFullYear();
+
+                // Find units that already have an invoice for this month
+                const unitsWithInvoices = await tx.invoice.findMany({
+                    where: {
+                        complexId: validatedData.complexId,
+                        month: currentMonth,
+                        year: currentYear,
+                        status: { not: 'CANCELLED' }
+                    },
+                    select: { unitId: true, dueDate: true, unit: { select: { number: true, id: true } } }
+                });
+
+                console.log(`[MandatoryBilling] Found ${unitsWithInvoices.length} units with existing invoices for ${currentMonth}/${currentYear}`);
+
+                // Generate complementary invoices for those units
+                if (unitsWithInvoices.length > 0) {
+                    const price = Number(newService.basePrice);
+
+                    for (const inv of unitsWithInvoices) {
+                        const invoiceNumber = `INV-${currentYear}${currentMonth.toString().padStart(2, '0')}-${inv.unit.number.replace(/\s+/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+
+                        console.log(`[MandatoryBilling] Creating invoice for Unit ${inv.unit.number}`);
+                        await tx.invoice.create({
+                            data: {
+                                number: invoiceNumber,
+                                month: currentMonth,
+                                year: currentYear,
+                                dueDate: inv.dueDate,
+                                totalAmount: price,
+                                status: "PENDING",
+                                unitId: inv.unitId,
+                                complexId: validatedData.complexId,
+                                createdAt: now, // Important: use current date
+                                items: {
+                                    create: [{
+                                        description: `${newService.name} [Complementaria]`,
+                                        amount: price,
+                                        serviceId: newService.id
+                                    }]
+                                }
+                            }
+                        });
+                    }
+                }
             }
 
             return newService;

@@ -31,8 +31,33 @@ export async function PATCH(
             return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
         }
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the complex
-        if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
+        // RBAC: Only SUPER_ADMIN, complex ADMIN, or the unit RESIDENT
+        if (session.user.role === Role.RESIDENT) {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+
+            if (!resident || resident.unitId !== unitService.unitId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para editar esta asignación" },
+                    { status: 403 }
+                );
+            }
+
+            // A resident cannot edit a mandatory service
+            const service = await prisma.service.findUnique({
+                where: { id: unitService.serviceId },
+                select: { isRequired: true }
+            });
+
+            if (service?.isRequired) {
+                return NextResponse.json(
+                    { error: "No se puede editar un servicio obligatorio" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
             return NextResponse.json(
                 { error: "No tiene permiso para editar esta asignación" },
                 { status: 403 }
@@ -87,8 +112,45 @@ export async function DELETE(
             return NextResponse.json({ error: "Asignación no encontrada" }, { status: 404 });
         }
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the complex
-        if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
+        // RBAC: Only SUPER_ADMIN, complex ADMIN, or the unit RESIDENT
+        if (session.user.role === Role.RESIDENT) {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+
+            if (!resident || resident.unitId !== unitService.unitId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para eliminar esta asignación" },
+                    { status: 403 }
+                );
+            }
+
+            // A resident cannot delete a mandatory service
+            const service = await prisma.service.findUnique({
+                where: { id: unitService.serviceId },
+                select: { isRequired: true }
+            });
+
+            if (service?.isRequired) {
+                return NextResponse.json(
+                    { error: "No se puede eliminar un servicio obligatorio" },
+                    { status: 403 }
+                );
+            }
+
+            // Enforce 1-month retention period for residents
+            const startDate = new Date(unitService.startDate);
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+            if (startDate > oneMonthAgo) {
+                return NextResponse.json(
+                    { error: "Debe cumplir al menos un mes de contratación para dar de baja este servicio." },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
             return NextResponse.json(
                 { error: "No tiene permiso para eliminar esta asignación" },
                 { status: 403 }

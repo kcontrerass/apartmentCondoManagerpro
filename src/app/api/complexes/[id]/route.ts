@@ -83,16 +83,32 @@ export async function PUT(
         const body = await request.json();
         const validatedData = ComplexUpdateSchema.parse(body);
 
-        const updatedComplex = await prisma.complex.update({
-            where: { id },
-            data: {
-                name: validatedData.name,
-                address: validatedData.address,
-                type: validatedData.type,
-                logoUrl: validatedData.logoUrl,
-                settings: validatedData.settings || undefined,
-                adminId: validatedData.adminId || undefined,
-            },
+        const updatedComplex = await prisma.$transaction(async (tx) => {
+            const complex = await tx.complex.update({
+                where: { id },
+                data: {
+                    name: validatedData.name,
+                    address: validatedData.address,
+                    type: validatedData.type,
+                    logoUrl: validatedData.logoUrl,
+                    settings: validatedData.settings || undefined,
+                    adminId: validatedData.adminId || undefined,
+                },
+            });
+
+            if (validatedData.adminId) {
+                await tx.user.update({
+                    where: { id: validatedData.adminId },
+                    data: { complexId: complex.id }
+                });
+            }
+
+            // If adminId was removed (explicitly null), we might want to unassign the user.
+            // But validatedData.adminId via zod is usually string or undefined.
+            // If the user wants to unassign, they might pass null, but Zod schema needs to be checked.
+            // Assuming for now we are mostly establishing links.
+
+            return complex;
         });
 
         return NextResponse.json(updatedComplex);
