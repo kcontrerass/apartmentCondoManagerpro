@@ -22,9 +22,11 @@ Este documento debe actualizarse **al final de cada día** con el progreso reali
 - [ ] Gestión de Complejos
 - [ ] Gestión de Unidades
 - [ ] Gestión de Residentes
-- [ ] Sistema de Servicios
-- [x] Sistema de Facturación
-- [x] Integración de Pagos
+- [x] Vista de detalle de incidente con historial y acciones de gestión.
+- [x] Integración en el sidebar.
+- [x] Widgets de dashboard para todos los roles (Residentes, Operadores, Admins).
+- [x] Sistema de breadcrumbs para mejor navegación.
+gos
 - [x] Gestión de Amenidades
 - [x] Sistema de Reservas
 - [x] Control de Acceso

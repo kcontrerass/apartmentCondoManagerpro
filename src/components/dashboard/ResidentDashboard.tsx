@@ -8,18 +8,21 @@ import { es } from "date-fns/locale";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
+import { ActivityTable } from "@/components/dashboard/ActivityTable";
 
 interface ResidentDashboardProps {
     data: {
         resident: any;
         pendingInvoices: any[];
         upcomingReservations: any[];
+        recentIncidents: any[];
+        activities: any[];
     };
 }
 
 export function ResidentDashboard({ data }: ResidentDashboardProps) {
     const t = useTranslations("Dashboard");
-    const { resident, pendingInvoices, upcomingReservations } = data;
+    const { resident, pendingInvoices, upcomingReservations, recentIncidents, activities } = data;
 
     return (
         <div className="space-y-8">
@@ -152,6 +155,34 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
 
                 <div className="space-y-6">
                     <Card className="p-6">
+                        <h3 className="font-bold mb-4">Reportes e Incidentes</h3>
+                        <p className="text-sm text-slate-500 mb-4">Informa sobre cualquier problema técnico o de seguridad en el complejo.</p>
+                        <div className="space-y-3 mb-4">
+                            {recentIncidents.map((inc: any) => (
+                                <Link key={inc.id} href={`/dashboard/incidents/${inc.id}`} className="block border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-1 rounded">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-xs font-bold truncate pr-2">{inc.title}</p>
+                                        <Badge variant={inc.status === 'RESOLVED' ? 'success' : 'warning'} className="scale-75 origin-right">
+                                            {inc.status}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-[10px] text-slate-400">
+                                        {format(new Date(inc.createdAt), "d MMM", { locale: es })}
+                                    </p>
+                                </Link>
+                            ))}
+                            {recentIncidents.length === 0 && (
+                                <p className="text-xs text-slate-400 italic">No tienes reportes recientes.</p>
+                            )}
+                        </div>
+                        <Link href="/dashboard/incidents">
+                            <Button variant="outline" className="w-full" icon="report">
+                                Nuevo Reporte
+                            </Button>
+                        </Link>
+                    </Card>
+
+                    <Card className="p-6">
                         <h3 className="font-bold mb-4">Control de Acceso</h3>
                         <p className="text-sm text-slate-500 mb-4">Registra tus visitas programadas para agilizar su ingreso al complejo.</p>
                         <Link href="/dashboard/access-control">
@@ -161,18 +192,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                         </Link>
                     </Card>
 
-                    <Card className="p-6">
-                        <h3 className="font-bold mb-4">{t("residentDashboard.recentActivity")}</h3>
-                        <div className="space-y-4">
-                            <div className="flex gap-4">
-                                <div className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0" />
-                                <div>
-                                    <p className="text-sm font-medium">Bienvenido a CondoManager Pro</p>
-                                    <p className="text-xs text-slate-500">Ahora puedes gestionar tu unidad desde aquí.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </Card>
+                    <ActivityTable activities={activities} />
                 </div>
             </div>
         </div>

@@ -22,12 +22,12 @@ model User {
   resetPasswordToken   String?       @unique
   complexId            String?       @map("complex_id")
   managedComplexes     Complex?
+  reportedIncidents    Incident[]    @relation("Reporter")
+  resolvedIncidents    Incident[]    @relation("Resolver")
   reservations         Reservation[]
   residentProfile      Resident?
   assignedComplex      Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
   visitorLogs          VisitorLog[]  @relation("CreatedVisitorLogs")
-  reportedIncidents    Incident[]    @relation("Reporter")
-  resolvedIncidents    Incident[]    @relation("Resolver")
 
   @@index([complexId], map: "users_complex_id_fkey")
   @@map("users")
@@ -47,12 +47,12 @@ model Complex {
   announcements Announcement[]
   admin         User?          @relation(fields: [adminId], references: [id])
   events        Event[]
+  incidents     Incident[]
   invoices      Invoice[]
   services      Service[]
   units         Unit[]
   staff         User[]         @relation("StaffComplex")
   visitorLogs   VisitorLog[]
-  incidents     Incident[]
 
   @@map("complexes")
 }
@@ -69,6 +69,7 @@ model Unit {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   parkingSpots Int           @default(0) @map("parking_spots")
+  incidents    Incident[]
   invoices     Invoice[]
   residents    Resident[]
   services     UnitService[]
@@ -294,6 +295,33 @@ model EventRSVP {
   @@map("event_rsvps")
 }
 
+model Incident {
+  id          String           @id @default(cuid())
+  title       String
+  description String           @db.Text
+  status      IncidentStatus   @default(REPORTED)
+  priority    IncidentPriority @default(MEDIUM)
+  type        IncidentType     @default(OTHER)
+  complexId   String           @map("complex_id")
+  unitId      String?          @map("unit_id")
+  reporterId  String           @map("reporter_id")
+  resolverId  String?          @map("resolver_id")
+  imageUrl    String?          @map("image_url")
+  location    String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  complex     Complex          @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
+  resolver    User?            @relation("Resolver", fields: [resolverId], references: [id])
+  unit        Unit?            @relation(fields: [unitId], references: [id])
+
+  @@index([complexId])
+  @@index([reporterId])
+  @@index([resolverId], map: "incidents_resolver_id_fkey")
+  @@index([unitId], map: "incidents_unit_id_fkey")
+  @@map("incidents")
+}
+
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -388,32 +416,6 @@ enum RSVPStatus {
   GOING
   NOT_GOING
   MAYBE
-}
-
-model Incident {
-  id          String           @id @default(cuid())
-  title       String
-  description String           @db.Text
-  status      IncidentStatus   @default(REPORTED)
-  priority    IncidentPriority @default(MEDIUM)
-  type        IncidentType     @default(OTHER)
-  complexId   String           @map("complex_id")
-  unitId      String?          @map("unit_id")
-  reporterId  String           @map("reporter_id")
-  resolverId  String?          @map("resolver_id")
-  imageUrl    String?          @map("image_url")
-  location    String?
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
-  
-  complex     Complex          @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
-  resolver    User?            @relation("Resolver", fields: [resolverId], references: [id])
-  unit        Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
-
-  @@index([complexId])
-  @@index([reporterId])
-  @@map("incidents")
 }
 
 enum IncidentStatus {

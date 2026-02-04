@@ -33,7 +33,6 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                     <tr className="border-b border-slate-100 dark:border-slate-800">
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Nombre</th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Unidad</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Tipo</th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Desde</th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Contacto Emergencia</th>
                         <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">Acciones</th>
@@ -57,11 +56,6 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                                         </span>
                                         <span className="text-xs text-slate-500">{resident.unit.complex.name}</span>
                                     </div>
-                                </td>
-                                <td className="py-4 px-4 text-sm">
-                                    <Badge variant={resident.type === 'OWNER' ? 'info' : 'neutral'}>
-                                        {resident.type === 'OWNER' ? 'Propietario' : 'Inquilino'}
-                                    </Badge>
                                 </td>
                                 <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
                                     {new Date(resident.startDate).toLocaleDateString()}

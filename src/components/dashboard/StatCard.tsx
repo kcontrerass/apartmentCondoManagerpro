@@ -9,7 +9,7 @@ interface StatCardProps {
     subtitle?: string;
     badge?: {
         text: string;
-        variant: 'success' | 'warning' | 'info' | 'neutral';
+        variant: 'success' | 'warning' | 'info' | 'neutral' | 'error';
     };
 }
 
@@ -18,6 +18,7 @@ const badgeStyles = {
     warning: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     neutral: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
 export function StatCard({

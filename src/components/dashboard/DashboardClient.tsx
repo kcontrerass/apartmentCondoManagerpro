@@ -11,9 +11,10 @@ interface DashboardStats {
     totalUnits: number;
     totalResidents: number;
     occupancyRate: number;
-    occupiedByOwner: number;
-    occupiedByTenant: number;
+    occupiedUnits: number;
     vacantUnits: number;
+    pendingIncidents: number;
+    recentActivities: any[];
 }
 
 interface DashboardClientProps {
@@ -23,47 +24,10 @@ interface DashboardClientProps {
 export function DashboardClient({ stats }: DashboardClientProps) {
     const t = useTranslations('Dashboard');
 
-    const activities = [
-        {
-            reference: 'Unit 402',
-            type: 'Maintenance Fee',
-            status: { label: 'Paid', variant: 'success' as const },
-            datetime: 'Today, 11:30 AM',
-            details: '$250.00',
-        },
-        {
-            reference: 'Unit 105',
-            type: 'Amenity Reservation',
-            status: { label: 'Pending', variant: 'warning' as const },
-            datetime: 'Today, 09:15 AM',
-            details: formatPrice(50.00),
-        },
-        {
-            reference: 'Visitor Log',
-            type: 'Access Control',
-            status: { label: 'Logged', variant: 'info' as const },
-            datetime: 'Today, 08:45 AM',
-            details: 'John Doe',
-        },
-        {
-            reference: 'Unit 203',
-            type: 'Incident Report',
-            status: { label: 'Urgent', variant: 'warning' as const },
-            datetime: 'Yesterday, 16:20 PM',
-            details: '#INC-2023-001',
-        },
-        {
-            reference: 'Unit 501',
-            type: 'Monthly Fee',
-            status: { label: 'Paid', variant: 'success' as const },
-            datetime: 'Yesterday, 10:00 AM',
-            details: '$250.00',
-        },
-    ];
+    const activities = stats.recentActivities;
 
     const occupancyData = {
-        owners: stats.occupiedByOwner,
-        tenants: stats.occupiedByTenant,
+        residents: stats.occupiedUnits,
         vacant: stats.vacantUnits,
     };
 
@@ -96,13 +60,13 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                     subtitle={t('registeredSystem')}
                 />
                 <StatCard
-                    icon="pie_chart"
-                    label={t('occupancy')}
-                    value={`${Math.round(stats.occupancyRate)}%`}
-                    subtitle={t('generalAverage')}
-                    iconBgColor="bg-purple-50 dark:bg-purple-900/20"
-                    iconColor="text-purple-500"
-                    badge={{ text: t('realTime'), variant: 'info' }}
+                    icon="report"
+                    label="Incidentes Pendientes"
+                    value={stats.pendingIncidents.toString()}
+                    subtitle="Por resolver"
+                    iconBgColor="bg-red-50 dark:bg-red-900/20"
+                    iconColor="text-red-500"
+                    badge={stats.pendingIncidents > 0 ? { text: "Acción requerida", variant: "error" } : undefined}
                 />
             </div>
 

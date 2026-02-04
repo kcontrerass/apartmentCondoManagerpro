@@ -1,4 +1,7 @@
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Activity {
     reference: string;
@@ -7,8 +10,9 @@ interface Activity {
         label: string;
         variant: 'success' | 'warning' | 'info' | 'neutral';
     };
-    datetime: string;
+    datetime: string | Date;
     details: string;
+    href?: string;
 }
 
 interface ActivityTableProps {
@@ -54,30 +58,49 @@ export function ActivityTable({ activities, onViewAll }: ActivityTableProps) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                        {activities.map((activity, index) => (
-                            <tr
-                                key={index}
-                                className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                            >
-                                <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                                    {activity.reference}
-                                </td>
-                                <td className="px-6 py-4 text-slate-500">
-                                    {activity.type}
-                                </td>
-                                <td className="px-6 py-4">
-                                    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", statusStyles[activity.status.variant])}>
-                                        {activity.status.label}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 text-slate-500">
-                                    {activity.datetime}
-                                </td>
-                                <td className="px-6 py-4 text-right text-slate-500 font-mono">
-                                    {activity.details}
+                        {activities.map((activity, index) => {
+                            const Content = (
+                                <>
+                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                        {activity.reference}
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500">
+                                        {activity.type}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", statusStyles[activity.status.variant])}>
+                                            {activity.status.label}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-slate-500">
+                                        {format(new Date(activity.datetime), "dd/MM/yyyy HH:mm", { locale: es })}
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-slate-500 font-mono">
+                                        {activity.details}
+                                    </td>
+                                </>
+                            );
+
+                            return (
+                                <tr
+                                    key={index}
+                                    className={cn(
+                                        "transition-colors",
+                                        activity.href ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50" : "hover:bg-slate-50/50 dark:hover:bg-slate-800/30"
+                                    )}
+                                    onClick={() => activity.href && (window.location.href = activity.href)}
+                                >
+                                    {Content}
+                                </tr>
+                            );
+                        })}
+                        {activities.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                                    No hay actividad reciente para mostrar.
                                 </td>
                             </tr>
-                        ))}
+                        )}
                     </tbody>
                 </table>
             </div>

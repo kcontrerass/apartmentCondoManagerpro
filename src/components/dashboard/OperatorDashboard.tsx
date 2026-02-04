@@ -3,6 +3,9 @@
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useTranslations } from "next-intl";
+import { Badge } from "@/components/ui/Badge";
+import { Link } from '@/i18n/routing';
+import { ActivityTable } from "@/components/dashboard/ActivityTable";
 
 interface OperatorDashboardProps {
     data: {
@@ -10,6 +13,8 @@ interface OperatorDashboardProps {
         totalResidents: number;
         occupiedUnits: number;
         pendingReservations: number;
+        recentIncidents: any[];
+        activities: any[];
     };
 }
 
@@ -53,22 +58,19 @@ export function OperatorDashboard({ data }: OperatorDashboardProps) {
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <Card className="p-6">
-                    <h3 className="font-bold mb-4">{t("operatorDashboard.todayVisitors")}</h3>
-                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">no_accounts</span>
-                        <p className="text-sm text-slate-500">No hay ingresos registrados hoy.</p>
-                    </div>
-                </Card>
-
-                <Card className="p-6">
-                    <h3 className="font-bold mb-4">{t("operatorDashboard.recentIncidents")}</h3>
-                    <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                        <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">report_off</span>
-                        <p className="text-sm text-slate-500">No hay incidentes reportados recientemente.</p>
-                    </div>
-                </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <ActivityTable activities={data.activities || []} />
+                </div>
+                <div className="lg:col-span-1 border-slate-200 dark:border-slate-800">
+                    <Card className="p-6 h-full">
+                        <h3 className="font-bold mb-4">{t("operatorDashboard.todayVisitors")}</h3>
+                        <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                            <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">no_accounts</span>
+                            <p className="text-sm text-slate-500">No hay ingresos registrados hoy.</p>
+                        </div>
+                    </Card>
+                </div>
             </div>
         </div>
     );

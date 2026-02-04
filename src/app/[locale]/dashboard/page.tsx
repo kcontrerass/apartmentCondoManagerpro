@@ -23,55 +23,90 @@ async function getStats(userId: string, role: string) {
             }
         });
 
-        if (!resident) return { residentData: null };
+        if (!resident) return null;
 
-        const [pendingInvoicesRaw, upcomingReservationsRaw] = await Promise.all([
-            (prisma as any).invoice.findMany({
-                where: {
-                    unitId: resident.unitId,
-                    status: 'PENDING'
-                },
-                take: 3,
-                orderBy: { createdAt: 'desc' }
+        const [invoicesRaw, reservationsRaw, incidentsRaw] = await Promise.all([
+            prisma.invoice.findMany({
+                where: { unitId: resident.unitId },
+                orderBy: { createdAt: 'desc' },
+                take: 5
             }),
-            (prisma as any).reservation.findMany({
-                where: {
-                    userId: userId,
-                    startTime: { gte: new Date() },
-                    status: { in: ['APPROVED', 'PENDING'] }
-                },
+            prisma.reservation.findMany({
+                where: { userId },
                 include: { amenity: true },
-                take: 3,
-                orderBy: { startTime: 'asc' }
+                orderBy: { startTime: 'asc' },
+                take: 10
+            }),
+            prisma.incident.findMany({
+                where: { reporterId: userId },
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                include: { complex: true }
             })
         ]);
 
-        const pendingInvoices = pendingInvoicesRaw.map((inv: any) => ({
-            ...inv,
-            totalAmount: Number(inv.totalAmount)
-        }));
+        const pendingInvoices = invoicesRaw
+            .filter((inv: any) => inv.status === 'PENDING')
+            .slice(0, 3)
+            .map((inv: any) => ({
+                ...inv,
+                totalAmount: Number(inv.totalAmount)
+            }));
 
-        const upcomingReservations = upcomingReservationsRaw.map((res: any) => ({
-            ...res,
-            totalCost: res.totalCost ? Number(res.totalCost) : null,
-            amenity: res.amenity ? {
-                ...res.amenity,
-                costPerDay: res.amenity.costPerDay ? Number(res.amenity.costPerDay) : null,
-                costPerHour: res.amenity.costPerHour ? Number(res.amenity.costPerHour) : null,
-            } : null
-        }));
+        const now = new Date();
+        const upcomingReservations = reservationsRaw
+            .filter((res: any) => res.startTime >= now && ['APPROVED', 'PENDING'].includes(res.status))
+            .slice(0, 3)
+            .map((res: any) => ({
+                ...res,
+                totalCost: res.totalCost ? Number(res.totalCost) : null,
+                amenity: res.amenity ? {
+                    ...res.amenity,
+                    costPerDay: res.amenity.costPerDay ? Number(res.amenity.costPerDay) : null,
+                    costPerHour: res.amenity.costPerHour ? Number(res.amenity.costPerHour) : null,
+                } : null
+            }));
+
+        const activities = [
+            ...incidentsRaw.map((inc: any) => ({
+                reference: resident.unit.number,
+                type: 'Incidente',
+                status: { label: inc.status, variant: inc.status === 'RESOLVED' ? 'success' : 'warning' },
+                datetime: inc.createdAt,
+                details: inc.title,
+                href: `/dashboard/incidents/${inc.id}`
+            })),
+            ...invoicesRaw.map((inv: any) => ({
+                reference: inv.number,
+                type: 'Factura',
+                status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+                datetime: inv.createdAt,
+                details: `Monto: ${inv.totalAmount}`,
+                href: `/dashboard/invoices`
+            })),
+            ...reservationsRaw.map((res: any) => ({
+                reference: res.amenity.name,
+                type: 'Reservación',
+                status: { label: res.status, variant: res.status === 'APPROVED' ? 'success' : 'warning' },
+                datetime: res.createdAt,
+                details: res.amenity.name,
+                href: `/dashboard/reservations`
+            }))
+        ].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()).slice(0, 5);
 
         return {
             residentData: {
                 resident,
                 pendingInvoices,
-                upcomingReservations
+                upcomingReservations,
+                recentIncidents: incidentsRaw.slice(0, 3),
+                activities
             }
         };
     }
 
     if (role === Role.OPERATOR || role === Role.GUARD) {
-        const user = await (prisma as any).user.findUnique({
+        const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { complexId: true }
         });
@@ -87,24 +122,77 @@ async function getStats(userId: string, role: string) {
             };
         }
 
-        const [totalUnits, totalResidents, occupiedUnits, pendingReservations] = await Promise.all([
-            prisma.unit.count({ where: { complexId: user.complexId } }),
+        const [unitStats, totalResidents, pendingReservations, recentIncidents, recentInvoicesRaw, recentReservationsRaw] = await Promise.all([
+            prisma.unit.groupBy({
+                by: ['status'],
+                _count: true,
+                where: { complexId: user.complexId }
+            }),
             prisma.resident.count({ where: { unit: { complexId: user.complexId } } }),
-            prisma.unit.count({ where: { complexId: user.complexId, status: 'OCCUPIED' } }),
-            (prisma as any).reservation.count({
+            prisma.reservation.count({
                 where: {
                     status: 'PENDING',
                     amenity: { complexId: user.complexId }
                 }
+            }),
+            prisma.incident.findMany({
+                where: { complexId: user.complexId },
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                include: { reporter: true, unit: true }
+            }),
+            prisma.invoice.findMany({
+                where: { complexId: user.complexId },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: { unit: { select: { number: true } } }
+            }),
+            prisma.reservation.findMany({
+                where: { amenity: { complexId: user.complexId } },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
             })
         ]);
+
+        const totalUnits = unitStats.reduce((acc: number, curr: any) => acc + curr._count, 0);
+        const occupiedUnits = unitStats.find((s: any) => s.status === 'OCCUPIED' || s.status === 'RENTED')?._count || 0;
+
+        const activities = [
+            ...recentIncidents.map((inc: any) => ({
+                reference: `Unidad ${inc.unit?.number || 'N/A'}`,
+                type: 'Incidente',
+                status: { label: inc.status, variant: inc.status === 'RESOLVED' ? 'success' : 'warning' },
+                datetime: inc.createdAt,
+                details: inc.title,
+                href: `/dashboard/incidents/${inc.id}`
+            })),
+            ...recentInvoicesRaw.map((inv: any) => ({
+                reference: `Unidad ${inv.unit?.number || 'N/A'}`,
+                type: 'Factura',
+                status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+                datetime: inv.createdAt,
+                details: `Monto: ${inv.totalAmount}`,
+                href: `/dashboard/invoices`
+            })),
+            ...recentReservationsRaw.map((res: any) => ({
+                reference: res.user.name,
+                type: 'Reservación',
+                status: { label: res.status, variant: res.status === 'APPROVED' ? 'success' : 'warning' },
+                datetime: res.createdAt,
+                details: res.amenity.name,
+                href: `/dashboard/reservations`
+            }))
+        ].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()).slice(0, 5);
 
         return {
             operatorData: {
                 totalUnits,
                 totalResidents,
                 occupiedUnits,
-                pendingReservations
+                pendingReservations,
+                recentIncidents,
+                activities
             }
         };
     }
@@ -115,23 +203,17 @@ async function getStats(userId: string, role: string) {
         totalUnits: 0,
         totalResidents: 0,
         occupancyRate: 0,
-        occupiedByOwner: 0,
-        occupiedByTenant: 0,
+        occupiedUnits: 0,
         vacantUnits: 0,
+        pendingIncidents: 0,
+        recentActivities: [] as any[],
     };
 
     let managedComplexIds: string[] = [];
     if (role === Role.SUPER_ADMIN) {
-        const [totalComplexes, totalUnits, totalResidents, complexes] = await Promise.all([
-            prisma.complex.count(),
-            prisma.unit.count(),
-            prisma.resident.count(),
-            prisma.complex.findMany({ select: { id: true } })
-        ]);
-        stats.totalComplexes = totalComplexes;
-        stats.totalUnits = totalUnits;
-        stats.totalResidents = totalResidents;
+        const complexes = await prisma.complex.findMany({ select: { id: true } });
         managedComplexIds = complexes.map(c => c.id);
+        stats.totalComplexes = managedComplexIds.length;
     } else {
         const managedComplexes = await prisma.complex.findMany({
             where: { adminId: userId },
@@ -139,20 +221,9 @@ async function getStats(userId: string, role: string) {
         });
         managedComplexIds = managedComplexes.map((c) => c.id);
         stats.totalComplexes = managedComplexIds.length;
-
-        const [totalUnits, totalResidents] = await Promise.all([
-            prisma.unit.count({
-                where: { complexId: { in: managedComplexIds } },
-            }),
-            prisma.resident.count({
-                where: { unit: { complexId: { in: managedComplexIds } } },
-            })
-        ]);
-        stats.totalUnits = totalUnits;
-        stats.totalResidents = totalResidents;
     }
 
-    const [unitStats, residentsRaw, totalUnitsWithOccupiedStatus] = await Promise.all([
+    const [unitStats, residentsRaw, pendingIncidents, recentIncidentsRaw, recentInvoicesRaw, recentReservationsRaw] = await Promise.all([
         prisma.unit.groupBy({
             by: ['status'],
             _count: true,
@@ -163,28 +234,70 @@ async function getStats(userId: string, role: string) {
             _count: true,
             where: { unit: { complexId: { in: managedComplexIds } } }
         }),
-        prisma.unit.count({
+        prisma.incident.count({
             where: {
-                status: 'OCCUPIED',
-                complexId: { in: managedComplexIds }
+                complexId: { in: managedComplexIds },
+                status: { in: ['REPORTED', 'IN_PROGRESS'] }
             }
+        }),
+        prisma.incident.findMany({
+            where: { complexId: { in: managedComplexIds } },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            include: { reporter: { select: { name: true } }, unit: { select: { number: true } } }
+        }),
+        prisma.invoice.findMany({
+            where: { complexId: { in: managedComplexIds } },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            include: { unit: { select: { number: true } } }
+        }),
+        prisma.reservation.findMany({
+            where: { amenity: { complexId: { in: managedComplexIds } } },
+            take: 3,
+            orderBy: { createdAt: 'desc' },
+            include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
         })
     ]);
 
-    unitStats.forEach(stat => {
-        if (stat.status === 'VACANT' || stat.status === 'MAINTENANCE') {
-            stats.vacantUnits += stat._count;
-        }
-    });
+    // Derived stats and Activity formatting
+    stats.totalUnits = unitStats.reduce((acc: number, curr: any) => acc + curr._count, 0);
+    stats.totalResidents = residentsRaw.reduce((acc: number, curr: any) => acc + curr._count, 0);
 
-    residentsRaw.forEach(res => {
-        if (res.type === 'OWNER') stats.occupiedByOwner = res._count;
-        if (res.type === 'TENANT') stats.occupiedByTenant = res._count;
-    });
+    stats.occupiedUnits = unitStats.find((s: any) => s.status === 'OCCUPIED' || s.status === 'RENTED')?._count || 0;
+    stats.vacantUnits = unitStats.find((s: any) => s.status === 'VACANT' || s.status === 'MAINTENANCE')?._count || 0;
 
     if (stats.totalUnits > 0) {
-        stats.occupancyRate = (totalUnitsWithOccupiedStatus / stats.totalUnits) * 100;
+        stats.occupancyRate = Math.round((stats.occupiedUnits / stats.totalUnits) * 100);
     }
+
+    stats.pendingIncidents = pendingIncidents;
+    stats.recentActivities = [
+        ...recentIncidentsRaw.map((inc: any) => ({
+            reference: `Unidad ${inc.unit?.number || 'N/A'}`,
+            type: 'Incidente',
+            status: { label: inc.status, variant: inc.status === 'RESOLVED' ? 'success' : 'warning' },
+            datetime: inc.createdAt,
+            details: inc.title,
+            href: `/dashboard/incidents/${inc.id}`
+        })),
+        ...recentInvoicesRaw.map((inv: any) => ({
+            reference: `Unidad ${inv.unit?.number || 'N/A'}`,
+            type: 'Factura',
+            status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+            datetime: inv.createdAt,
+            details: `Monto: ${inv.totalAmount}`,
+            href: `/dashboard/invoices`
+        })),
+        ...recentReservationsRaw.map((res: any) => ({
+            reference: res.user.name,
+            type: 'Reservación',
+            status: { label: res.status, variant: res.status === 'APPROVED' ? 'success' : 'warning' },
+            datetime: res.createdAt,
+            details: res.amenity.name,
+            href: `/dashboard/reservations`
+        }))
+    ].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()).slice(0, 5);
 
     return { adminData: stats };
 }
@@ -209,7 +322,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                     actions={
                         !isResident && (
                             <>
-                                <Button variant="secondary" icon="mail">Enviar Aviso</Button>
+                                <Link href="/dashboard/announcements/new">
+                                    <Button variant="secondary" icon="mail">Enviar Aviso</Button>
+                                </Link>
                                 <Link href="/dashboard/access-control">
                                     <Button variant="secondary" icon="person_add">Registrar Visitante</Button>
                                 </Link>

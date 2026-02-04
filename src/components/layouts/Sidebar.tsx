@@ -11,39 +11,48 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
     const t = useTranslations('Common');
     const locale = useLocale();
 
-    const navSections = [
-        {
-            label: t('main'),
-            items: [
-                { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'domain', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
-                { icon: 'door_front', label: t('units'), href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-                { icon: 'group', label: t('residents'), href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
-            ],
-        },
-        {
-            label: t('management'),
-            items: [
-                { icon: 'pool', label: t('amenities'), href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
-                { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.RESIDENT] },
-                { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
-                { icon: 'badge', label: t('access'), href: '/dashboard/access-control', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.RESIDENT] },
-                { icon: 'shield_person', label: t('staff'), href: '/dashboard/staff', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
-            ],
-        },
-        {
-            label: t('support'),
-            items: [
-                { icon: 'campaign', label: t('announcements'), href: '/dashboard/announcements', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'event', label: t('events'), href: '/dashboard/events', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'forum', label: t('communications'), href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', badge: 3, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                { icon: 'bar_chart', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
-                { icon: 'description', label: t('documents'), href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-            ],
-        },
-    ];
+    const navSections: {
+        label: string;
+        items: {
+            icon: string;
+            label: string;
+            href: string;
+            roles?: Role[];
+            badge?: string | number
+        }[]
+    }[] = [
+            {
+                label: t('main'),
+                items: [
+                    { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'domain', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                    { icon: 'door_front', label: t('units'), href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+                    { icon: 'group', label: t('residents'), href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
+                ],
+            },
+            {
+                label: t('management'),
+                items: [
+                    { icon: 'pool', label: t('amenities'), href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
+                    { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.RESIDENT] },
+                    { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT] },
+                    { icon: 'badge', label: t('access'), href: '/dashboard/access-control', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.RESIDENT] },
+                    { icon: 'shield_person', label: t('staff'), href: '/dashboard/staff', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                ],
+            },
+            {
+                label: t('support'),
+                items: [
+                    { icon: 'campaign', label: t('announcements'), href: '/dashboard/announcements', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'event', label: t('events'), href: '/dashboard/events', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'forum', label: t('communications'), href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'bar_chart', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                    { icon: 'description', label: t('documents'), href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                ],
+            },
+        ];
 
     return (
         <aside className="hidden md:flex flex-col w-64 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-shrink-0 fixed left-0 top-0 z-40">

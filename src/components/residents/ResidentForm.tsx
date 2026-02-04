@@ -83,18 +83,6 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                             <p className="text-xs text-red-500 mt-1">{errors.unitId.message as string}</p>
                         )}
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Tipo de Residente
-                        </label>
-                        <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                            {...register("type")}
-                        >
-                            <option value="TENANT">Inquilino</option>
-                            <option value="OWNER">Propietario</option>
-                        </select>
-                    </div>
                     <Input
                         label="Fecha de Inicio"
                         type="date"

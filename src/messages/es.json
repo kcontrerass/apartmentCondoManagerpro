@@ -95,13 +95,13 @@
     },
     "Residents": {
         "title": "Residentes",
-        "subtitle": "Administración de inquilinos y propietarios",
+        "subtitle": "Administración de residentes",
         "newResident": "Asignar Residente",
         "name": "Nombre",
         "email": "Correo",
         "phone": "Teléfono",
-        "type_owner": "Propietario",
-        "type_tenant": "Inquilino",
+        "type_owner": "Residente",
+        "type_tenant": "Residente",
         "type_family": "Familiar",
         "unit": "Unidad",
         "startDate": "Fecha de Inicio"

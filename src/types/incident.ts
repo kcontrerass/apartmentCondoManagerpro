@@ -12,6 +12,8 @@ export interface Incident extends PrismaIncident {
         id: string;
         name: string;
         image: string | null;
+        email?: string;
+        phone?: string | null;
     };
     resolver?: {
         id: string;

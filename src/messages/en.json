@@ -95,13 +95,13 @@
     },
     "Residents": {
         "title": "Residents",
-        "subtitle": "Tenant and owner administration",
+        "subtitle": "Resident administration",
         "newResident": "Assign Resident",
         "name": "Name",
         "email": "Email",
         "phone": "Phone",
-        "type_owner": "Owner",
-        "type_tenant": "Tenant",
+        "type_owner": "Resident",
+        "type_tenant": "Resident",
         "type_family": "Family Member",
         "unit": "Unit",
         "startDate": "Start Date"
