@@ -132,9 +132,9 @@ export default function IncidentsClient({
         unitNumber: inc.unit?.number
     }));
 
-    const canReport = [Role.RESIDENT, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.SUPER_ADMIN].includes(userRole);
+    const canReport = [Role.RESIDENT, Role.ADMIN, Role.OPERATOR, (Role.SUPER_ADMIN as any)].includes(userRole);
     const canManage = [Role.ADMIN, Role.OPERATOR, (Role.SUPER_ADMIN as any), Role.GUARD].includes(userRole);
-    const canDelete = userRole === Role.RESIDENT; // Only Residents can delete their own reports (if they are REPORTED)
+    const canDelete = String(userRole) === 'RESIDENT'; // Only Residents can delete their own reports (if they are REPORTED)
 
     return (
         <div className="space-y-6">

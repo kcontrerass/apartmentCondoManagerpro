@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
 
         const data = validation.data;
 
-        // Verify complex access for residents
+        // Verify complex access for residents and staff
         if (session.user.role === 'RESIDENT') {
             const resident = await prisma.resident.findUnique({
                 where: { userId: session.user.id },
@@ -135,6 +135,22 @@ export async function POST(request: NextRequest) {
             if (!resident || !resident.unit || resident.unit.complexId !== data.complexId) {
                 return NextResponse.json(
                     { success: false, error: { code: 'FORBIDDEN', message: 'No puedes reportar incidentes para este complejo' } },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role === 'GUARD' || session.user.role === 'OPERATOR' || session.user.role === 'ADMIN') {
+            // Ensure the staff member is assigned to this complex
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true, managedComplexes: { select: { id: true } } }
+            });
+
+            const hasAccess = user?.complexId === data.complexId ||
+                user?.managedComplexes.some(c => c.id === data.complexId);
+
+            if (!hasAccess) {
+                return NextResponse.json(
+                    { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permisos en este complejo' } },
                     { status: 403 }
                 );
             }

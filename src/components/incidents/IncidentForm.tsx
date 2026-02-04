@@ -24,6 +24,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
     const {
         register,
         handleSubmit,
+        reset,
         formState: { errors }
     } = useForm({
         resolver: zodResolver(incidentSchema),
@@ -32,12 +33,22 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
             description: '',
             priority: 'MEDIUM' as IncidentPriority,
             type: 'OTHER' as IncidentType,
-            complexId,
+            complexId: complexId || '',
             unitId: unitId || '',
             location: '',
             imageUrl: ''
         }
     });
+
+    // React to complexId changes (Crucial for Guard/Operator recovery)
+    React.useEffect(() => {
+        if (complexId) {
+            reset((prev) => ({
+                ...prev,
+                complexId
+            }));
+        }
+    }, [complexId, reset]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -112,6 +123,10 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                     {...register('imageUrl')}
                     error={errors.imageUrl?.message as string}
                 />
+
+                {/* Hidden fields */}
+                <input type="hidden" {...register('complexId')} />
+                <input type="hidden" {...register('unitId')} />
             </div>
 
             <div className="flex justify-end pt-4 gap-4">

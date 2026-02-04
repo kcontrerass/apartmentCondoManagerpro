@@ -171,12 +171,15 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                                         Cancelar
                                     </Button>
                                 )}
-                                {userRole === 'RESIDENT' && (
-                                    <Button onClick={handleDelete} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
-                                        Eliminar Reporte
-                                    </Button>
-                                )}
                             </div>
+                        </div>
+                    )}
+
+                    {userRole === 'RESIDENT' && incident.status === 'REPORTED' && (
+                        <div className="flex justify-end pt-4">
+                            <Button onClick={handleDelete} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
+                                Eliminar Reporte
+                            </Button>
                         </div>
                     )}
                 </div>
