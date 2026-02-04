@@ -14,9 +14,8 @@ Este documento debe actualizarse **al final de cada día** con el progreso reali
 
 ## 🎯 Progreso General del Proyecto
 
-**Fecha de Inicio**: [Fecha]
-**Fecha Actual**: [Actualizar diariamente]
-**Día**: [X] de 20
+**Fecha Actual**: 2026-02-04
+**Día**: 11 de 20
 
 ### Módulos Completados (✅)
 - [ ] Autenticación y Autorización
@@ -29,11 +28,11 @@ Este documento debe actualizarse **al final de cada día** con el progreso reali
 - [x] Gestión de Amenidades
 - [x] Sistema de Reservas
 - [x] Control de Acceso
-- [ ] Avisos y Eventos
+- [x] Avisos y Eventos
 - [ ] Reportes e Incidentes
 - [ ] Módulo de Documentos
 - [ ] Sistema de Reportería
-- [ ] Perfiles y Configuración
+- [x] Perfiles y Configuración
 
 ### Estadísticas Generales
 - **Commits Totales**: 0
@@ -380,9 +379,73 @@ Se crearon las interfaces de usuario para el dashboard que permiten listar, crea
 
 ## 📅 SEMANA 3
 
-### Día 11 - [Fecha] - Comunicación y Avisos
+### Día 11 - 2026-02-04 - Comunicación y Avisos (Global View)
 
-[Copiar estructura]
+#### Dev A - Antigravity
+**Horas trabajadas**: 8/8
+
+**Tareas Completadas** ✅
+- [x] Implementación de `GET /api/announcements` para Super Admin (Vista Global)
+- [x] Implementación de `GET /api/events` para Super Admin (Vista Global)
+- [x] Soporte para filtros (prioridad, estado, búsqueda, timeframe) en endpoints globales
+- [x] Modificación de hooks `useAnnouncements` y `useEvents` para fetching global
+
+**En Progreso** 🚧
+- [ ] Reportes e Incidentes
+
+**Bloqueadores** ⚠️
+- Ninguno
+
+**Commits Realizados**:
+```bash
+feat: implement global view for announcements and events (backend)
+feat: update data fetching hooks for super admin global access
+```
+
+**Pull Requests**:
+- [x] #11: Vista Global para Super Admin
+
+**Notas del Día**:
+Se habilitó la capacidad para que los Super Admins vean todos los anuncios y eventos de todos los complejos en un solo lugar. Se añadieron identificadores visuales (nombres de complejos) en tablas y tarjetas para facilitar la distinción de origen.
+
+---
+
+#### Dev B - Antigravity
+**Horas trabajadas**: 8/8
+
+**Tareas Completadas** ✅
+- [x] Actualización de `AnnouncementsClient` para visualización global
+- [x] Actualización de `EventsClient` para visualización global
+- [x] Inclusión de nombres de complejos en `AnnouncementTable`, `EventTable` y `EventCard`
+- [x] Actualización de tipos `AnnouncementListItem` y `EventListItem` para incluir relación con complejo
+
+**En Progreso** 🚧
+- [ ] Refactorización de componentes comunes
+
+**Bloqueadores** ⚠️
+- Ninguno
+
+**Commits Realizados**:
+```bash
+feat: add complex names to global lists and cards
+style: improve global dashboard UI for Super Admin
+```
+
+**Pull Requests**:
+- [x] #12: UI Global View y Mejoras Visuales
+
+**Notas del Día**:
+Se mejoró la experiencia de usuario del Super Admin al navegar por avisos y eventos globales, permitiendo filtrar y buscar sin necesidad de seleccionar un complejo específico inicialmente.
+
+---
+
+#### ✅ Entregables del Día 11
+- [x] APIs Globales de Avisos y Eventos funcionales
+- [x] Hooks de frontend adaptados para fetching global
+- [x] UI del Dashboard (Avisos/Eventos) con soporte global
+- [x] Identificación clara de complejos en vistas globales
+
+**Estado**: ✅ Completado
 
 ---
 
@@ -410,9 +473,31 @@ Se crearon las interfaces de usuario para el dashboard que permiten listar, crea
 
 ---
 
-### Día 16-17 - [Fechas] - Testing y Bugfixing
+### Día 15 - 2026-02-04 - Perfil de Usuario y Configuración
 
-[Copiar estructura]
+#### Dev A - Antigravity
+**Horas trabajadas**: 2/8
+
+**Tareas Completadas** ✅
+- [x] Fixed Prisma validation error in Profile Page (singular relation check)
+- [x] Refined complex name resolution logic for all roles in Profile
+
+**En Progreso** 🚧
+- [ ] Edición de perfil
+
+**Bloqueadores** ⚠️
+- Ninguno
+
+**Commits Realizados**:
+```bash
+fix: resolve prisma validation error on singular managedComplexes relation
+```
+
+**Pull Requests**:
+- [x] #13: Profile Page Fixes
+
+**Notas del Día**:
+Se resolvió un bug crítico donde el perfil de usuario fallaba al cargar para administradores debido a un uso incorrecto de `take` en una relación singular de Prisma.
 
 ---
 
@@ -502,5 +587,5 @@ Se crearon las interfaces de usuario para el dashboard que permiten listar, crea
 
 ---
 
-**Última Actualización**: [Fecha y Hora]
-**Actualizado por**: [Nombre]
+**Última Actualización**: 2026-02-04 15:55
+**Actualizado por**: Antigravity

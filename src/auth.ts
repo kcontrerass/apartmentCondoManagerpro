@@ -9,8 +9,34 @@ import { prisma } from '@/lib/prisma';
 
 async function getUser(email: string) {
     try {
-        const user = await prisma.user.findUnique({ where: { email } });
-        return user;
+        const user = await prisma.user.findUnique({
+            where: { email },
+            include: {
+                managedComplexes: { select: { id: true } },
+                residentProfile: {
+                    include: {
+                        unit: {
+                            select: { complexId: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!user) return null;
+
+        // Flatten complexId for easier access in JWT/Session
+        let complexId: string | null = user.complexId; // From assignedComplex (Staff)
+
+        if (!complexId && user.managedComplexes) {
+            complexId = user.managedComplexes.id; // From managedComplexes (Admin)
+        }
+
+        if (!complexId && user.residentProfile?.unit) {
+            complexId = user.residentProfile.unit.complexId; // From residentProfile -> Unit (Resident)
+        }
+
+        return { ...user, complexId };
     } catch (error) {
         console.error('Failed to fetch user:', error);
         throw new Error('Failed to fetch user.');

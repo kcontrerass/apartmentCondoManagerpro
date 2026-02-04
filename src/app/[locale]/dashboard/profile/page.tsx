@@ -14,7 +14,6 @@ export default async function ProfilePage() {
         where: { id: session.user.id },
         include: {
             managedComplexes: {
-                take: 1,
                 select: { name: true }
             },
             residentProfile: {
@@ -40,7 +39,7 @@ export default async function ProfilePage() {
 
     const complexName = user.role === 'RESIDENT'
         ? user.residentProfile?.unit?.complex?.name
-        : user.assignedComplex?.name || user.managedComplexes[0]?.name;
+        : user.assignedComplex?.name || user.managedComplexes?.name;
 
     return (
         <MainLayout user={session.user}>

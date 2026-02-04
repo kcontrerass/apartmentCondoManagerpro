@@ -35,6 +35,8 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
         {
             label: t('support'),
             items: [
+                { icon: 'campaign', label: t('announcements'), href: '/dashboard/announcements', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                { icon: 'event', label: t('events'), href: '/dashboard/events', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                 { icon: 'forum', label: t('communications'), href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                 { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', badge: 3, roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                 { icon: 'bar_chart', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },

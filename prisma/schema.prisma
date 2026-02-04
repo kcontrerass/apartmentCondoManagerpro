@@ -7,7 +7,293 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums
+model User {
+  id                   String        @id @default(cuid())
+  email                String        @unique
+  password             String
+  name                 String
+  phone                String?
+  image                String?       @db.Text
+  role                 Role          @default(RESIDENT)
+  status               UserStatus    @default(ACTIVE)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  resetPasswordExpires DateTime?
+  resetPasswordToken   String?       @unique
+  complexId            String?       @map("complex_id")
+  managedComplexes     Complex?
+  reservations         Reservation[]
+  residentProfile      Resident?
+  assignedComplex      Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
+  visitorLogs          VisitorLog[]  @relation("CreatedVisitorLogs")
+  reportedIncidents    Incident[]    @relation("Reporter")
+  resolvedIncidents    Incident[]    @relation("Resolver")
+
+  @@index([complexId], map: "users_complex_id_fkey")
+  @@map("users")
+}
+
+model Complex {
+  id            String         @id @default(cuid())
+  name          String
+  address       String         @db.Text
+  type          ComplexType    @default(BUILDING)
+  logoUrl       String?        @map("logo_url")
+  settings      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  adminId       String?        @unique
+  amenities     Amenity[]
+  announcements Announcement[]
+  admin         User?          @relation(fields: [adminId], references: [id])
+  events        Event[]
+  invoices      Invoice[]
+  services      Service[]
+  units         Unit[]
+  staff         User[]         @relation("StaffComplex")
+  visitorLogs   VisitorLog[]
+  incidents     Incident[]
+
+  @@map("complexes")
+}
+
+model Unit {
+  id           String        @id @default(cuid())
+  number       String
+  type         String?
+  bedrooms     Int           @default(1)
+  bathrooms    Float         @default(1)
+  area         Float?
+  status       UnitStatus    @default(VACANT)
+  complexId    String        @map("complex_id")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  parkingSpots Int           @default(0) @map("parking_spots")
+  invoices     Invoice[]
+  residents    Resident[]
+  services     UnitService[]
+  complex      Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  visitorLogs  VisitorLog[]
+
+  @@unique([complexId, number])
+  @@map("units")
+}
+
+model Resident {
+  id               String       @id @default(cuid())
+  type             ResidentType @default(TENANT)
+  startDate        DateTime     @map("start_date")
+  endDate          DateTime?    @map("end_date")
+  emergencyContact Json?        @map("emergency_contact")
+  userId           String       @unique @map("user_id")
+  unitId           String       @map("unit_id")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  unit             Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([unitId], map: "residents_unit_id_fkey")
+  @@map("residents")
+}
+
+model Amenity {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?       @db.Text
+  type            AmenityType   @default(OTHER)
+  capacity        Int?
+  operatingHours  Json?         @map("operating_hours")
+  costPerDay      Decimal?      @map("cost_per_day") @db.Decimal(10, 2)
+  costPerHour     Decimal?      @map("cost_per_hour") @db.Decimal(10, 2)
+  complexId       String        @map("complex_id")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  requiresPayment Boolean       @default(false) @map("requires_payment")
+  complex         Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  reservations    Reservation[]
+
+  @@index([complexId], map: "amenities_complex_id_fkey")
+  @@map("amenities")
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  startTime     DateTime          @map("start_date_time")
+  endTime       DateTime          @map("end_date_time")
+  status        ReservationStatus @default(PENDING)
+  notes         String?           @db.Text
+  totalCost     Decimal?          @map("total_cost") @db.Decimal(10, 2)
+  userId        String            @map("user_id")
+  amenityId     String            @map("amenity_id")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  invoiceId     String?           @unique @map("invoice_id")
+  paymentMethod PaymentMethod?    @map("payment_method")
+  amenity       Amenity           @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  invoice       Invoice?          @relation(fields: [invoiceId], references: [id])
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([amenityId], map: "reservations_amenity_id_fkey")
+  @@index([userId], map: "reservations_user_id_fkey")
+  @@map("reservations")
+}
+
+model Service {
+  id           String           @id @default(cuid())
+  name         String
+  description  String?          @db.Text
+  basePrice    Decimal          @map("base_price") @db.Decimal(10, 2)
+  frequency    ServiceFrequency @default(MONTHLY)
+  complexId    String           @map("complex_id")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  hasQuantity  Boolean          @default(false)
+  isRequired   Boolean          @default(false)
+  complex      Complex          @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  unitServices UnitService[]
+
+  @@index([complexId], map: "services_complex_id_fkey")
+  @@map("services")
+}
+
+model UnitService {
+  id          String            @id @default(cuid())
+  customPrice Decimal?          @map("custom_price") @db.Decimal(10, 2)
+  status      UnitServiceStatus @default(ACTIVE)
+  serviceId   String            @map("service_id")
+  unitId      String            @map("unit_id")
+  startDate   DateTime          @default(now()) @map("start_date")
+  endDate     DateTime?         @map("end_date")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  quantity    Int               @default(1)
+  service     Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  unit        Unit              @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([unitId, serviceId])
+  @@index([serviceId], map: "unit_services_service_id_fkey")
+  @@map("unit_services")
+}
+
+model Invoice {
+  id            String         @id @default(cuid())
+  number        String         @unique
+  month         Int
+  year          Int
+  dueDate       DateTime       @map("due_date")
+  totalAmount   Decimal        @map("total_amount") @db.Decimal(10, 2)
+  status        InvoiceStatus  @default(PENDING)
+  unitId        String         @map("unit_id")
+  complexId     String         @map("complex_id")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  paymentMethod PaymentMethod? @map("payment_method")
+  items         InvoiceItem[]
+  complex       Complex        @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  unit          Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  reservation   Reservation?
+
+  @@index([complexId], map: "invoices_complex_id_fkey")
+  @@index([unitId], map: "invoices_unit_id_fkey")
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String   @id @default(cuid())
+  invoiceId   String   @map("invoice_id")
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  serviceId   String?  @map("service_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId], map: "invoice_items_invoice_id_fkey")
+  @@map("invoice_items")
+}
+
+model VisitorLog {
+  id            String        @id @default(cuid())
+  visitorName   String        @map("visitor_name")
+  visitorId     String?       @map("visitor_id_card")
+  reason        String?       @db.Text
+  status        VisitorStatus @default(SCHEDULED)
+  entryTime     DateTime?     @map("entry_time")
+  exitTime      DateTime?     @map("exit_time")
+  scheduledDate DateTime      @map("scheduled_date")
+  unitId        String        @map("unit_id")
+  complexId     String        @map("complex_id")
+  createdById   String        @map("created_by_id")
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  complex       Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  createdBy     User          @relation("CreatedVisitorLogs", fields: [createdById], references: [id])
+  unit          Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([complexId], map: "visitor_logs_complex_id_fkey")
+  @@index([createdById], map: "visitor_logs_created_by_id_fkey")
+  @@index([unitId], map: "visitor_logs_unit_id_fkey")
+  @@map("visitor_logs")
+}
+
+model Announcement {
+  id          String               @id @default(cuid())
+  title       String
+  content     String               @db.Text
+  priority    AnnouncementPriority @default(NORMAL)
+  complexId   String               @map("complex_id")
+  targetRoles Json?                @map("target_roles")
+  imageUrl    String?              @map("image_url")
+  publishedAt DateTime?            @map("published_at")
+  expiresAt   DateTime?            @map("expires_at")
+  authorId    String               @map("author_id")
+  authorName  String               @map("author_name")
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+  complex     Complex              @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@index([complexId])
+  @@index([publishedAt])
+  @@map("announcements")
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  title         String
+  description   String      @db.Text
+  complexId     String      @map("complex_id")
+  location      String?
+  eventDate     DateTime    @map("event_date")
+  startTime     DateTime    @map("start_time")
+  endTime       DateTime    @map("end_time")
+  imageUrl      String?     @map("image_url")
+  organizerId   String      @map("organizer_id")
+  organizerName String      @map("organizer_name")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  rsvps         EventRSVP[]
+  complex       Complex     @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@index([complexId])
+  @@index([eventDate])
+  @@map("events")
+}
+
+model EventRSVP {
+  id        String     @id @default(cuid())
+  eventId   String     @map("event_id")
+  userId    String     @map("user_id")
+  status    RSVPStatus
+  guests    Int        @default(0)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@map("event_rsvps")
+}
+
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -23,9 +309,9 @@ enum UserStatus {
 }
 
 enum ComplexType {
-  BUILDING    // Edificio Vertical
-  RESIDENTIAL // Residencial Horizontal
-  CONDO       // Condominio Mixto
+  BUILDING
+  RESIDENTIAL
+  CONDO
 }
 
 enum UnitStatus {
@@ -70,177 +356,6 @@ enum VisitorStatus {
   CANCELLED
 }
 
-// Models
-
-model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String // Hashed
-  name          String
-  phone         String?
-  image         String?   @db.Text
-  role          Role      @default(RESIDENT)
-  status        UserStatus @default(ACTIVE)
-  
-  resetPasswordToken   String?   @unique
-  resetPasswordExpires DateTime?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  residentProfile Resident?
-  managedComplexes Complex[] // For ADMIN role
-  reservations     Reservation[]
-  visitorLogs      VisitorLog[]  @relation("CreatedVisitorLogs")
-
-  // For Staff (GUARDS/OPERATORS)
-  complexId        String?       @map("complex_id")
-  assignedComplex  Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
-
-  @@map("users")
-}
-
-model Complex {
-  id          String      @id @default(cuid())
-  name        String
-  address     String      @db.Text
-  type        ComplexType @default(BUILDING)
-  logoUrl     String?     @map("logo_url")
-  settings    Json?       // Flexible settings (colors, rules, etc)
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  // Relations
-  adminId     String?     @unique
-  admin       User?       @relation(fields: [adminId], references: [id])
-  units       Unit[]
-  amenities   Amenity[]
-  services    Service[]
-  invoices    Invoice[]
-  visitorLogs VisitorLog[]
-  staff       User[]      @relation("StaffComplex")
-
-  @@map("complexes")
-}
-
-model Unit {
-  id          String     @id @default(cuid())
-  number      String     // e.g. "101", "A-20"
-  type        String?    // e.g. "Apartment", "Penthouse"
-  bedrooms    Int        @default(1)
-  bathrooms   Float      @default(1.0)
-  parkingSpots Int       @default(0) @map("parking_spots")
-  area        Float?     // in sq meters
-  
-  status      UnitStatus @default(VACANT)
-  
-  complexId   String     @map("complex_id")
-  complex     Complex    @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
- 
-  // Relations
-  residents   Resident[]
-  services    UnitService[]
-  invoices    Invoice[]
-  visitorLogs VisitorLog[]
-
-  @@unique([complexId, number]) // Unit numbers must be unique within a complex
-  @@map("units")
-}
-
-model Resident {
-  id              String       @id @default(cuid())
-  type            ResidentType @default(TENANT)
-  
-  startDate       DateTime     @map("start_date")
-  endDate         DateTime?    @map("end_date")
-  
-  emergencyContact Json?       @map("emergency_contact") // {name, phone, relation}
-  
-  userId          String       @unique @map("user_id")
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  unitId          String       @map("unit_id")
-  unit            Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  @@map("residents")
-}
-
-model Amenity {
-  id             String      @id @default(cuid())
-  name           String
-  description    String?     @db.Text
-  type           AmenityType @default(OTHER)
-  requiresPayment Boolean    @default(false) @map("requires_payment")
-  
-  capacity       Int?
-  operatingHours Json?       @map("operating_hours") // {open, close, days}
-  
-  costPerDay     Decimal?    @map("cost_per_day") @db.Decimal(10, 2)
-  costPerHour    Decimal?    @map("cost_per_hour") @db.Decimal(10, 2)
-  
-  complexId      String      @map("complex_id")
-  complex        Complex     @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  reservations   Reservation[]
-
-  @@map("amenities")
-}
-
-model Reservation {
-  id             String            @id @default(cuid())
-  startTime      DateTime          @map("start_date_time")
-  endTime        DateTime          @map("end_date_time")
-  status         ReservationStatus @default(PENDING)
-  notes          String?           @db.Text
-  totalCost      Decimal?          @map("total_cost") @db.Decimal(10, 2)
-  paymentMethod  PaymentMethod?    @map("payment_method")
-
-  userId         String            @map("user_id")
-  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  amenityId      String            @map("amenity_id")
-  amenity        Amenity           @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-
-  invoiceId      String?           @unique @map("invoice_id")
-  invoice        Invoice?          @relation(fields: [invoiceId], references: [id])
-
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-
-  @@map("reservations")
-}
-
-model Service {
-  id             String      @id @default(cuid())
-  name           String
-  description    String?     @db.Text
-  basePrice      Decimal     @map("base_price") @db.Decimal(10, 2)
-  frequency      ServiceFrequency @default(MONTHLY)
-  isRequired     Boolean     @default(false)
-  hasQuantity    Boolean     @default(false)
-  
-  complexId      String      @map("complex_id")
-  complex        Complex     @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  
-  unitServices   UnitService[]
-  
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  @@map("services")
-}
-
 enum ServiceFrequency {
   ONCE
   DAILY
@@ -249,77 +364,9 @@ enum ServiceFrequency {
   YEARLY
 }
 
-model UnitService {
-  id             String      @id @default(cuid())
-  
-  // Custom price for this unit, if null use service basePrice
-  customPrice    Decimal?    @map("custom_price") @db.Decimal(10, 2)
-  quantity       Int         @default(1)
-  
-  status         UnitServiceStatus @default(ACTIVE)
-  
-  serviceId      String      @map("service_id")
-  service        Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  
-  unitId         String      @map("unit_id")
-  unit           Unit        @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  
-  startDate      DateTime    @default(now()) @map("start_date")
-  endDate        DateTime?   @map("end_date")
-  
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  @@unique([unitId, serviceId])
-  @@map("unit_services")
-}
-
 enum UnitServiceStatus {
   ACTIVE
   INACTIVE
-}
-
-model Invoice {
-  id             String        @id @default(cuid())
-  number         String        @unique // Correlative number e.g. INV-001
-  
-  month          Int
-  year           Int
-  dueDate        DateTime      @map("due_date")
-  
-  totalAmount    Decimal       @map("total_amount") @db.Decimal(10, 2)
-  status         InvoiceStatus @default(PENDING)
-  paymentMethod  PaymentMethod? @map("payment_method")
-  
-  unitId         String        @map("unit_id")
-  unit           Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  
-  complexId      String        @map("complex_id")
-  complex        Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  
-  items          InvoiceItem[]
-  reservation    Reservation?
-  
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id             String   @id @default(cuid())
-  invoiceId      String   @map("invoice_id")
-  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  
-  description    String
-  amount         Decimal  @db.Decimal(10, 2)
-  
-  serviceId      String?  @map("service_id")
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@map("invoice_items")
 }
 
 enum InvoiceStatus {
@@ -330,30 +377,63 @@ enum InvoiceStatus {
   PROCESSING
 }
 
-model VisitorLog {
-  id            String        @id @default(cuid())
-  visitorName   String        @map("visitor_name")
-  visitorId     String?       @map("visitor_id_card") // Documento de identidad
-  reason        String?       @db.Text
-  
-  status        VisitorStatus @default(SCHEDULED)
-  
-  entryTime     DateTime?     @map("entry_time")
-  exitTime      DateTime?     @map("exit_time")
-  scheduledDate DateTime      @map("scheduled_date")
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
 
-  // Relations
-  unitId        String        @map("unit_id")
-  unit          Unit          @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  
-  complexId     String        @map("complex_id")
-  complex       Complex       @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  
-  createdById   String        @map("created_by_id")
-  createdBy     User          @relation("CreatedVisitorLogs", fields: [createdById], references: [id])
+enum RSVPStatus {
+  GOING
+  NOT_GOING
+  MAYBE
+}
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+model Incident {
+  id          String           @id @default(cuid())
+  title       String
+  description String           @db.Text
+  status      IncidentStatus   @default(REPORTED)
+  priority    IncidentPriority @default(MEDIUM)
+  type        IncidentType     @default(OTHER)
+  complexId   String           @map("complex_id")
+  unitId      String?          @map("unit_id")
+  reporterId  String           @map("reporter_id")
+  resolverId  String?          @map("resolver_id")
+  imageUrl    String?          @map("image_url")
+  location    String?
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  
+  complex     Complex          @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
+  resolver    User?            @relation("Resolver", fields: [resolverId], references: [id])
+  unit        Unit?            @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
-  @@map("visitor_logs")
+  @@index([complexId])
+  @@index([reporterId])
+  @@map("incidents")
+}
+
+enum IncidentStatus {
+  REPORTED
+  IN_PROGRESS
+  RESOLVED
+  CANCELLED
+}
+
+enum IncidentPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum IncidentType {
+  MAINTENANCE
+  SECURITY
+  NOISE
+  CLEANING
+  OTHER
 }

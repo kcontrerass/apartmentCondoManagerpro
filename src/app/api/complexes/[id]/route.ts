@@ -43,7 +43,22 @@ export async function GET(
             return NextResponse.json({ error: "Complejo no encontrado" }, { status: 404 });
         }
 
-        return NextResponse.json(complex);
+        // Get resident count separately as it's a nested relation
+        const residentCount = await prisma.resident.count({
+            where: {
+                unit: {
+                    complexId: id
+                }
+            }
+        });
+
+        return NextResponse.json({
+            ...complex,
+            _count: {
+                ...complex._count,
+                residents: residentCount
+            }
+        });
     } catch (error) {
         console.error("Error fetching complex:", error);
         return NextResponse.json(

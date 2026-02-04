@@ -219,10 +219,7 @@ export function Header() {
                     <span className="uppercase text-xs">{locale === 'es' ? 'EN' : 'ES'}</span>
                 </Button>
 
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 relative">
-                    <span className="material-symbols-outlined">notifications</span>
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-slate-900"></span>
-                </Button>
+
                 <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 hidden sm:flex">
                     <span className="material-symbols-outlined">help</span>
                 </Button>
