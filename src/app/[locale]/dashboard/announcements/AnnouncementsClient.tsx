@@ -32,21 +32,39 @@ const AnnouncementsClient = () => {
         }
     }, [session]);
 
-    // Proactive complexId recovery for residents with stale sessions
+    // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
         const recoverComplexId = async () => {
-            if (session?.user?.id && !complexId && session.user.role === Role.RESIDENT) {
-                console.log(`[Announcements] 🔍 Attempting complexId recovery for user ${session.user.id}...`);
+            if (session?.user?.id && !complexId && userRole !== Role.SUPER_ADMIN) {
+                console.log(`[Announcements] 🔍 Attempting complexId recovery for user ${session.user.id} (${userRole})...`);
                 setIsRecovering(true);
                 try {
-                    const response = await fetch(`/api/residents?userId=${session.user.id}`);
-                    const data = await response.json();
-                    if (Array.isArray(data) && data.length > 0 && data[0].unit) {
-                        const recoveredId = data[0].unit.complexId;
-                        console.log(`[Announcements] ✅ Recovered complexId: ${recoveredId}`);
-                        setComplexId(recoveredId);
-                    } else {
-                        console.warn('[Announcements] ⚠️ No resident unit found for user.');
+                    // Try getting from resident API first if it's a resident
+                    if (userRole === Role.RESIDENT) {
+                        const response = await fetch(`/api/residents?userId=${session.user.id}`);
+                        const data = await response.json();
+                        if (Array.isArray(data) && data.length > 0 && data[0].unit) {
+                            const recoveredId = data[0].unit.complexId;
+                            console.log(`[Announcements] ✅ Recovered (Resident) complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                            return;
+                        }
+                    }
+
+                    // Fallback to profile API for all roles (including Guard/Operator/Admin)
+                    const profileRes = await fetch('/api/users/profile');
+                    if (profileRes.ok) {
+                        const profileData = await profileRes.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Announcements] ✅ Recovered (Profile) complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        } else {
+                            console.warn('[Announcements] ⚠️ No complexId found in profile for user.');
+                        }
                     }
                 } catch (error) {
                     console.error('[Announcements] ❌ Failed to recover complexId:', error);
@@ -59,7 +77,7 @@ const AnnouncementsClient = () => {
         };
 
         recoverComplexId();
-    }, [session?.user?.id, complexId, session?.user?.role]);
+    }, [session?.user?.id, complexId, userRole]);
 
     const { announcements, loading: hookLoading, fetchAnnouncements, deleteAnnouncement } = useAnnouncements(complexId || undefined);
     const loading = hookLoading || isRecovering;

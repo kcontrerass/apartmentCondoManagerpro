@@ -18,7 +18,7 @@ interface IncidentDetailClientProps {
 
 export default function IncidentDetailClient({ incidentId, userRole }: IncidentDetailClientProps) {
     const { updateIncident, deleteIncident } = useIncidents();
-    const [incident, setIncident] = useState<Incident | null>(null);
+    const [incident, setIncident] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -94,7 +94,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
         }
     };
 
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'OPERATOR';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'OPERATOR' || userRole === 'GUARD';
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -171,9 +171,11 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                                         Cancelar
                                     </Button>
                                 )}
-                                <Button onClick={handleDelete} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
-                                    Eliminar Reporte
-                                </Button>
+                                {userRole === 'RESIDENT' && (
+                                    <Button onClick={handleDelete} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
+                                        Eliminar Reporte
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     )}

@@ -21,7 +21,33 @@ const NewAnnouncementClient = () => {
     const [selectedComplexId, setSelectedComplexId] = React.useState<string | null>(sessionComplexId || null);
 
     const isSuperAdmin = session?.user?.role === Role.SUPER_ADMIN;
-    const complexId = sessionComplexId || selectedComplexId;
+    const [complexId, setComplexId] = React.useState<string | null>(sessionComplexId || null);
+
+    // Proactive complexId recovery for users with stale sessions
+    React.useEffect(() => {
+        const recoverComplexId = async () => {
+            if (session?.user?.id && !complexId && !isSuperAdmin) {
+                console.log(`[NewAnnouncement] 🔍 Attempting complexId recovery for user ${session.user.id}...`);
+                try {
+                    const profileRes = await fetch('/api/users/profile');
+                    if (profileRes.ok) {
+                        const profileData = await profileRes.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id);
+
+                        if (recoveredId) {
+                            console.log(`[NewAnnouncement] ✅ Recovered (Profile) complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[NewAnnouncement] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [session?.user?.id, complexId, isSuperAdmin]);
 
     const handleSubmit = async (data: any) => {
         try {

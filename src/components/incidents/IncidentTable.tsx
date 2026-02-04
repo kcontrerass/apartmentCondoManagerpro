@@ -13,13 +13,15 @@ interface IncidentTableProps {
     onUpdateStatus: (id: string, status: IncidentStatus) => void;
     onDelete: (id: string) => void;
     canManage: boolean;
+    canDelete: boolean;
 }
 
 const IncidentTable: React.FC<IncidentTableProps> = ({
     incidents,
     onUpdateStatus,
     onDelete,
-    canManage
+    canManage,
+    canDelete
 }) => {
     const getStatusVariant = (status: IncidentStatus) => {
         switch (status) {
@@ -142,13 +144,15 @@ const IncidentTable: React.FC<IncidentTableProps> = ({
                                                     title="Resolver"
                                                 />
                                             )}
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                icon="delete"
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                                onClick={() => onDelete(incident.id)}
-                                            />
+                                            {canDelete && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    icon="delete"
+                                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => onDelete(incident.id)}
+                                                />
+                                            )}
                                         </div>
                                     )}
                                 </div>

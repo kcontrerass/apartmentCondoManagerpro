@@ -23,7 +23,26 @@ export async function GET(
 
         // Access check
         if (session.user.role !== 'SUPER_ADMIN') {
-            const userComplexId = (session.user as any).complexId;
+            let userComplexId = (session.user as any).complexId;
+
+            // Fallback: Check if user is a resident of this complex
+            if (!userComplexId && session.user.role === 'RESIDENT') {
+                const resident = await prisma.resident.findUnique({
+                    where: { userId: session.user.id },
+                    include: { unit: true }
+                });
+                userComplexId = resident?.unit?.complexId;
+            }
+
+            // Fallback: Check if user is a staff/admin of this complex
+            if (!userComplexId) {
+                const userProfile = await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { complexId: true, managedComplexes: { select: { id: true } } }
+                });
+                userComplexId = userProfile?.complexId || (userProfile?.managedComplexes?.[0]?.id);
+            }
+
             if (userComplexId !== complexId) {
                 return NextResponse.json(
                     { success: false, error: { code: 'FORBIDDEN', message: 'No tienes acceso a este complejo' } },

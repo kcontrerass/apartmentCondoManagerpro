@@ -17,17 +17,17 @@ export async function GET() {
                 email: true,
                 role: true,
                 status: true,
+                complexId: true,
                 createdAt: true,
                 managedComplexes: {
-                    take: 1,
-                    select: { name: true }
+                    select: { id: true, name: true }
                 },
                 residentProfile: {
                     include: {
                         unit: {
                             include: {
                                 complex: {
-                                    select: { name: true }
+                                    select: { id: true, name: true }
                                 }
                             }
                         }

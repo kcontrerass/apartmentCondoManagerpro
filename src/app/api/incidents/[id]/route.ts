@@ -107,12 +107,15 @@ export async function DELETE(
 
         if (!incident) return NextResponse.json({ success: false, error: { code: 'NOT_FOUND' } }, { status: 404 });
 
-        // Only Admin or Reporter (if status is REPORTED) can delete
-        const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'SUPER_ADMIN';
+        // Only Reporter (Resident) can delete if status is REPORTED. 
+        // Admin, Super Admin, Guards, Operators CANNOT delete.
         const isReporter = incident.reporterId === session.user.id;
 
-        if (!isAdmin && !(isReporter && incident.status === 'REPORTED')) {
-            return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
+        if (!isReporter || incident.status !== 'REPORTED') {
+            return NextResponse.json({
+                success: false,
+                error: { code: 'FORBIDDEN', message: 'No tienes permisos para eliminar este incidente.' }
+            }, { status: 403 });
         }
 
         await prisma.incident.delete({ where: { id } });

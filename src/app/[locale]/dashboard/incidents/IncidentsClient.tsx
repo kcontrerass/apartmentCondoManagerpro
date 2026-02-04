@@ -25,21 +25,67 @@ export default function IncidentsClient({
     residentComplexId,
     residentUnitId
 }: IncidentsClientProps) {
-    const {
-        incidents,
-        loading,
-        fetchIncidents,
-        reportIncident,
-        updateIncident,
-        deleteIncident
-    } = useIncidents(userRole !== 'SUPER_ADMIN' ? (userComplexId || residentComplexId) : undefined);
+    const [userRoleState, setUserRoleState] = useState<Role>(userRole);
+    const [complexId, setComplexId] = useState<string | null>(userComplexId || residentComplexId || null);
+    const [isRecovering, setIsRecovering] = useState(false);
+
+    // Sync complexId if props change
+    useEffect(() => {
+        if (userComplexId || residentComplexId) {
+            setComplexId(userComplexId || residentComplexId || null);
+        }
+    }, [userComplexId, residentComplexId]);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            // If we have an ID but no complexId, and we're not Super Admin
+            if (!complexId && userRole !== Role.SUPER_ADMIN) {
+                console.log(`[Incidents] 🔍 Attempting complexId recovery...`);
+                setIsRecovering(true);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Incidents] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Incidents] ❌ Failed to recover complexId:', error);
+                } finally {
+                    setIsRecovering(false);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole]);
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
+    const {
+        incidents,
+        loading: hookLoading,
+        fetchIncidents,
+        reportIncident,
+        updateIncident,
+        deleteIncident
+    } = useIncidents(userRole !== (Role.SUPER_ADMIN as any) ? (complexId || undefined) : undefined);
+
+    const loading = hookLoading || isRecovering;
+
     useEffect(() => {
-        fetchIncidents();
-    }, [fetchIncidents]);
+        if (complexId || userRole === Role.SUPER_ADMIN) {
+            fetchIncidents();
+        }
+    }, [fetchIncidents, complexId, userRole]);
 
     const handleReport = async (data: any) => {
         setSubmitting(true);
@@ -74,7 +120,7 @@ export default function IncidentsClient({
     };
 
     // Prepare list items
-    const incidentListItems: IncidentListItem[] = incidents.map(inc => ({
+    const incidentListItems: IncidentListItem[] = (incidents as any[]).map(inc => ({
         id: inc.id,
         title: inc.title,
         status: inc.status,
@@ -86,8 +132,9 @@ export default function IncidentsClient({
         unitNumber: inc.unit?.number
     }));
 
-    const canReport = userRole === 'RESIDENT' || userRole === 'ADMIN' || userRole === 'OPERATOR';
-    const canManage = userRole === 'ADMIN' || userRole === 'OPERATOR' || userRole === 'SUPER_ADMIN';
+    const canReport = [Role.RESIDENT, Role.ADMIN, Role.OPERATOR, Role.GUARD, Role.SUPER_ADMIN].includes(userRole);
+    const canManage = [Role.ADMIN, Role.OPERATOR, (Role.SUPER_ADMIN as any), Role.GUARD].includes(userRole);
+    const canDelete = userRole === Role.RESIDENT; // Only Residents can delete their own reports (if they are REPORTED)
 
     return (
         <div className="space-y-6">
@@ -125,6 +172,7 @@ export default function IncidentsClient({
                         onUpdateStatus={handleUpdateStatus}
                         onDelete={handleDelete}
                         canManage={canManage}
+                        canDelete={canDelete}
                     />
                 )}
             </div>
@@ -135,7 +183,7 @@ export default function IncidentsClient({
                 title="Nuevo Reporte de Incidente"
             >
                 <IncidentForm
-                    complexId={(userComplexId || residentComplexId) || ''}
+                    complexId={complexId || ''}
                     unitId={residentUnitId}
                     onSubmit={handleReport}
                     isLoading={submitting}

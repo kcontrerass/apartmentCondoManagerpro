@@ -33,34 +33,39 @@ export function Header() {
         const fetchUserComplex = async () => {
             if (!session?.user) return;
 
+            // 1. Try session first
+            if ((session.user as any).complexId) {
+                setUserComplexId((session.user as any).complexId);
+                console.log('✅ Complex ID from session:', (session.user as any).complexId);
+                return;
+            }
+
+            // 2. Fallback to Profile API (The most reliable source)
             try {
-                if (session.user.role === Role.RESIDENT) {
-                    // Fetch resident's complex via their unit
-                    const response = await fetch(`/api/residents?userId=${session.user.id}`);
-                    const data = await response.json();
-                    if (Array.isArray(data) && data.length > 0 && data[0].unit) {
-                        setUserComplexId(data[0].unit.complexId);
-                        console.log('🏠 Resident Complex ID:', data[0].unit.complexId);
+                console.log('🔍 Fetching complexId from profile fallback...');
+                const response = await fetch('/api/users/profile');
+                if (response.ok) {
+                    const profileData = await response.json();
+
+                    // Unified extraction logic
+                    const recoveredId = profileData.complexId ||
+                        (profileData.managedComplexes?.[0]?.id) ||
+                        (profileData.residentProfile?.unit?.complexId);
+
+                    if (recoveredId) {
+                        setUserComplexId(recoveredId);
+                        console.log('✅ Recovered complexId from profile:', recoveredId);
                     }
-                } else if (session.user.role === Role.ADMIN) {
-                    // Fetch admin's managed complex
-                    const response = await fetch('/api/complexes');
-                    const data = await response.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        setUserComplexId(data[0].id);
-                        console.log('🏢 Admin Complex ID:', data[0].id);
-                    }
-                } else if (session.user.role === Role.GUARD || session.user.role === Role.OPERATOR) {
-                    // Fetch staff's assigned complex from user profile
-                    const response = await fetch(`/api/staff`);
-                    const data = await response.json();
-                    const currentUser = data.find((u: any) => u.id === session.user.id);
-                    if (currentUser?.complexId) {
-                        setUserComplexId(currentUser.complexId);
-                        console.log('👤 Staff Complex ID:', currentUser.complexId);
+                } else if (session.user.role === Role.RESIDENT) {
+                    // Resident fallback if profile fails for some reason
+                    const resResponse = await fetch(`/api/residents?userId=${session.user.id}`);
+                    const resData = await resResponse.json();
+                    if (Array.isArray(resData) && resData.length > 0 && resData[0].unit) {
+                        const recoveredId = resData[0].unit.complexId;
+                        setUserComplexId(recoveredId);
+                        console.log('🏠 Recovered (Resident) complexId:', recoveredId);
                     }
                 }
-                // SUPER_ADMIN doesn't need filtering, userComplexId stays null
             } catch (error) {
                 console.error('Error fetching user complex:', error);
             }
