@@ -25,7 +25,6 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
                 label: t('main'),
                 items: [
                     { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
-                    { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                     { icon: 'domain', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
                     { icon: 'door_front', label: t('units'), href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
                     { icon: 'group', label: t('residents'), href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.GUARD] },
@@ -48,6 +47,7 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
                     { icon: 'campaign', label: t('announcements'), href: '/dashboard/announcements', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                     { icon: 'event', label: t('events'), href: '/dashboard/events', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                     { icon: 'forum', label: t('communications'), href: '/dashboard/communications', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
+                    { icon: 'warning', label: t('incidents'), href: '/dashboard/incidents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                     { icon: 'bar_chart', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
                     { icon: 'description', label: t('documents'), href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR, Role.RESIDENT, Role.GUARD] },
                 ],
