@@ -116,12 +116,14 @@ export async function POST(request: Request) {
         if (amenity.operatingHours) {
             const hours = amenity.operatingHours as any;
             if (hours.open && hours.close) {
-                const start = new Date(validatedData.startTime);
-                const end = new Date(validatedData.endTime);
+                // Adjust to Guatemala Time (GMT-6) for comparison with operating hours
+                const GUATEMALA_OFFSET = 6 * 60 * 60 * 1000;
+                const start = new Date(new Date(validatedData.startTime).getTime() - GUATEMALA_OFFSET);
+                const end = new Date(new Date(validatedData.endTime).getTime() - GUATEMALA_OFFSET);
 
                 const isWithinHours = (date: Date) => {
-                    const h = date.getHours();
-                    const m = date.getMinutes();
+                    const h = date.getUTCHours();
+                    const m = date.getUTCMinutes();
                     const timeMinutes = h * 60 + m;
 
                     const [openH, openM] = hours.open.split(':').map(Number);
@@ -129,7 +131,6 @@ export async function POST(request: Request) {
                     const openMinutes = openH * 60 + openM;
                     const closeMinutes = closeH * 60 + closeM;
 
-                    // Support for overnight hours (e.g. 22:00 to 02:00)
                     if (openMinutes <= closeMinutes) {
                         return timeMinutes >= openMinutes && timeMinutes <= closeMinutes;
                     } else {
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
 
                 const isWithinDays = (date: Date) => {
                     if (!hours.days || !Array.isArray(hours.days) || hours.days.length === 0) return true;
-                    return hours.days.includes(date.getDay());
+                    return hours.days.includes(date.getUTCDay());
                 };
 
                 if (!isWithinHours(start) || !isWithinHours(end) || !isWithinDays(start) || !isWithinDays(end)) {

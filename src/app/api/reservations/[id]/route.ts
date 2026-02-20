@@ -98,12 +98,16 @@ export async function PATCH(
             if (amenity && amenity.operatingHours) {
                 const hours = amenity.operatingHours as any;
                 if (hours.open && hours.close) {
-                    const start = new Date(validatedData.startTime || existing.startTime);
-                    const end = new Date(validatedData.endTime || existing.endTime);
+                    // Adjust to Guatemala Time (GMT-6)
+                    const GUATEMALA_OFFSET = 6 * 60 * 60 * 1000;
+                    const startRaw = new Date(validatedData.startTime || existing.startTime);
+                    const endRaw = new Date(validatedData.endTime || existing.endTime);
+                    const start = new Date(startRaw.getTime() - GUATEMALA_OFFSET);
+                    const end = new Date(endRaw.getTime() - GUATEMALA_OFFSET);
 
                     const isWithinHours = (date: Date) => {
-                        const h = date.getHours();
-                        const m = date.getMinutes();
+                        const h = date.getUTCHours();
+                        const m = date.getUTCMinutes();
                         const timeMinutes = h * 60 + m;
 
                         const [openH, openM] = hours.open.split(':').map(Number);
@@ -120,7 +124,7 @@ export async function PATCH(
 
                     const isWithinDays = (date: Date) => {
                         if (!hours.days || !Array.isArray(hours.days) || hours.days.length === 0) return true;
-                        return hours.days.includes(date.getDay());
+                        return hours.days.includes(date.getUTCDay());
                     };
 
                     if (!isWithinHours(start) || !isWithinHours(end) || !isWithinDays(start) || !isWithinDays(end)) {

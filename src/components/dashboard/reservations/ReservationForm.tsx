@@ -89,6 +89,35 @@ export default function ReservationForm({
                 throw new Error(t('form.errorAmenityRequired') || 'Debe seleccionar una amenidad');
             }
 
+            // --- NEW FLOW FOR CARD PAYMENTS ---
+            if (paymentMethod === 'CARD' && isPaymentRequired) {
+                const checkoutRes = await fetch('/api/payments/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        method: 'CARD',
+                        reservationData: {
+                            startTime: new Date(startTime).toISOString(),
+                            endTime: new Date(endTime).toISOString(),
+                            notes: notes || undefined,
+                            amenityId,
+                            totalCost
+                        }
+                    })
+                });
+
+                const checkoutData = await checkoutRes.json();
+                if (!checkoutRes.ok) {
+                    throw new Error(checkoutData.error || 'Error al iniciar el pago');
+                }
+
+                if (checkoutData.url) {
+                    window.location.href = checkoutData.url;
+                    return;
+                }
+            }
+
+            // --- LEGACY FLOW FOR CASH/TRANSFER OR NO PAYMENT ---
             const res = await createReservation({
                 startTime: new Date(startTime).toISOString(),
                 endTime: new Date(endTime).toISOString(),
@@ -98,21 +127,9 @@ export default function ReservationForm({
                 totalCost,
             } as any);
 
-            // Handle Payment Flows
+            // Handle Success Flows
             if (res.invoiceId && isPaymentRequired) {
-                if (paymentMethod === 'CARD') {
-                    // Trigger Recurrente Checkout
-                    const checkoutRes = await fetch('/api/payments/checkout', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ invoiceId: res.invoiceId, method: 'CARD' })
-                    });
-                    const checkoutData = await checkoutRes.json();
-                    if (checkoutData.url) {
-                        window.location.href = checkoutData.url;
-                        return; // Stop here, redirecting
-                    }
-                } else if (paymentMethod === 'TRANSFER') {
+                if (paymentMethod === 'TRANSFER') {
                     setSuccessType('TRANSFER');
                     setInvoiceIdForSuccess(res.invoiceId);
                 } else if (paymentMethod === 'CASH') {
@@ -127,7 +144,7 @@ export default function ReservationForm({
                 }
             }
 
-            // Clear form if staying on page (though we usually switch view)
+            // Clear form
             if (!successType) {
                 setStartTime('');
                 setEndTime('');

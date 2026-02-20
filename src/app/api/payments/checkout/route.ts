@@ -11,10 +11,119 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        const { invoiceId, method } = await request.json();
+        const { invoiceId, method, reservationData } = await request.json();
 
+        // 1. Handle Reservation Payment (New Flow)
+        if (reservationData) {
+            const { amenityId, startTime, endTime, notes } = reservationData;
+
+            const amenity = await prisma.amenity.findUnique({
+                where: { id: amenityId },
+                include: { complex: true }
+            });
+
+            if (!amenity) {
+                return NextResponse.json({ error: "Amenidad no encontrada" }, { status: 404 });
+            }
+
+            // RBAC Check for Residents
+            if (session.user.role === Role.RESIDENT) {
+                const resident = await prisma.resident.findUnique({
+                    where: { userId: session.user.id },
+                    include: { unit: true }
+                });
+                if (!resident || !resident.unit || resident.unit.complexId !== amenity.complexId) {
+                    return NextResponse.json({ error: "No puedes reservar amenidades fuera de tu complejo" }, { status: 403 });
+                }
+            }
+
+            // --- RE-VALIDATE OPERATING HOURS (DRY attempt) ---
+            if (amenity.operatingHours) {
+                const hours = amenity.operatingHours as any;
+                if (hours.open && hours.close) {
+                    const GUATEMALA_OFFSET = 6 * 60 * 60 * 1000;
+                    const startAdjusted = new Date(new Date(startTime).getTime() - GUATEMALA_OFFSET);
+                    const endAdjusted = new Date(new Date(endTime).getTime() - GUATEMALA_OFFSET);
+
+                    const isWithinHours = (date: Date) => {
+                        const h = date.getUTCHours();
+                        const m = date.getUTCMinutes();
+                        const timeMinutes = h * 60 + m;
+                        const [openH, openM] = hours.open.split(':').map(Number);
+                        const [closeH, closeM] = hours.close.split(':').map(Number);
+                        const openMinutes = openH * 60 + openM;
+                        const closeMinutes = closeH * 60 + closeM;
+                        if (openMinutes <= closeMinutes) return timeMinutes >= openMinutes && timeMinutes <= closeMinutes;
+                        return timeMinutes >= openMinutes || timeMinutes <= closeMinutes;
+                    };
+
+                    const isWithinDays = (date: Date) => {
+                        if (!hours.days || !Array.isArray(hours.days) || hours.days.length === 0) return true;
+                        return hours.days.includes(date.getUTCDay());
+                    };
+
+                    if (!isWithinHours(startAdjusted) || !isWithinHours(endAdjusted) || !isWithinDays(startAdjusted) || !isWithinDays(endAdjusted)) {
+                        return NextResponse.json({ error: "La amenidad no está disponible en este horario." }, { status: 400 });
+                    }
+                }
+            }
+
+            // Conflict Detection (Optimistic)
+            const conflict = await (prisma as any).reservation.findFirst({
+                where: {
+                    amenityId,
+                    status: 'APPROVED',
+                    OR: [
+                        { AND: [{ startTime: { lte: startTime } }, { endTime: { gt: startTime } }] },
+                        { AND: [{ startTime: { lt: endTime } }, { endTime: { gte: endTime } }] },
+                        { AND: [{ startTime: { gte: startTime } }, { endTime: { lte: endTime } }] }
+                    ]
+                }
+            });
+
+            if (conflict) {
+                return NextResponse.json({ error: "La amenidad ya está reservada en este horario." }, { status: 409 });
+            }
+
+            // Calculate Cost again in Backend
+            let totalAmount = 0;
+            const start = new Date(startTime);
+            const end = new Date(endTime);
+            const hoursDiff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+            const daysDiff = Math.ceil(hoursDiff / 24);
+
+            if (amenity.costPerHour) totalAmount = hoursDiff * Number(amenity.costPerHour);
+            else if (amenity.costPerDay) totalAmount = daysDiff * Number(amenity.costPerDay);
+
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+            const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
+
+            const checkoutSession = await recurrente.checkouts.create({
+                items: [{
+                    name: `Reserva: ${amenity.name} - ${amenity.complex?.name}`,
+                    currency: 'GTQ',
+                    amount_in_cents: Math.round(totalAmount * 100),
+                    quantity: 1,
+                }],
+                success_url: `${appUrl}/${locale}/dashboard/payments/success`,
+                cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                metadata: {
+                    type: 'RESERVATION',
+                    amenityId,
+                    startTime,
+                    endTime,
+                    notes,
+                    userId: session.user.id,
+                    totalAmount
+                }
+            });
+
+            return NextResponse.json({ url: checkoutSession.checkout_url || checkoutSession.url });
+        }
+
+        // 2. Handle Existing Invoice Payment
         if (!invoiceId) {
-            return NextResponse.json({ error: "ID de factura requerido" }, { status: 400 });
+            return NextResponse.json({ error: "ID de factura o datos de reserva requeridos" }, { status: 400 });
         }
 
         const invoice = await (prisma as any).invoice.findUnique({
@@ -57,6 +166,7 @@ export async function POST(request: Request) {
                 success_url: `${appUrl}/${locale}/dashboard/payments/success?invoice_id=${invoice.id}`,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 metadata: {
+                    type: 'INVOICE',
                     invoiceId: invoice.id,
                     unitId: invoice.unitId,
                 }

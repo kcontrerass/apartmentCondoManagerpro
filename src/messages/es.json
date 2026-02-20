@@ -254,6 +254,8 @@
         "new": "Nueva Reserva",
         "book": "Reservar",
         "myReservations": "Mis Reservas",
+        "cancelledSuccess": "Reserva cancelada con éxito",
+        "cancelError": "Error al cancelar la reserva",
         "table": {
             "amenity": "Amenidad",
             "resident": "Residente",

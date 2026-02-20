@@ -23,33 +23,84 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
             console.log('Verifying Recurrente Checkout:', JSON.stringify(checkout, null, 2));
 
             if (checkout) {
-                const metadataInvoiceId = checkout.metadata?.invoiceId || checkout.checkout?.metadata?.invoiceId;
+                const metadata = checkout.metadata || checkout.checkout?.metadata || {};
+                const type = metadata.type;
                 const status = checkout.status || checkout.payment_status || checkout.checkout?.status;
-                const invoiceId = metadataInvoiceId;
-
-                // Check status
                 const isPaid = status === 'paid' || status === 'completed' || status === 'succeeded';
 
-                if (isPaid && invoiceId) {
-                    await (prisma as any).invoice.update({
-                        where: { id: invoiceId },
-                        data: { status: "PAID", updatedAt: new Date() }
-                    });
+                if (isPaid) {
+                    // --- CASE 1: RESERVATION PAYMENT ---
+                    if (type === 'RESERVATION') {
+                        const { amenityId, startTime, endTime, notes, userId, totalAmount } = metadata;
 
-                    // Update linked reservation if exists
-                    const linkedReservation = await (prisma as any).reservation.findUnique({
-                        where: { invoiceId }
-                    });
-
-                    if (linkedReservation) {
-                        await (prisma as any).reservation.update({
-                            where: { id: linkedReservation.id },
-                            data: { status: 'APPROVED' }
+                        // Check if reservation already exists to avoid duplicates on refresh
+                        const existingRes = await (prisma as any).reservation.findFirst({
+                            where: {
+                                userId,
+                                amenityId,
+                                startTime: new Date(startTime),
+                                endTime: new Date(endTime)
+                            }
                         });
-                        console.log(`Reservation ${linkedReservation.id} approved via session_id verification.`);
-                    }
 
-                    console.log(`Invoice ${invoiceId} updated via session_id verification.`);
+                        if (!existingRes) {
+                            // 1. Get user for the invoice
+                            const user = await prisma.user.findUnique({
+                                where: { id: userId },
+                                include: { residentProfile: true }
+                            });
+
+                            // 2. Create Invoice first
+                            const invoice = await (prisma as any).invoice.create({
+                                data: {
+                                    unitId: user?.residentProfile?.unitId,
+                                    month: new Date(startTime).getUTCMonth() + 1,
+                                    year: new Date(startTime).getUTCFullYear(),
+                                    totalAmount: Number(totalAmount),
+                                    status: 'PAID',
+                                    paymentMethod: 'CARD',
+                                    type: 'SERVICE', // or a specific type if available
+                                    description: `Reserva de amenidad (Pagado vía Tarjeta)`
+                                }
+                            });
+
+                            // 3. Create Reservation
+                            await (prisma as any).reservation.create({
+                                data: {
+                                    userId,
+                                    amenityId,
+                                    startTime: new Date(startTime),
+                                    endTime: new Date(endTime),
+                                    notes,
+                                    status: 'APPROVED',
+                                    invoiceId: invoice.id
+                                }
+                            });
+                            console.log(`Reservation created for user ${userId} after successful payment.`);
+                        }
+                    }
+                    // --- CASE 2: EXISTING INVOICE PAYMENT ---
+                    else {
+                        const invoiceId = metadata.invoiceId;
+                        if (invoiceId) {
+                            await (prisma as any).invoice.update({
+                                where: { id: invoiceId },
+                                data: { status: "PAID", updatedAt: new Date() }
+                            });
+
+                            const linkedReservation = await (prisma as any).reservation.findUnique({
+                                where: { invoiceId }
+                            });
+
+                            if (linkedReservation) {
+                                await (prisma as any).reservation.update({
+                                    where: { id: linkedReservation.id },
+                                    data: { status: 'APPROVED' }
+                                });
+                                console.log(`Reservation ${linkedReservation.id} approved via session_id verification.`);
+                            }
+                        }
+                    }
                 }
             }
         } catch (error) {
