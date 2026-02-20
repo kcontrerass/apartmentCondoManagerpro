@@ -21,6 +21,13 @@ const EventForm: React.FC<EventFormProps> = ({
 }) => {
     const t = useTranslations('events');
 
+    const formatForInput = (dateStr?: string | Date) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        return d.toISOString().slice(0, 16);
+    };
+
     const {
         register,
         handleSubmit,
@@ -28,10 +35,19 @@ const EventForm: React.FC<EventFormProps> = ({
     } = useForm<EventCreateInput>({
         resolver: zodResolver(eventCreateSchema),
         defaultValues: {
-            complexId,
             ...initialData,
+            complexId,
+            eventDate: initialData?.eventDate ? formatForInput(initialData.eventDate) : '',
+            startTime: initialData?.startTime ? formatForInput(initialData.startTime) : '',
+            endTime: initialData?.endTime ? formatForInput(initialData.endTime) : '',
         },
     });
+
+    React.useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            console.log('[EventForm] Validation Errors:', errors);
+        }
+    }, [errors]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -155,7 +171,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     disabled={isLoading}
                     className="px-10 py-4 bg-primary text-white font-extrabold rounded-2xl shadow-xl shadow-primary-light/50 hover:bg-primary-dark hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
                 >
-                    {isLoading ? 'Guardando...' : 'Crear Evento'}
+                    {isLoading ? 'Guardando...' : (initialData?.title ? 'Actualizar Evento' : 'Crear Evento')}
                 </button>
             </div>
         </form>

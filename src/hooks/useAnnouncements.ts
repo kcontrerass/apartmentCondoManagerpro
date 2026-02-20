@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { AnnouncementListItem, Announcement, AnnouncementFilters } from '@/types/announcement';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const useAnnouncements = (complexId?: string) => {
     const [announcements, setAnnouncements] = useState<AnnouncementListItem[]>([]);

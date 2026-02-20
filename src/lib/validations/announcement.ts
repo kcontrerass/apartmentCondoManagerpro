@@ -7,17 +7,17 @@ const announcementPriorityEnum = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
  * Base schema for an announcement
  */
 export const announcementBaseSchema = z.object({
-    complexId: z.string().cuid('ID de complejo inválido'),
+    complexId: z.string(),
     title: z.string()
         .min(3, 'El título debe tener al menos 3 caracteres')
         .max(200, 'El título no puede exceder 200 caracteres'),
     content: z.string()
         .min(10, 'El contenido debe tener al menos 10 caracteres'),
     priority: announcementPriorityEnum,
-    targetRoles: z.array(userRoleEnum).optional(),
-    imageUrl: z.string().url('URL de imagen inválida').optional().or(z.literal('')),
-    publishedAt: z.string().optional().or(z.literal('')),
-    expiresAt: z.string().optional().or(z.literal('')),
+    targetRoles: z.union([z.array(userRoleEnum), userRoleEnum, z.string(), z.any()]).optional().nullable(),
+    imageUrl: z.string().url('URL de imagen inválida').optional().nullable().or(z.literal('')),
+    publishedAt: z.string().optional().nullable().or(z.literal('')),
+    expiresAt: z.string().optional().nullable().or(z.literal('')),
 });
 
 /**

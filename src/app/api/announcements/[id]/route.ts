@@ -43,7 +43,10 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            data: announcement,
+            data: {
+                ...announcement,
+                targetRoles: announcement.targetRoles ? (announcement.targetRoles as string[]) : null,
+            },
         });
     } catch (error) {
         console.error('Error fetching announcement detail:', error);
@@ -150,7 +153,10 @@ export async function PUT(
 
         return NextResponse.json({
             success: true,
-            data: updatedAnnouncement,
+            data: {
+                ...updatedAnnouncement,
+                targetRoles: updatedAnnouncement.targetRoles ? (updatedAnnouncement.targetRoles as string[]) : null,
+            },
             message: 'Aviso actualizado exitosamente',
         });
     } catch (error) {

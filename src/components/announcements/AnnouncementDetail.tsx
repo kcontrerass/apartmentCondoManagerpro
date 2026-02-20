@@ -65,7 +65,13 @@ const AnnouncementDetail: React.FC<AnnouncementDetailProps> = ({ announcement, o
                     </div>
                     <div className="flex items-center text-sm font-medium opacity-80">
                         <CalendarDaysIcon className="w-4 h-4 mr-2" />
-                        {announcement.publishedAt ? format(new Date(announcement.publishedAt), "PPP", { locale: es }) : '-'}
+                        {(() => {
+                            try {
+                                return announcement.publishedAt ? format(new Date(announcement.publishedAt), "PPP", { locale: es }) : '-';
+                            } catch (e) {
+                                return '-';
+                            }
+                        })()}
                     </div>
                 </div>
 
@@ -107,7 +113,13 @@ const AnnouncementDetail: React.FC<AnnouncementDetailProps> = ({ announcement, o
                                 <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 text-left md:text-right">Vigente hasta</span>
                                 <div className="flex items-center gap-2 text-gray-600 font-medium">
                                     <ClockIcon className="w-4 h-4" />
-                                    {format(new Date(announcement.expiresAt), "PPP", { locale: es })}
+                                    {(() => {
+                                        try {
+                                            return format(new Date(announcement.expiresAt), "PPP", { locale: es });
+                                        } catch (e) {
+                                            return '-';
+                                        }
+                                    })()}
                                 </div>
                             </div>
                         )}

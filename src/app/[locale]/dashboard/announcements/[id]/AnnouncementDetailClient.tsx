@@ -37,10 +37,14 @@ const AnnouncementDetailClient = () => {
 
     const handleUpdate = async (data: any) => {
         if (id) {
-            const updated = await updateAnnouncement(id as string, data);
-            if (updated) {
-                setAnnouncement(updated);
-                setIsEditing(false);
+            try {
+                const updated = await updateAnnouncement(id as string, data);
+                if (updated) {
+                    setAnnouncement((prev: any) => ({ ...prev, ...updated }));
+                    setIsEditing(false);
+                }
+            } catch (error) {
+                console.error('Update failed:', error);
             }
         }
     };

@@ -15,7 +15,9 @@ export const eventBaseSchema = z.object({
     startTime: z.string().min(1, 'Hora de inicio es requerida'),
     endTime: z.string().min(1, 'Hora de fin es requerida'),
     imageUrl: z.string().url('URL de imagen inválida').optional().or(z.literal('')).nullable(),
-    maxAttendees: z.number().int().min(1).optional().nullable(),
+    maxAttendees: z.union([z.number().int().min(1), z.nan(), z.null(), z.undefined()])
+        .transform(v => (v === undefined || v === null || (typeof v === 'number' && isNaN(v))) ? null : v)
+        .optional(),
 });
 
 /**

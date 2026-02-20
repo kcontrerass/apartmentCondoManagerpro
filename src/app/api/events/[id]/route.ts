@@ -153,6 +153,7 @@ export async function PUT(
                 startTime: data.startTime ? new Date(data.startTime) : undefined,
                 endTime: data.endTime ? new Date(data.endTime) : undefined,
                 imageUrl: data.imageUrl,
+                maxAttendees: data.maxAttendees ?? null,
             },
         });
 
