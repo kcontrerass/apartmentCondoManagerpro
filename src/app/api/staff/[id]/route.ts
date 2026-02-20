@@ -50,6 +50,36 @@ export async function PUT(
             }
         }
 
+        // One Admin Per Complex Rule:
+        // If the user is being updated to ADMIN, or an existing ADMIN is changing complexes
+        const newRole = validatedData.role || userToUpdate.role;
+        const newComplexId = validatedData.complexId !== undefined ? validatedData.complexId : userToUpdate.complexId;
+
+        if (newRole === Role.ADMIN && newComplexId) {
+            // Check 1: In the staff list (User.complexId)
+            const staffAdmin = await prisma.user.findFirst({
+                where: {
+                    role: Role.ADMIN,
+                    complexId: newComplexId,
+                    status: "ACTIVE",
+                    id: { not: id }
+                }
+            });
+
+            // Check 2: The direct complex admin (Complex.adminId)
+            const complex = await prisma.complex.findUnique({
+                where: { id: newComplexId },
+                select: { adminId: true }
+            });
+
+            if (staffAdmin || (complex?.adminId && complex.adminId !== id)) {
+                return NextResponse.json(
+                    { error: "Este complejo ya tiene un administrador activo asignado. Solo puede haber un administrador por complejo." },
+                    { status: 409 }
+                );
+            }
+        }
+
         const updateData: any = { ...validatedData };
         if (validatedData.password) {
             updateData.password = await bcrypt.hash(validatedData.password, 10);

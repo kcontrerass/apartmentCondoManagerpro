@@ -21,13 +21,12 @@ export async function GET(request: Request) {
         };
 
         if (unassignedOnly && !currentComplexId) {
-            where.managedComplexes = {
-                none: {}
-            };
+            where.managedComplexes = null;
+            where.complexId = null;
         } else if (currentComplexId) {
             where.OR = [
-                { managedComplexes: { none: {} } },
-                { managedComplexes: { some: { id: currentComplexId } } }
+                { managedComplexes: null, complexId: null },
+                { managedComplexes: { id: currentComplexId } }
             ];
         }
 

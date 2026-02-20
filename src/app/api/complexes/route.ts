@@ -110,9 +110,15 @@ export async function POST(request: Request) {
             });
 
             if (adminIdToAssign) {
+                // Check if this complex already has other users with Rule.ADMIN (unlikely for new complex but for consistency)
+                // Actually, for a new complex, there are no users yet.
+
                 await tx.user.update({
                     where: { id: adminIdToAssign },
-                    data: { complexId: newComplex.id }
+                    data: {
+                        complexId: newComplex.id,
+                        role: Role.ADMIN // Ensure they have the ADMIN role
+                    }
                 });
             }
 

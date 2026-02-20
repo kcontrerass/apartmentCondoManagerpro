@@ -99,6 +99,22 @@ export async function PUT(
         const validatedData = ComplexUpdateSchema.parse(body);
 
         const updatedComplex = await prisma.$transaction(async (tx) => {
+            // If adminId is being changed, check for existing users with Role.ADMIN in the staff list
+            if (validatedData.adminId && validatedData.adminId !== existingComplex.adminId) {
+                const staffAdmins = await tx.user.findFirst({
+                    where: {
+                        complexId: id,
+                        role: Role.ADMIN,
+                        status: "ACTIVE",
+                        id: { not: validatedData.adminId }
+                    }
+                });
+
+                if (staffAdmins) {
+                    throw new Error("ALREADY_HAS_ADMIN");
+                }
+            }
+
             const complex = await tx.complex.update({
                 where: { id },
                 data: {
@@ -114,7 +130,10 @@ export async function PUT(
             if (validatedData.adminId) {
                 await tx.user.update({
                     where: { id: validatedData.adminId },
-                    data: { complexId: complex.id }
+                    data: {
+                        complexId: complex.id,
+                        role: Role.ADMIN // Ensure they have the ADMIN role
+                    }
                 });
             }
 
@@ -134,6 +153,12 @@ export async function PUT(
         if (error.code === 'P2002' && error.meta?.target?.includes('adminId')) {
             return NextResponse.json(
                 { error: "El administrador seleccionado ya está asignado a otro complejo." },
+                { status: 409 }
+            );
+        }
+        if (error.message === "ALREADY_HAS_ADMIN") {
+            return NextResponse.json(
+                { error: "Este complejo ya tiene otro usuario con el rol de administrador en la lista de personal. Por favor, remuévalo o cámbiele el rol primero." },
                 { status: 409 }
             );
         }

@@ -134,6 +134,33 @@ export async function POST(request: Request) {
 
         const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
+
+        // One Admin Per Complex Rule:
+        // If the new user is an ADMIN, ensure the complex doesn't already have one.
+        if (validatedData.role === Role.ADMIN && targetComplexId) {
+            // Check 1: In the staff list (User.complexId)
+            const staffAdmin = await prisma.user.findFirst({
+                where: {
+                    role: Role.ADMIN,
+                    complexId: targetComplexId,
+                    status: "ACTIVE"
+                }
+            });
+
+            // Check 2: The direct complex admin (Complex.adminId)
+            const complex = await prisma.complex.findUnique({
+                where: { id: targetComplexId },
+                select: { adminId: true }
+            });
+
+            if (staffAdmin || complex?.adminId) {
+                return NextResponse.json(
+                    { error: "Este complejo ya tiene un administrador activo asignado. Solo puede haber un administrador por complejo." },
+                    { status: 409 }
+                );
+            }
+        }
+
         const newUser = await prisma.user.create({
             data: {
                 name: validatedData.name,
