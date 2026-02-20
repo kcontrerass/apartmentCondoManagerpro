@@ -196,6 +196,21 @@ export async function PATCH(
             data: validatedData
         });
 
+        // --- CANCEL ASSOCIATED INVOICE IF RESERVATION IS CANCELLED ---
+        if (reservation.status === ReservationStatus.CANCELLED && reservation.invoiceId) {
+            const invoice = await (prisma as any).invoice.findUnique({
+                where: { id: reservation.invoiceId }
+            });
+
+            if (invoice && (invoice.status === 'PENDING' || invoice.status === 'PROCESSING')) {
+                await (prisma as any).invoice.update({
+                    where: { id: invoice.id },
+                    data: { status: 'CANCELLED' }
+                });
+                console.log(`Associated invoice ${invoice.id} cancelled due to reservation ${id} cancellation.`);
+            }
+        }
+
         return NextResponse.json(reservation);
     } catch (error: any) {
         if (error.name === "ZodError") {

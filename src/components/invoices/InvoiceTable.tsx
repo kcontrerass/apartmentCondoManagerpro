@@ -102,8 +102,9 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                 {(() => {
                                     const method = invoice.paymentMethod || invoice.reservation?.paymentMethod;
                                     const isPaid = invoice.status === 'PAID';
+                                    const isCancelled = invoice.status === 'CANCELLED';
 
-                                    if (method) {
+                                    if (method && !isCancelled) {
                                         // Specific rule for CARD: hide entirely if not paid
                                         if (method === 'CARD' && !isPaid) {
                                             return <span className="text-slate-400 dark:text-slate-500">-</span>;
