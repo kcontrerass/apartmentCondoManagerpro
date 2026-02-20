@@ -387,5 +387,64 @@
         "instruction2": "Asegúrate de haber proporcionado el correo electrónico correcto asociado a tu unidad.",
         "instruction3": "Una vez asignado, podrás ver tus datos y realizar todas las acciones del complejo.",
         "logout": "Cerrar sesión e intentar de nuevo"
+    },
+    "Reports": {
+        "title": "Reportes y Analíticas",
+        "subtitle": "Resumen del rendimiento y estadísticas del complejo",
+        "noData": "No hay datos disponibles para los complejos seleccionados",
+        "filterByComplex": "Filtrar por Complejo",
+        "allComplexes": "Todos los Complejos",
+        "stats": {
+            "totalRevenue": "Ingresos Totales (6m)",
+            "occupancy": "Ocupación",
+            "incidents": "Incidentes",
+            "resolution": "Resolución"
+        },
+        "charts": {
+            "revenue": {
+                "title": "Ingresos Mensuales",
+                "label": "Ingresos"
+            },
+            "incidents": {
+                "title": "Estado de Incidentes",
+                "total": "Total"
+            },
+            "amenities": {
+                "title": "Popularidad de Amenidades (Top 5)",
+                "label": "Reservas"
+            },
+            "payments": {
+                "title": "Distribución de Métodos de Pago",
+                "label": "Uso"
+            },
+            "visitors": {
+                "title": "Tendencia de Visitas (Últimos 7 Días)",
+                "label": "Visitantes"
+            },
+            "occupancy": {
+                "title": "Distribución de Ocupación",
+                "total": "Unidades"
+            }
+        },
+        "incidentsStatus": {
+            "REPORTED": "Reportados",
+            "IN_PROGRESS": "En Proceso",
+            "RESOLVED": "Resueltos",
+            "CANCELLED": "Cancelados"
+        },
+        "months": {
+            "Jan": "Ene",
+            "Feb": "Feb",
+            "Mar": "Mar",
+            "Apr": "Abr",
+            "May": "May",
+            "Jun": "Jun",
+            "Jul": "Jul",
+            "Aug": "Ago",
+            "Sep": "Sep",
+            "Oct": "Oct",
+            "Nov": "Nov",
+            "Dec": "Dic"
+        }
     }
 }

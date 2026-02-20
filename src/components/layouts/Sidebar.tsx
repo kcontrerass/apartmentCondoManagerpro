@@ -26,6 +26,7 @@ export function Sidebar({ user, complexName }: { user?: { name?: string | null; 
                 items: [
                     { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT, Role.GUARD] },
                     { icon: 'apartment', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN] },
+                    { icon: 'monitoring', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                 ],
             },
             {

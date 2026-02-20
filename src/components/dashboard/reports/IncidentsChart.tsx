@@ -7,6 +7,7 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
+import { useTranslations } from 'next-intl';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -49,9 +50,11 @@ export function IncidentsChart({ data }: IncidentsChartProps) {
         },
     };
 
+    const t = useTranslations('Reports');
+
     return (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm h-full">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Estado de Incidentes</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">{t('charts.incidents.title')}</h3>
             <div className="h-[300px] relative">
                 <Doughnut data={chartData} options={options} />
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
@@ -59,7 +62,7 @@ export function IncidentsChart({ data }: IncidentsChartProps) {
                         <span className="block text-3xl font-bold text-slate-900 dark:text-white">
                             {data.reduce((acc, curr) => acc + curr.count, 0)}
                         </span>
-                        <span className="text-xs text-slate-500 uppercase tracking-wider">Total</span>
+                        <span className="text-xs text-slate-500 uppercase tracking-wider">{t('charts.incidents.total')}</span>
                     </div>
                 </div>
             </div>

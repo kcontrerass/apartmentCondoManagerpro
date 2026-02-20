@@ -384,5 +384,64 @@
         "instruction2": "Ensure you have provided the correct email address associated with your unit.",
         "instruction3": "Once assigned, you will have access to all your complex's data and actions.",
         "logout": "Logout and try again"
+    },
+    "Reports": {
+        "title": "Reports & Analytics",
+        "subtitle": "Complex performance and statistics overview",
+        "noData": "No data available for the selected complexes",
+        "filterByComplex": "Filter by Complex",
+        "allComplexes": "All Complexes",
+        "stats": {
+            "totalRevenue": "Total Revenue (6m)",
+            "occupancy": "Occupancy",
+            "incidents": "Incidents",
+            "resolution": "Resolution"
+        },
+        "charts": {
+            "revenue": {
+                "title": "Monthly Revenue",
+                "label": "Revenue"
+            },
+            "incidents": {
+                "title": "Incident Status",
+                "total": "Total"
+            },
+            "amenities": {
+                "title": "Amenity Popularity (Top 5)",
+                "label": "Reservations"
+            },
+            "payments": {
+                "title": "Payment Method Distribution",
+                "label": "Usage"
+            },
+            "visitors": {
+                "title": "Visitor Trends (Last 7 Days)",
+                "label": "Visitors"
+            },
+            "occupancy": {
+                "title": "Unit Occupancy Distribution",
+                "total": "Units"
+            }
+        },
+        "incidentsStatus": {
+            "REPORTED": "Reported",
+            "IN_PROGRESS": "In Progress",
+            "RESOLVED": "Resolved",
+            "CANCELLED": "Cancelled"
+        },
+        "months": {
+            "Jan": "Jan",
+            "Feb": "Feb",
+            "Mar": "Mar",
+            "Apr": "Apr",
+            "May": "May",
+            "Jun": "Jun",
+            "Jul": "Jul",
+            "Aug": "Aug",
+            "Sep": "Sep",
+            "Oct": "Oct",
+            "Nov": "Nov",
+            "Dec": "Dec"
+        }
     }
 }
