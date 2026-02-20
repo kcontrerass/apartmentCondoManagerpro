@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
                 title: data.title,
                 content: data.content,
                 priority: data.priority || 'NORMAL',
-                targetRoles: data.targetRoles || null,
+                targetRoles: data.targetRoles as any,
                 imageUrl: data.imageUrl || null,
                 publishedAt: (data.publishedAt && data.publishedAt.trim() !== '')
                     ? new Date(data.publishedAt)
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
                 expiresAt: (data.expiresAt && data.expiresAt.trim() !== '')
                     ? new Date(data.expiresAt)
                     : null,
-                authorId: session.user.id,
+                authorId: session.user.id!,
                 authorName: session.user.name || 'Administración',
             },
             include: {

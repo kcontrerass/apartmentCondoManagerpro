@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
             });
 
             const hasAccess = user?.complexId === data.complexId ||
-                user?.managedComplexes.some(c => c.id === data.complexId);
+                user?.managedComplexes?.id === data.complexId;
 
             if (!hasAccess) {
                 return NextResponse.json(
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
                 type: data.type || 'OTHER',
                 complexId: data.complexId,
                 unitId: data.unitId || null,
-                reporterId: session.user.id,
+                reporterId: session.user.id!,
                 location: data.location,
                 imageUrl: data.imageUrl,
             },

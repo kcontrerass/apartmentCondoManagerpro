@@ -40,7 +40,7 @@ export async function GET(
                     where: { id: session.user.id },
                     select: { complexId: true, managedComplexes: { select: { id: true } } }
                 });
-                userComplexId = userProfile?.complexId || (userProfile?.managedComplexes?.[0]?.id);
+                userComplexId = userProfile?.complexId || (userProfile?.managedComplexes?.id);
             }
 
             if (userComplexId !== complexId) {

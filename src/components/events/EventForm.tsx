@@ -130,6 +130,23 @@ const EventForm: React.FC<EventFormProps> = ({
                         <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">{errors.endTime.message}</p>
                     )}
                 </div>
+
+                {/* Max Attendees */}
+                <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                        Capacidad Máxima
+                    </label>
+                    <input
+                        type="number"
+                        {...register('maxAttendees', { valueAsNumber: true })}
+                        className={`w-full px-5 py-3.5 rounded-2xl border ${errors.maxAttendees ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
+                            } focus:outline-none transition-all outline-none font-medium shadow-sm`}
+                        placeholder="Sin límite"
+                    />
+                    {errors.maxAttendees && (
+                        <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">{errors.maxAttendees.message}</p>
+                    )}
+                </div>
             </div>
 
             <div className="flex justify-end pt-6">

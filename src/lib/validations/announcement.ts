@@ -13,7 +13,7 @@ export const announcementBaseSchema = z.object({
         .max(200, 'El título no puede exceder 200 caracteres'),
     content: z.string()
         .min(10, 'El contenido debe tener al menos 10 caracteres'),
-    priority: announcementPriorityEnum.default('NORMAL'),
+    priority: announcementPriorityEnum,
     targetRoles: z.array(userRoleEnum).optional(),
     imageUrl: z.string().url('URL de imagen inválida').optional().or(z.literal('')),
     publishedAt: z.string().optional().or(z.literal('')),

@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
                 startTime: new Date(data.startTime),
                 endTime: new Date(data.endTime),
                 imageUrl: data.imageUrl || null,
+                maxAttendees: data.maxAttendees ? (typeof data.maxAttendees === 'string' ? parseInt(data.maxAttendees) : data.maxAttendees) : null,
                 organizerId: session.user.id,
                 organizerName: session.user.name || 'Administración',
             },

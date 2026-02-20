@@ -172,9 +172,9 @@ export async function POST(request: Request) {
 
                 // Create UnitService for each unit
                 await tx.unitService.createMany({
-                    data: units.map((unit) => ({
+                    data: units.map((unit: any) => ({
                         unitId: unit.id,
-                        serviceId: newService.id,
+                        serviceId: (newService as any).id,
                         customPrice: null, // Use service base price
                         status: "ACTIVE",
                         startDate: new Date(),
