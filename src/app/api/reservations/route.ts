@@ -112,6 +112,49 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Amenidad no encontrada" }, { status: 404 });
         }
 
+        // 1.5. Check Operating Hours
+        if (amenity.operatingHours) {
+            const hours = amenity.operatingHours as any;
+            if (hours.open && hours.close) {
+                const start = new Date(validatedData.startTime);
+                const end = new Date(validatedData.endTime);
+
+                const isWithinHours = (date: Date) => {
+                    const h = date.getHours();
+                    const m = date.getMinutes();
+                    const timeMinutes = h * 60 + m;
+
+                    const [openH, openM] = hours.open.split(':').map(Number);
+                    const [closeH, closeM] = hours.close.split(':').map(Number);
+                    const openMinutes = openH * 60 + openM;
+                    const closeMinutes = closeH * 60 + closeM;
+
+                    // Support for overnight hours (e.g. 22:00 to 02:00)
+                    if (openMinutes <= closeMinutes) {
+                        return timeMinutes >= openMinutes && timeMinutes <= closeMinutes;
+                    } else {
+                        return timeMinutes >= openMinutes || timeMinutes <= closeMinutes;
+                    }
+                };
+
+                const isWithinDays = (date: Date) => {
+                    if (!hours.days || !Array.isArray(hours.days) || hours.days.length === 0) return true;
+                    return hours.days.includes(date.getDay());
+                };
+
+                if (!isWithinHours(start) || !isWithinHours(end) || !isWithinDays(start) || !isWithinDays(end)) {
+                    let dayError = "";
+                    if (!isWithinDays(start) || !isWithinDays(end)) {
+                        dayError = " en los días seleccionados";
+                    }
+                    return NextResponse.json(
+                        { error: `La amenidad no está disponible en este horario${dayError}. Horario: ${hours.open} - ${hours.close}` },
+                        { status: 400 }
+                    );
+                }
+            }
+        }
+
         // 2. Cross-Complex Prevention for Residents
         if (session.user.role === Role.RESIDENT) {
             const resident = await prisma.resident.findUnique({
@@ -160,7 +203,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // 3. Calculate Cost
+        // 4. Calculate Cost
         let totalCost = 0;
         const start = new Date(validatedData.startTime);
         const end = new Date(validatedData.endTime);

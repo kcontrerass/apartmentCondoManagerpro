@@ -89,6 +89,54 @@ export async function PATCH(
         // Validation
         const validatedData = updateReservationSchema.parse(body);
 
+        // Check Operating Hours if time is being changed
+        if (validatedData.startTime || validatedData.endTime) {
+            const amenity = await prisma.amenity.findUnique({
+                where: { id: existing.amenityId }
+            });
+
+            if (amenity && amenity.operatingHours) {
+                const hours = amenity.operatingHours as any;
+                if (hours.open && hours.close) {
+                    const start = new Date(validatedData.startTime || existing.startTime);
+                    const end = new Date(validatedData.endTime || existing.endTime);
+
+                    const isWithinHours = (date: Date) => {
+                        const h = date.getHours();
+                        const m = date.getMinutes();
+                        const timeMinutes = h * 60 + m;
+
+                        const [openH, openM] = hours.open.split(':').map(Number);
+                        const [closeH, closeM] = hours.close.split(':').map(Number);
+                        const openMinutes = openH * 60 + openM;
+                        const closeMinutes = closeH * 60 + closeM;
+
+                        if (openMinutes <= closeMinutes) {
+                            return timeMinutes >= openMinutes && timeMinutes <= closeMinutes;
+                        } else {
+                            return timeMinutes >= openMinutes || timeMinutes <= closeMinutes;
+                        }
+                    };
+
+                    const isWithinDays = (date: Date) => {
+                        if (!hours.days || !Array.isArray(hours.days) || hours.days.length === 0) return true;
+                        return hours.days.includes(date.getDay());
+                    };
+
+                    if (!isWithinHours(start) || !isWithinHours(end) || !isWithinDays(start) || !isWithinDays(end)) {
+                        let dayError = "";
+                        if (!isWithinDays(start) || !isWithinDays(end)) {
+                            dayError = " en los días seleccionados";
+                        }
+                        return NextResponse.json(
+                            { error: `La amenidad no está disponible en este horario${dayError}. Horario: ${hours.open} - ${hours.close}` },
+                            { status: 400 }
+                        );
+                    }
+                }
+            }
+        }
+
         // Security: Residents can ONLY cancel their own reservations
         if (session.user.role === Role.RESIDENT) {
             if (Object.keys(body).length > 1 || body.status !== ReservationStatus.CANCELLED) {
