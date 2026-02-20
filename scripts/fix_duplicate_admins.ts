@@ -1,4 +1,4 @@
-import { prisma } from "../src/lib/prisma";
+import { prisma } from "../src/lib/db";
 
 async function main() {
     console.log("Checking for duplicate admin assignments...");
