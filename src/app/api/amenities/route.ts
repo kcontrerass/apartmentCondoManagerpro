@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { createAmenitySchema } from "@/lib/validations/amenity";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(request: Request) {
     try {
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
                 where.complex = { adminId: session.user.id };
                 console.log(`[API Amenities] Admin ${session.user.id} filtering by managed complexes`);
             }
-        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
             const user = await (prisma as any).user.findUnique({
                 where: { id: session.user.id },
                 select: { complexId: true }
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         }
 
         // RBAC Check
-        if (session.user.role !== Role.ADMIN && session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.OPERATOR) {
+        if (session.user.role !== Role.ADMIN && session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "No tienes permiso para crear amenidades" }, { status: 403 });
         }
 

@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { InvoiceTable } from "@/components/invoices/InvoiceTable";
+import { toast } from "sonner";
 import { InvoiceGenerationModal } from "@/components/invoices/InvoiceGenerationModal";
 import { InvoiceDetailModal } from "@/components/invoices/InvoiceDetailModal";
 import { GenerateInvoicesSchema } from "@/lib/validations/invoice";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export function InvoicesClient() {
     const t = useTranslations('Invoices');
@@ -86,11 +87,11 @@ export function InvoicesClient() {
 
             const result = await response.json();
             if (response.ok) {
-                alert(t('successGenerate', { count: result.generated, skipped: result.skipped }));
+                toast.success(t('successGenerate', { count: result.generated, skipped: result.skipped }));
                 setIsGenerateModalOpen(false);
                 fetchInvoices();
             } else {
-                alert(result.error || "Error al generar facturas");
+                toast.error(result.error || "Error al generar facturas");
             }
         } catch (error) {
             console.error("Error generating invoices:", error);
@@ -143,11 +144,11 @@ export function InvoicesClient() {
                     fetchInvoices();
                 }
             } else {
-                alert(data.error || "Error al iniciar el pago");
+                toast.error(data.error || "Error al iniciar el pago");
             }
         } catch (error) {
             console.error("Error initiating payment:", error);
-            alert("Ocurrió un error al procesar el pago");
+            toast.error("Ocurrió un error al procesar el pago");
         } finally {
             setIsSubmitting(false);
         }
@@ -299,38 +300,36 @@ export function InvoicesClient() {
                         </div>
                     ) : (
                         <>
-                            <div className="space-y-4">
-                                <div
-                                    onClick={() => setSelectedMethod('CARD')}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                                >
-                                    <span className="material-symbols-outlined text-primary">credit_card</span>
-                                    <div>
-                                        <p className="font-semibold text-slate-900 dark:text-white">Tarjeta de Crédito/Débito</p>
-                                        <p className="text-xs text-slate-500">Pago instantáneo seguro vía Recurrente</p>
-                                    </div>
+                            <div
+                                onClick={() => setSelectedMethod('CARD')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Tarjeta de Crédito/Débito</p>
+                                    <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>Pago instantáneo seguro vía Recurrente</p>
                                 </div>
+                            </div>
 
-                                <div
-                                    onClick={() => setSelectedMethod('CASH')}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                                >
-                                    <span className="material-symbols-outlined text-primary">payments</span>
-                                    <div>
-                                        <p className="font-semibold text-slate-900 dark:text-white">Efectivo</p>
-                                        <p className="text-xs text-slate-500">Paga en la administración del complejo</p>
-                                    </div>
+                            <div
+                                onClick={() => setSelectedMethod('CASH')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Efectivo</p>
+                                    <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>Paga en la administración del complejo</p>
                                 </div>
+                            </div>
 
-                                <div
-                                    onClick={() => setSelectedMethod('TRANSFER')}
-                                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200'}`}
-                                >
-                                    <span className="material-symbols-outlined text-primary">account_balance</span>
-                                    <div>
-                                        <p className="font-semibold text-slate-900 dark:text-white">Transferencia Bancaria</p>
-                                        <p className="text-xs text-slate-500">Envía el comprobante a administración</p>
-                                    </div>
+                            <div
+                                onClick={() => setSelectedMethod('TRANSFER')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Transferencia Bancaria</p>
+                                    <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>Envía el comprobante a administración</p>
                                 </div>
                             </div>
 

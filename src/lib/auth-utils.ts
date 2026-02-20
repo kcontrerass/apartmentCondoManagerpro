@@ -1,12 +1,7 @@
 import { auth } from '@/auth';
 
-export enum Role {
-    SUPER_ADMIN = 'SUPER_ADMIN',
-    ADMIN = 'ADMIN',
-    OPERATOR = 'OPERATOR',
-    GUARD = 'GUARD',
-    RESIDENT = 'RESIDENT',
-}
+import { Role } from '@/types/roles';
+export { Role };
 
 export async function getCurrentUser() {
     const session = await auth();

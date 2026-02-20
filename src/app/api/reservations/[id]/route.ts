@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { Role, ReservationStatus } from "@prisma/client";
+import { ReservationStatus } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { reservationSchema, updateReservationSchema } from "@/lib/validations/reservation";
 
 export async function GET(
@@ -77,7 +78,7 @@ export async function PATCH(
         // RBAC Check refined
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
         const isAdminOfComplex = session.user.role === Role.ADMIN && existing.amenity.complex.adminId === session.user.id;
-        const isOperator = session.user.role === Role.OPERATOR;
+        const isOperator = session.user.role === Role.BOARD_OF_DIRECTORS;
         const isOwner = existing.userId === session.user.id;
 
         if (!isSuperAdmin && !isAdminOfComplex && !isOperator && !isOwner) {

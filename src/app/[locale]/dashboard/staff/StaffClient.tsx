@@ -9,8 +9,9 @@ import { StaffTable } from "@/components/staff/StaffTable";
 import { StaffForm } from "@/components/staff/StaffForm";
 import { Spinner } from "@/components/ui/Spinner"; // Check correct UI component paths
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface StaffClientProps {
     initialComplexes: { id: string; name: string }[];
@@ -25,6 +26,9 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
     const [editingUser, setEditingUser] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<any>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchStaff = async () => {
         try {
@@ -34,7 +38,7 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             setStaff(data);
         } catch (error) {
             console.error(error);
-            // toast error
+            toast.error("Error al cargar el equipo");
         } finally {
             setIsLoading(false);
         }
@@ -59,16 +63,17 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             const result = await res.json();
 
             if (!res.ok) {
-                alert(result.error || "Error al guardar");
+                toast.error(result.error || "Error al guardar");
                 return;
             }
 
+            toast.success("Usuario guardado exitosamente");
             setIsModalOpen(false);
             fetchStaff();
             setEditingUser(null);
         } catch (error) {
             console.error(error);
-            alert("Error de conexión");
+            toast.error("Error de conexión");
         } finally {
             setIsSubmitting(false);
         }
@@ -79,24 +84,30 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (user: any) => {
-        if (!confirm(`¿Estás seguro de eliminar a ${user.name}?`)) return;
+    const handleDelete = async () => {
+        if (!userToDelete) return;
 
+        setIsDeleting(true);
         try {
-            const res = await fetch(`/api/staff/${user.id}`, {
+            const res = await fetch(`/api/staff/${userToDelete.id}`, {
                 method: "DELETE",
             });
 
             if (!res.ok) {
                 const data = await res.json();
-                alert(data.error || "Error al eliminar");
+                toast.error(data.error || "Error al eliminar");
                 return;
             }
 
+            toast.success("Usuario eliminado");
+            setIsDeleteModalOpen(false);
+            setUserToDelete(null);
             fetchStaff();
         } catch (error) {
             console.error(error);
-            alert("Error al eliminar");
+            toast.error("Error al eliminar");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -154,7 +165,10 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
                     <StaffTable
                         staff={filteredStaff}
                         onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onDelete={(user) => {
+                            setUserToDelete(user);
+                            setIsDeleteModalOpen(true);
+                        }}
                         currentUserRole={currentUserRole}
                     />
                 )}
@@ -173,6 +187,36 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
                     complexes={initialComplexes}
                     currentUserRole={currentUserRole}
                 />
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Usuario"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        ¿Estás seguro de eliminar a <span className="font-bold text-slate-900 dark:text-white">{userToDelete?.name}</span>? Esta acción es irreversible.
+                    </p>
+                </div>
             </Modal>
         </div>
     );

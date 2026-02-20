@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { staffCreateSchema } from "@/lib/validations/staff";
 import bcrypt from "bcrypt";
 
@@ -26,65 +26,64 @@ export async function GET(request: Request) {
         }
 
         const { searchParams } = new URL(request.url);
-        const complexId = searchParams.get("complexId");
+        const queryComplexId = searchParams.get("complexId");
 
-        // Admins can only see staff for their managed/assigned complex
-        // Super Admins can see all, or filter by complexId
+        // RBAC Visibility Logic:
+        // 1. ADMINs can ONLY see staff for their managed complex.
+        // 2. SUPER_ADMINs can see all staff OR filter by query param.
 
-        let whereClause: any = {
-            role: {
-                in: [Role.GUARD, Role.OPERATOR, Role.ADMIN] // Staff roles
-            }
-        };
+        let effectiveComplexId = queryComplexId;
 
         if (session.user.role === Role.ADMIN) {
-            // Find the complex this admin manages
-            const complex = await prisma.complex.findFirst({
-                where: { adminId: session.user.id }
-            });
+            // Force complexId from session
+            const adminComplexId = (session.user as any).complexId;
 
-            if (!complex) {
-                // If admin has no complex, maybe return empty or error?
-                // Or maybe they are an ADMIN but assigned to a complex (unlikely based on schema, adminId is on Complex)
-                // Let's assume complex.adminId is the robust way.
+            if (!adminComplexId) {
+                // Admin has no complex assigned/managed, return empty
                 return NextResponse.json([]);
             }
-            whereClause.complexId = complex.id;
-        } else if (complexId) {
-            whereClause.complexId = complexId;
+
+            effectiveComplexId = adminComplexId;
         }
 
-        const staff = await prisma.user.findMany({
-            where: whereClause,
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                phone: true,
-                role: true,
-                status: true,
-                complexId: true,
-                assignedComplex: {
-                    select: { name: true }
-                },
-                managedComplexes: {
-                    select: { name: true }
-                },
-                createdAt: true
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        // Use queryRaw to bypass stale Enum validation in the running dev server
+        const staff: any[] = await prisma.$queryRaw`
+            SELECT 
+                u.id, 
+                u.name, 
+                u.email, 
+                u.phone, 
+                u.role, 
+                u.status, 
+                u.complex_id as complexId,
+                u.createdAt,
+                c.name as assignedComplexName,
+                mc.name as managedComplexName
+            FROM users u
+            LEFT JOIN complexes c ON u.complex_id = c.id
+            LEFT JOIN complexes mc ON mc.adminId = u.id
+            WHERE u.role IN ('GUARD', 'BOARD_OF_DIRECTORS', 'ADMIN')
+            AND (${effectiveComplexId} IS NULL OR u.complex_id = ${effectiveComplexId})
+            ORDER BY u.createdAt DESC
+        `;
 
-        // Map to flat structure for frontend if needed, or just let frontend handle it.
-        // Frontend expects "assignedComplex" object. Let's merge them.
-        const mappedStaff = staff.map(user => ({
-            ...user,
-            assignedComplex: user.assignedComplex || (user.managedComplexes.length > 0 ? { name: user.managedComplexes[0].name } : null)
+        // Map to structure expected by frontend
+        const mappedStaff = staff.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: u.role,
+            status: u.status,
+            complexId: u.complexId,
+            createdAt: u.createdAt,
+            assignedComplex: u.assignedComplexName ? { name: u.assignedComplexName } :
+                (u.managedComplexName ? { name: u.managedComplexName } : null)
         }));
 
         return NextResponse.json(mappedStaff);
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error fetching staff:", error);
         return NextResponse.json({ error: "Error al obtener el personal" }, { status: 500 });
     }
@@ -108,20 +107,19 @@ export async function POST(request: Request) {
         let targetComplexId = validatedData.complexId || null;
 
         if (session.user.role === Role.ADMIN) {
-            // Force assignment to Admin's complex
-            const complex = await prisma.complex.findFirst({
-                where: { adminId: session.user.id }
-            });
-            if (!complex) {
+            // Force assignment to Admin's complex from session
+            const adminComplexId = (session.user as any).complexId;
+
+            if (!adminComplexId) {
                 return NextResponse.json({ error: "No tienes un complejo asignado para administrar" }, { status: 403 });
             }
-            // Add check: Admin cannot create another ADMIN, only GUARD/OPERATOR (usually)
-            // But let's allow flexibility for now or restrict?
-            if (validatedData.role === Role.ADMIN) {
+
+            // Add check: Admin cannot create another ADMIN, only GUARD/BOARD_OF_DIRECTORS
+            if (validatedData.role === Role.ADMIN || validatedData.role === Role.SUPER_ADMIN) {
                 return NextResponse.json({ error: "Solo súper administradores pueden crear otros administradores" }, { status: 403 });
             }
 
-            targetComplexId = complex.id;
+            targetComplexId = adminComplexId;
         } else {
             // Super Admins must specify complexId for staff
 
@@ -129,8 +127,8 @@ export async function POST(request: Request) {
             // This is useful for creating Admins that might be assigned later, or unassigned staff.
 
             // However, regular staff (Guards/Operators) must usually be assigned to a complex to function.
-            if (!targetComplexId && (validatedData.role === Role.GUARD || validatedData.role === Role.OPERATOR)) {
-                return NextResponse.json({ error: "Debes asignar un complejo a los guardias y operadores" }, { status: 400 });
+            if (!targetComplexId && (validatedData.role === Role.GUARD || validatedData.role === Role.BOARD_OF_DIRECTORS)) {
+                return NextResponse.json({ error: "Debes asignar un complejo a los guardias y miembros de la junta" }, { status: 400 });
             }
         }
 

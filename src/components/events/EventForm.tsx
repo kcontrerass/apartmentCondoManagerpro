@@ -100,18 +100,6 @@ const EventForm: React.FC<EventFormProps> = ({
                     )}
                 </div>
 
-                {/* Image URL */}
-                <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                        URL de Imagen
-                    </label>
-                    <input
-                        {...register('imageUrl')}
-                        className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all outline-none font-medium shadow-sm"
-                        placeholder="https://ejemplo.com/evento.jpg"
-                    />
-                </div>
-
                 {/* Times */}
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">

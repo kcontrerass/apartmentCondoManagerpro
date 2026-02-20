@@ -10,9 +10,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { UnitTable } from "@/components/units/UnitTable";
 import { UnitForm } from "@/components/units/UnitForm";
 import { UnitInput } from "@/lib/validations/unit";
-import { Unit, Resident, Role } from "@prisma/client";
+import { Unit, Resident } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { useTranslations } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
+import { toast } from "sonner";
 
 interface UnitWithResidents extends Unit {
     residents: (Resident & { user: { name: string; email: string } })[];
@@ -31,6 +33,9 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<UnitWithResidents | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const fetchComplexes = async () => {
@@ -89,12 +94,13 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
             });
 
             if (response.ok) {
+                toast.success("Unidad guardada exitosamente");
                 setIsModalOpen(false);
                 setEditingUnit(null);
                 fetchUnits();
             } else {
                 const errorData = await response.json();
-                alert(errorData.error || t('errorSaving'));
+                toast.error(errorData.error || t('errorSaving'));
             }
         } catch (error) {
             console.error("Error saving unit:", error);
@@ -103,16 +109,26 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(t('deleteConfirm'))) return;
+    const handleDelete = async () => {
+        if (!unitToDelete) return;
 
+        setIsDeleting(true);
         try {
-            const response = await fetch(`/api/units/${id}`, { method: "DELETE" });
+            const response = await fetch(`/api/units/${unitToDelete}`, { method: "DELETE" });
             if (response.ok) {
+                toast.success("Unidad eliminada exitosamente");
+                setIsDeleteModalOpen(false);
+                setUnitToDelete(null);
                 fetchUnits();
+            } else {
+                const data = await response.json();
+                toast.error(data.error || "Error al eliminar la unidad");
             }
         } catch (error) {
             console.error("Error deleting unit:", error);
+            toast.error("Error al procesar la eliminación");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -122,7 +138,7 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('managingUnits') : t('allRegistered')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -150,7 +166,10 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
                             setEditingUnit(unit);
                             setIsModalOpen(true);
                         }}
-                        onDelete={handleDelete}
+                        onDelete={(id) => {
+                            setUnitToDelete(id);
+                            setIsDeleteModalOpen(true);
+                        }}
                         onView={(id) => router.push(`/dashboard/units/${id}`)}
                     />
                 )}
@@ -171,6 +190,40 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
                     complexes={complexes}
                     showComplexSelector={!complexIdFromQuery && !editingUnit}
                 />
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Unidad"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        {t('deleteConfirm')}
+                    </p>
+                    <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                        <strong>Atención:</strong> Esta acción eliminará permanentemente la unidad y todos sus registros asociados.
+                    </p>
+                </div>
             </Modal>
         </div>
     );

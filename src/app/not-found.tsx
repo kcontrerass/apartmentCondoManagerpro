@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function NotFound() {
     return (
-        <html>
+        <html className="dark" style={{ colorScheme: 'dark' }}>
             <body className="antialiased">
                 <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white p-4">
                     <div className="text-center space-y-6 max-w-md">

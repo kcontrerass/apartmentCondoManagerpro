@@ -6,7 +6,7 @@ import { useComplexes } from '@/hooks/useComplexes';
 import IncidentTable from '@/components/incidents/IncidentTable';
 import IncidentForm from '@/components/incidents/IncidentForm';
 import { IncidentListItem, IncidentStatus } from '@/types/incident';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
@@ -69,6 +69,9 @@ export default function IncidentsClient({
 
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [incidentToDelete, setIncidentToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const {
         incidents,
@@ -109,13 +112,18 @@ export default function IncidentsClient({
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm('¿Estás seguro de que deseas eliminar este incidente?')) return;
+    const handleDelete = async () => {
+        if (!incidentToDelete) return;
+        setIsDeleting(true);
         try {
-            await deleteIncident(id);
+            await deleteIncident(incidentToDelete);
             toast.success('Incidente eliminado');
+            setIsDeleteModalOpen(false);
+            setIncidentToDelete(null);
         } catch (error: any) {
             toast.error(error.message || 'Error al eliminar incidente');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -132,8 +140,8 @@ export default function IncidentsClient({
         unitNumber: inc.unit?.number
     }));
 
-    const canReport = [Role.RESIDENT, Role.ADMIN, Role.OPERATOR, (Role.SUPER_ADMIN as any)].includes(userRole);
-    const canManage = [Role.ADMIN, Role.OPERATOR, (Role.SUPER_ADMIN as any), Role.GUARD].includes(userRole);
+    const canReport = [Role.RESIDENT, Role.ADMIN, Role.BOARD_OF_DIRECTORS, (Role.SUPER_ADMIN as any)].includes(userRole);
+    const canManage = [Role.ADMIN, Role.BOARD_OF_DIRECTORS, (Role.SUPER_ADMIN as any), Role.GUARD].includes(userRole);
     const canDelete = String(userRole) === 'RESIDENT'; // Only Residents can delete their own reports (if they are REPORTED)
 
     return (
@@ -170,7 +178,10 @@ export default function IncidentsClient({
                     <IncidentTable
                         incidents={incidentListItems}
                         onUpdateStatus={handleUpdateStatus}
-                        onDelete={handleDelete}
+                        onDelete={(id) => {
+                            setIncidentToDelete(id);
+                            setIsDeleteModalOpen(true);
+                        }}
                         canManage={canManage}
                         canDelete={canDelete}
                     />
@@ -188,6 +199,36 @@ export default function IncidentsClient({
                     onSubmit={handleReport}
                     isLoading={submitting}
                 />
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Incidente"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        ¿Estás seguro de que deseas eliminar este incidente definitivamente? Esta acción no se puede deshacer.
+                    </p>
+                </div>
             </Modal>
         </div>
     );

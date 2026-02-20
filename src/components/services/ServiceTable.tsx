@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface ServiceWithCount {
     id: string;
@@ -88,9 +88,14 @@ export function ServiceTable({
                         >
                             <td className="py-4 px-4">
                                 <div className="flex flex-col">
-                                    <span className="font-medium text-slate-900 dark:text-white">
-                                        {service.name}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium text-slate-900 dark:text-white">
+                                            {service.name}
+                                        </span>
+                                        <Badge variant={service.isRequired ? "info" : "neutral"} className="text-[10px] px-1.5 py-0">
+                                            {service.isRequired ? "Obligatorio" : "Opcional"}
+                                        </Badge>
+                                    </div>
                                     {service.description && (
                                         <span className="text-xs text-slate-500 line-clamp-1">
                                             {service.description}
@@ -154,10 +159,7 @@ export function ServiceTable({
                                             const isSubscribed = service.unitServices && service.unitServices.length > 0;
                                             if (isSubscribed) {
                                                 const unitService = service.unitServices![0];
-                                                const hiringDate = new Date(unitService.startDate);
-                                                const oneMonthAgo = new Date();
-                                                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                                                const canUnsubscribe = hiringDate <= oneMonthAgo;
+                                                const canUnsubscribe = true; // Enabled anytime as requested
 
                                                 return (
                                                     <div className="flex items-center gap-2">
@@ -185,23 +187,15 @@ export function ServiceTable({
                                                                         <span className="material-symbols-outlined text-[18px]">save</span>
                                                                     </Button>
                                                                 )}
-                                                                {canUnsubscribe ? (
-                                                                    <Button
-                                                                        variant="danger"
-                                                                        size="sm"
-                                                                        onClick={() => onUnsubscribe?.(unitService.id)}
-                                                                        title="Dar de baja"
-                                                                        disabled={!!isSubmitting}
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-[18px]">delete</span>
-                                                                    </Button>
-                                                                ) : (
-                                                                    <div title="Debe cumplir al menos un mes de contratación para dar de baja" className="cursor-help opacity-30 grayscale pointer-events-none">
-                                                                        <Button variant="danger" size="sm" disabled>
-                                                                            <span className="material-symbols-outlined text-[18px]">delete</span>
-                                                                        </Button>
-                                                                    </div>
-                                                                )}
+                                                                <Button
+                                                                    variant="danger"
+                                                                    size="sm"
+                                                                    onClick={() => onUnsubscribe?.(unitService.id)}
+                                                                    title="Dar de baja"
+                                                                    disabled={!!isSubmitting}
+                                                                >
+                                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                                                </Button>
                                                             </div>
                                                         )}
                                                     </div>
@@ -236,7 +230,7 @@ export function ServiceTable({
                                             );
                                         })()
                                     ) : (
-                                        userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                        userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                                             <>
                                                 <Button
                                                     variant="secondary"

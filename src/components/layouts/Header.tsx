@@ -7,9 +7,13 @@ import { useRouter, usePathname } from '@/i18n/routing';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 
-export function Header() {
+interface HeaderProps {
+    isUnassigned?: boolean;
+}
+
+export function Header({ isUnassigned = false }: HeaderProps) {
     const locale = useLocale();
     const router = useRouter();
     const pathname = usePathname();
@@ -151,67 +155,71 @@ export function Header() {
             </div>
 
             {/* Search Bar - Hide on small mobile, show expand button or make smaller */}
-            <div className="flex-1 max-w-md mx-4 hidden md:block" ref={searchRef}>
-                <div className="relative group">
-                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <span className="material-symbols-outlined text-slate-400 text-[20px] group-focus-within:text-primary transition-colors">search</span>
-                    </span>
-                    <input
-                        type="search"
-                        placeholder={t('search')}
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setShowResults(true);
-                        }}
-                        onFocus={() => setShowResults(true)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
-                    />
+            {!isUnassigned && (
+                <div className="flex-1 max-w-md mx-4 hidden md:block" ref={searchRef}>
+                    <div className="relative group">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="material-symbols-outlined text-slate-400 text-[20px] group-focus-within:text-primary transition-colors">search</span>
+                        </span>
+                        <input
+                            type="search"
+                            placeholder={t('search')}
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setShowResults(true);
+                            }}
+                            onFocus={() => setShowResults(true)}
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+                        />
 
-                    {/* Search Results Dropdown */}
-                    {showResults && (searchResults.length > 0 || isSearching || searchQuery.length >= 2) && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
-                            {isSearching ? (
-                                <div className="p-4 text-center text-sm text-slate-500">
-                                    <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                                </div>
-                            ) : searchResults.length > 0 ? (
-                                <div className="py-2">
-                                    {searchResults.map((result, idx) => (
-                                        <Link
-                                            key={`${result.type}-${result.id}-${idx}`}
-                                            href={result.href}
-                                            onClick={() => {
-                                                setShowResults(false);
-                                                setSearchQuery('');
-                                            }}
-                                            className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-                                        >
-                                            <span className="material-symbols-outlined text-slate-400 text-[20px]">
-                                                {result.type === 'complex' ? 'domain' : result.type === 'unit' ? 'door_front' : 'person'}
-                                            </span>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-medium text-slate-900 dark:text-white">{result.label}</p>
-                                                <p className="text-xs text-slate-500 capitalize">{result.type === 'complex' ? 'Complejo' : result.type === 'unit' ? 'Unidad' : 'Residente'}</p>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-4 text-center text-sm text-slate-500">
-                                    No se encontraron resultados
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        {/* Search Results Dropdown */}
+                        {showResults && (searchResults.length > 0 || isSearching || searchQuery.length >= 2) && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
+                                {isSearching ? (
+                                    <div className="p-4 text-center text-sm text-slate-500">
+                                        <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                                    </div>
+                                ) : searchResults.length > 0 ? (
+                                    <div className="py-2">
+                                        {searchResults.map((result, idx) => (
+                                            <Link
+                                                key={`${result.type}-${result.id}-${idx}`}
+                                                href={result.href}
+                                                onClick={() => {
+                                                    setShowResults(false);
+                                                    setSearchQuery('');
+                                                }}
+                                                className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                                            >
+                                                <span className="material-symbols-outlined text-slate-400 text-[20px]">
+                                                    {result.type === 'complex' ? 'domain' : result.type === 'unit' ? 'door_front' : 'person'}
+                                                </span>
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-medium text-slate-900 dark:text-white">{result.label}</p>
+                                                    <p className="text-xs text-slate-500 capitalize">{result.type === 'complex' ? 'Complejo' : result.type === 'unit' ? 'Unidad' : 'Residente'}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="p-4 text-center text-sm text-slate-500">
+                                        No se encontraron resultados
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex items-center gap-1 md:gap-2">
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 md:hidden">
-                    <span className="material-symbols-outlined">search</span>
-                </Button>
+                {!isUnassigned && (
+                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 md:hidden">
+                        <span className="material-symbols-outlined">search</span>
+                    </Button>
+                )}
 
                 {/* Language Switcher */}
                 <Button

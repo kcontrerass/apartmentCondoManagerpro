@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { serviceSchema } from "@/lib/validations/service";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
+import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 
 export async function GET(request: Request) {
     try {
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
             }
 
             whereClause.complexId = complex.id;
-        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
             const user = await (prisma as any).user.findUnique({
                 where: { id: session.user.id },
                 select: { complexId: true }
@@ -147,7 +148,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const service = await prisma.$transaction(async (tx) => {
+        const service = await (prisma as any).$transaction(async (tx: any) => {
             // 1. Create the service
             const newService = await tx.service.create({
                 data: {
@@ -181,57 +182,28 @@ export async function POST(request: Request) {
                     skipDuplicates: true,
                 });
 
-                // 3. New: Check if invoices already exist for this month and complex
+                // 3. Auto-generate invoices if billing for this month has already started
                 const now = new Date();
                 const currentMonth = now.getMonth() + 1;
                 const currentYear = now.getFullYear();
 
-                // Find units that already have an invoice for this month
-                const unitsWithInvoices = await tx.invoice.findMany({
+                const existingInvoices = await tx.invoice.findFirst({
                     where: {
                         complexId: validatedData.complexId,
                         month: currentMonth,
-                        year: currentYear,
-                        status: { not: 'CANCELLED' }
-                    },
-                    select: { unitId: true, dueDate: true, unit: { select: { number: true, id: true } } }
+                        year: currentYear
+                    }
                 });
 
-                console.log(`[MandatoryBilling] Found ${unitsWithInvoices.length} units with existing invoices for ${currentMonth}/${currentYear}`);
-
-                // Generate complementary invoices for those units
-                if (unitsWithInvoices.length > 0) {
-                    const price = Number(newService.basePrice);
-
-                    for (const inv of unitsWithInvoices) {
-                        const invoiceNumber = `INV-${currentYear}${currentMonth.toString().padStart(2, '0')}-${inv.unit.number.replace(/\s+/g, '')}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-
-                        console.log(`[MandatoryBilling] Creating invoice for Unit ${inv.unit.number}`);
-                        await tx.invoice.create({
-                            data: {
-                                number: invoiceNumber,
-                                month: currentMonth,
-                                year: currentYear,
-                                dueDate: inv.dueDate,
-                                totalAmount: price,
-                                status: "PENDING",
-                                unitId: inv.unitId,
-                                complexId: validatedData.complexId,
-                                createdAt: now, // Important: use current date
-                                items: {
-                                    create: [{
-                                        description: `${newService.name} [Complementaria]`,
-                                        amount: price,
-                                        serviceId: newService.id
-                                    }]
-                                }
-                            }
-                        });
-                    }
+                if (existingInvoices) {
+                    console.log(`[MandatoryBilling] Billing cycle started. Triggering generation for all units.`);
+                    await generateInvoicesForComplex(tx, validatedData.complexId, currentMonth, currentYear);
                 }
             }
 
             return newService;
+        }, {
+            timeout: 30000 // 30 seconds for bulk mandatory assignment
         });
 
         return NextResponse.json(service, { status: 201 });

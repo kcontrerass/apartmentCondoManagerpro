@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { reservationSchema } from "@/lib/validations/reservation";
 
@@ -7,7 +7,7 @@ import { reservationSchema } from "@/lib/validations/reservation";
 const Role = {
     SUPER_ADMIN: 'SUPER_ADMIN',
     ADMIN: 'ADMIN',
-    OPERATOR: 'OPERATOR',
+    BOARD_OF_DIRECTORS: 'BOARD_OF_DIRECTORS',
     RESIDENT: 'RESIDENT'
 } as const;
 
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
                     adminId: session.user.id
                 }
             };
-        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.SUPER_ADMIN) {
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.SUPER_ADMIN) {
             // SUPER_ADMIN and OPERATOR (if global) can see everything or filter by complex
             if (complexId) {
                 where.amenity = { complexId };

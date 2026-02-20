@@ -2,7 +2,8 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Resident, User, Unit, Complex, Role } from "@prisma/client";
+import { Resident, User, Unit, Complex } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface ResidentWithExtras extends Resident {
     user: {
@@ -74,7 +75,7 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                                             <span className="material-symbols-outlined text-[18px]">visibility</span>
                                         </Button>
 
-                                        {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                        {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                                             <>
                                                 <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)}>
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>

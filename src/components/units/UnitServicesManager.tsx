@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useTranslations } from "next-intl";
 import { formatPrice } from "@/lib/utils";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface UnitServicesManagerProps {
     unitId: string;
@@ -23,6 +24,7 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     const fetchUnitServices = async () => {
         try {
@@ -77,8 +79,6 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
     };
 
     const handleRemove = async (assignmentId: string) => {
-        if (!confirm(t("deleteConfirm"))) return;
-
         try {
             const response = await fetch(`/api/unit-services/${assignmentId}`, {
                 method: "DELETE",
@@ -88,6 +88,8 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
             }
         } catch (error) {
             console.error("Error removing service:", error);
+        } finally {
+            setConfirmDeleteId(null);
         }
     };
 
@@ -100,7 +102,7 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
         <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold">{t("unitServices")}</h3>
-                {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                     <Button variant="secondary" size="sm" icon="add" onClick={() => setIsModalOpen(true)}>
                         {t("assignService")}
                     </Button>
@@ -112,7 +114,12 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                     {unitServices.map((us) => (
                         <div key={us.id} className="flex justify-between items-center p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                             <div>
-                                <p className="font-medium">{us.service.name}</p>
+                                <div className="flex items-center gap-2">
+                                    <p className="font-medium">{us.service.name}</p>
+                                    <Badge variant={us.service.isRequired ? "info" : "neutral"} className="text-[10px] px-1.5 py-0">
+                                        {us.service.isRequired ? "Obligatorio" : "Opcional"}
+                                    </Badge>
+                                </div>
                                 <p className="text-xs text-slate-500">
                                     {formatPrice(us.customPrice || us.service.basePrice)} • {us.service.frequency}
                                 </p>
@@ -121,10 +128,10 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                                 <Badge variant={us.status === "ACTIVE" ? "success" : "neutral"}>
                                     {us.status}
                                 </Badge>
-                                {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                                     <button
-                                        onClick={() => handleRemove(us.id)}
-                                        className="p-1 te-slate-400 hover:text-red-600 transition-colors"
+                                        onClick={() => setConfirmDeleteId(us.id)}
+                                        className="p-1 text-slate-400 hover:text-red-600 transition-colors"
                                     >
                                         <span className="material-symbols-outlined text-[18px]">delete</span>
                                     </button>
@@ -146,7 +153,12 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                             {unassignedServices.map((service) => (
                                 <div key={service.id} className="py-3 flex justify-between items-center">
                                     <div>
-                                        <p className="font-medium">{service.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium">{service.name}</p>
+                                            <Badge variant={service.isRequired ? "info" : "neutral"} className="text-[10px] px-1.5 py-0">
+                                                {service.isRequired ? "Obligatorio" : "Opcional"}
+                                            </Badge>
+                                        </div>
                                         <p className="text-xs text-slate-500">{formatPrice(service.basePrice)}</p>
                                     </div>
                                     <Button
@@ -165,6 +177,15 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                     )}
                 </div>
             </Modal>
+            <ConfirmModal
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => confirmDeleteId && handleRemove(confirmDeleteId)}
+                title="Eliminar Servicio"
+                message={t("deleteConfirm")}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+            />
         </Card>
     );
 }

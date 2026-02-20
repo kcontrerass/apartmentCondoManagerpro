@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -13,6 +13,7 @@ import { AmenityForm } from "@/components/amenities/AmenityForm";
 import ReservationForm from "@/components/dashboard/reservations/ReservationForm";
 import { CreateAmenityInput } from "@/lib/validations/amenity";
 import { Spinner } from "@/components/ui/Spinner";
+import { toast } from "sonner";
 
 export function AmenitiesClient() {
     const t = useTranslations('Amenities');
@@ -26,6 +27,9 @@ export function AmenitiesClient() {
     const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
     const [selectedAmenity, setSelectedAmenity] = useState<any>(null);
     const [amenityIdToBook, setAmenityIdToBook] = useState<string | null>(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [amenityToDelete, setAmenityToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const isResident = session?.user?.role === Role.RESIDENT;
 
@@ -72,6 +76,7 @@ export function AmenitiesClient() {
             });
 
             if (response.ok) {
+                toast.success(t('successSave'));
                 setIsModalOpen(false);
                 setSelectedAmenity(null);
                 fetchAmenities();
@@ -80,26 +85,36 @@ export function AmenitiesClient() {
                 const errorMessage = Array.isArray(errorData.error)
                     ? errorData.error[0]?.message
                     : (errorData.error || t('errorSaving'));
-                alert(errorMessage);
+                toast.error(errorMessage);
             }
         } catch (error) {
             console.error("Error saving amenity:", error);
-            alert(t('unexpectedError'));
+            toast.error(t('unexpectedError'));
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm(t('deleteConfirm'))) return;
+    const handleDelete = async () => {
+        if (!amenityToDelete) return;
 
+        setIsDeleting(true);
         try {
-            const response = await fetch(`/api/amenities/${id}`, { method: "DELETE" });
+            const response = await fetch(`/api/amenities/${amenityToDelete}`, { method: "DELETE" });
             if (response.ok) {
+                toast.success(t('deleted'));
+                setIsDeleteModalOpen(false);
+                setAmenityToDelete(null);
                 fetchAmenities();
+            } else {
+                const data = await response.json();
+                toast.error(data.error || t('errorDeleting'));
             }
         } catch (error) {
             console.error("Error deleting amenity:", error);
+            toast.error(t('unexpectedError'));
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -145,7 +160,10 @@ export function AmenitiesClient() {
                     <AmenityTable
                         amenities={amenities}
                         onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onDelete={(id) => {
+                            setAmenityToDelete(id);
+                            setIsDeleteModalOpen(true);
+                        }}
                         onBook={isResident ? handleBook : undefined}
                         isAdmin={isAdmin}
                     />
@@ -176,6 +194,36 @@ export function AmenitiesClient() {
                             amenityId={amenityIdToBook}
                         />
                     )}
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title={t('confirmDeleteTitle')}
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            {t('cancel')}
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            {isDeleting ? t('deleting') : t('delete')}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        {t('deleteConfirm')}
+                    </p>
                 </div>
             </Modal>
         </div>

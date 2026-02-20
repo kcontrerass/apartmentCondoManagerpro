@@ -89,8 +89,6 @@ export const useAnnouncements = (complexId?: string) => {
     }, []);
 
     const deleteAnnouncement = useCallback(async (id: string) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este aviso?')) return;
-
         setLoading(true);
         try {
             const response = await fetch(`/api/announcements/${id}`, {

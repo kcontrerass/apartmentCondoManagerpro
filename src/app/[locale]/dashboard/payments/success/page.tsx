@@ -3,7 +3,7 @@ import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { recurrente } from "@/lib/recurrente";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 interface Props {
     params: Promise<{ locale: string }>;

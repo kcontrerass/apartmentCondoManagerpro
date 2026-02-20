@@ -64,7 +64,7 @@
             "recentInvoices": "Facturas Recientes",
             "recentActivity": "Actividad Reciente"
         },
-        "operatorDashboard": {
+        "boardOfDirectorsDashboard": {
             "todayVisitors": "Visitantes de Hoy",
             "recentIncidents": "Incidentes Recientes"
         },
@@ -149,7 +149,8 @@
         "actions": {
             "view": "Ver Detalle",
             "pay": "Pagar Ahora",
-            "markPaid": "Marcar como Pagada"
+            "markPaid": "Marcar como Pagada",
+            "markOverdue": "Marcar Vencida"
         },
         "status": {
             "PENDING": "Pendiente",
@@ -236,6 +237,12 @@
             "costsHelp": "Define el costo por reserva (por día o por hora). Si es 0, la reserva será gratuita."
         },
         "deleteConfirm": "¿Estás seguro de eliminar esta amenidad?",
+        "confirmDeleteTitle": "Eliminar Amenidad",
+        "deleted": "Amenidad eliminada correctamente",
+        "errorDeleting": "Error al eliminar la amenidad",
+        "deleting": "Eliminando...",
+        "delete": "Sí, eliminar",
+        "cancel": "Cancelar",
         "successSave": "Amenidad guardada correctamente",
         "errorSaving": "Error al guardar la amenidad",
         "unexpectedError": "Ocurrió un error inesperado",
@@ -288,6 +295,9 @@
         },
         "deleteConfirm": "¿Seguro que deseas eliminar esta reserva?",
         "cancelConfirm": "¿Deseas cancelar tu reserva?",
+        "confirmCancelTitle": "Cancelar Reserva",
+        "confirmCancel": "Sí, cancelar",
+        "cancelling": "Cancelando...",
         "noReservations": "No se encontraron reservaciones.",
         "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo.",
         "paymentInstructions": {
@@ -366,5 +376,14 @@
         "dateTime": "Fecha y Hora",
         "actions": "Acciones",
         "noEvents": "No hay eventos programados"
+    },
+    "Unassigned": {
+        "title": "Asignación Pendiente",
+        "message": "Bienvenido a CondoManager Pro. Tu usuario ha sido creado, pero aún no tienes un complejo residencial asignado.",
+        "subtitle": "¿Qué debo hacer?",
+        "instruction1": "Contacta con la administración de tu edificio para que te registren.",
+        "instruction2": "Asegúrate de haber proporcionado el correo electrónico correcto asociado a tu unidad.",
+        "instruction3": "Una vez asignado, podrás ver tus datos y realizar todas las acciones del complejo.",
+        "logout": "Cerrar sesión e intentar de nuevo"
     }
 }

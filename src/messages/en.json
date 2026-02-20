@@ -64,7 +64,7 @@
             "recentInvoices": "Recent Invoices",
             "recentActivity": "Recent Activity"
         },
-        "operatorDashboard": {
+        "boardOfDirectorsDashboard": {
             "todayVisitors": "Today's Visitors",
             "recentIncidents": "Recent Incidents"
         },
@@ -149,7 +149,8 @@
         "actions": {
             "view": "View Detail",
             "pay": "Pay Now",
-            "markPaid": "Mark as Paid"
+            "markPaid": "Mark as Paid",
+            "markOverdue": "Mark Overdue"
         },
         "status": {
             "PENDING": "Pending",
@@ -233,6 +234,12 @@
             "selectComplex": "Select Complex"
         },
         "deleteConfirm": "Are you sure you want to delete this amenity?",
+        "confirmDeleteTitle": "Delete Amenity",
+        "deleted": "Amenity deleted successfully",
+        "errorDeleting": "Error deleting amenity",
+        "deleting": "Deleting...",
+        "delete": "Yes, delete",
+        "cancel": "Cancel",
         "successSave": "Amenity saved successfully",
         "errorSaving": "Error saving amenity",
         "unexpectedError": "An unexpected error occurred",
@@ -285,6 +292,9 @@
         },
         "deleteConfirm": "Are you sure you want to delete this reservation?",
         "cancelConfirm": "Do you want to cancel your reservation?",
+        "confirmCancelTitle": "Cancel Reservation",
+        "confirmCancel": "Yes, cancel",
+        "cancelling": "Cancelling...",
         "noReservations": "No reservations found.",
         "adminPlaceholder": "Admin manual creation functionality under development.",
         "paymentInstructions": {
@@ -363,5 +373,14 @@
         "dateTime": "Date & Time",
         "actions": "Actions",
         "noEvents": "No scheduled events"
+    },
+    "Unassigned": {
+        "title": "Assignment Pending",
+        "message": "Welcome to CondoManager Pro. Your account has been created, but you haven't been assigned to a residential complex yet.",
+        "subtitle": "What should I do?",
+        "instruction1": "Contact your building's administration to be registered.",
+        "instruction2": "Ensure you have provided the correct email address associated with your unit.",
+        "instruction3": "Once assigned, you will have access to all your complex's data and actions.",
+        "logout": "Logout and try again"
     }
 }

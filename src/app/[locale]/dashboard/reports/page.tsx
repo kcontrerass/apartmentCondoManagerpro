@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ReportsClient } from "@/components/dashboard/reports/ReportsClient";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { Role } from "@/types/roles";
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 

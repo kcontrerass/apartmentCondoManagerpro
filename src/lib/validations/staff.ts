@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { Role, UserStatus } from "@prisma/client";
+import { UserStatus } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export const staffCreateSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),

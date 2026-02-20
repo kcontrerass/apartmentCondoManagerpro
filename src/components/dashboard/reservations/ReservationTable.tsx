@@ -17,7 +17,7 @@ type ReservationStatus = typeof ReservationStatus[keyof typeof ReservationStatus
 const Role = {
     SUPER_ADMIN: 'SUPER_ADMIN',
     ADMIN: 'ADMIN',
-    OPERATOR: 'OPERATOR',
+    BOARD_OF_DIRECTORS: 'BOARD_OF_DIRECTORS',
     RESIDENT: 'RESIDENT'
 } as const;
 import { useSession } from 'next-auth/react';
@@ -27,6 +27,7 @@ import { useLocale } from 'next-intl';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export default function ReservationTable() {
     const t = useTranslations('Reservations');
@@ -35,6 +36,8 @@ export default function ReservationTable() {
     const locale = useLocale();
     const [reservations, setReservations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const dateLocale = locale === 'es' ? es : enUS;
 
@@ -55,12 +58,15 @@ export default function ReservationTable() {
     }, []);
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('deleteConfirm'))) return;
+        setIsDeleting(true);
         try {
             await deleteReservation(id);
             await fetchData();
         } catch (e) {
             console.error(e);
+        } finally {
+            setIsDeleting(false);
+            setConfirmDeleteId(null);
         }
     };
 
@@ -129,14 +135,23 @@ export default function ReservationTable() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {r.paymentMethod ? (
-                                    <div className="flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-sm text-slate-500">
-                                            {r.paymentMethod === 'CARD' ? 'credit_card' : r.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
-                                        </span>
-                                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                                            {t(`paymentMethod.${r.paymentMethod}` as any)}
-                                        </span>
-                                    </div>
+                                    (() => {
+                                        const isPaid = r.status === 'APPROVED' || r.status === 'COMPLETED';
+                                        if (r.paymentMethod === 'CARD' && !isPaid) {
+                                            return <span className="text-sm text-slate-400 dark:text-slate-500">-</span>;
+                                        }
+
+                                        return (
+                                            <div className="flex items-center gap-2">
+                                                <span className="material-symbols-outlined text-sm text-slate-500">
+                                                    {r.paymentMethod === 'CARD' ? 'credit_card' : r.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                                </span>
+                                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                                    {t(`paymentMethod.${r.paymentMethod}` as any)}
+                                                </span>
+                                            </div>
+                                        )
+                                    })()
                                 ) : (
                                     <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
                                 )}
@@ -172,6 +187,17 @@ export default function ReservationTable() {
                     )}
                 </tbody>
             </table>
+
+            <ConfirmModal
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
+                title={t('confirmDeleteTitle' as any) || "Eliminar Reserva"}
+                message={t('deleteConfirm')}
+                isLoading={isDeleting}
+                confirmText={tCommon('delete')}
+                cancelText={tCommon('cancel')}
+            />
         </div>
     );
 }

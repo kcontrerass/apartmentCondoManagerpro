@@ -10,8 +10,9 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { AnnouncementFilters, AnnouncementListItem } from '@/types/announcement';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 
 const AnnouncementsClient = () => {
     const { data: session } = useSession();
@@ -21,6 +22,7 @@ const AnnouncementsClient = () => {
     const [userRole, setUserRole] = useState<string | null>(session?.user?.role || null);
     const [complexId, setComplexId] = useState<string | null>(session?.user?.complexId || null);
     const [isRecovering, setIsRecovering] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Sync state with session when it loads
     useEffect(() => {
@@ -108,7 +110,7 @@ const AnnouncementsClient = () => {
         router.push(`/dashboard/announcements/${id}`);
     };
 
-    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR].includes(userRole as any);
+    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(userRole as any);
 
     return (
         <div className="space-y-8">
@@ -194,12 +196,27 @@ const AnnouncementsClient = () => {
                         <AnnouncementTable
                             announcements={announcements}
                             onEdit={handleEdit}
-                            onDelete={deleteAnnouncement}
+                            onDelete={setConfirmDeleteId}
                             canManage={canManage}
                         />
                     </div>
                 )}
             </Card>
+
+            <ConfirmModal
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => {
+                    if (confirmDeleteId) {
+                        deleteAnnouncement(confirmDeleteId);
+                        setConfirmDeleteId(null);
+                    }
+                }}
+                title="Eliminar Aviso"
+                message="¿Estás seguro de que deseas eliminar este aviso? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+            />
         </div>
     );
 };

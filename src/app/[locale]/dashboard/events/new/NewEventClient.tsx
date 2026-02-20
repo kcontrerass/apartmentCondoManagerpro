@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ComplexSelector } from '@/components/dashboard/ComplexSelector';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 
 const NewEventClient = () => {
     const { data: session } = useSession();

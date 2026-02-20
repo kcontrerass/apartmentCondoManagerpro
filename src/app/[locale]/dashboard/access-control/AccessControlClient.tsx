@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { VisitorForm } from "@/components/access/VisitorForm";
 import { useTranslations } from "next-intl";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -24,7 +24,7 @@ export function AccessControlClient({ userRole, initialComplexes, residentUnit }
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const isGuard = userRole === Role.GUARD || userRole === Role.OPERATOR || userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+    const isGuard = userRole === Role.GUARD || userRole === Role.BOARD_OF_DIRECTORS || userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     const isResident = userRole === Role.RESIDENT;
 
     useEffect(() => {

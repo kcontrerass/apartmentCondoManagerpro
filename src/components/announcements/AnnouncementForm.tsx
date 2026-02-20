@@ -72,18 +72,6 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                     </select>
                 </div>
 
-                {/* Image URL */}
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        {t('imageUrl')}
-                    </label>
-                    <input
-                        {...register('imageUrl')}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-primary-light focus:outline-none focus:ring-4 transition-all outline-none"
-                        placeholder="https://ejemplo.com/imagen.jpg"
-                    />
-                </div>
-
                 {/* dates */}
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">

@@ -43,6 +43,9 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                             {t('table.period')}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
+                            Servicios
+                        </th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
                             {t('table.total')}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
@@ -71,6 +74,22 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
                                 {`${invoice.month}/${invoice.year}`}
                             </td>
+                            <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
+                                {invoice.items && invoice.items.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {invoice.items.map((item: any, idx: number) => (
+                                            <span
+                                                key={idx}
+                                                className="inline-block rounded-full bg-slate-100 dark:bg-slate-700 px-2 py-0.5 text-xs text-slate-700 dark:text-slate-300 whitespace-nowrap"
+                                            >
+                                                {item.description}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-slate-400">-</span>
+                                )}
+                            </td>
                             <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-semibold">
                                 {formatPrice(invoice.totalAmount)}
                             </td>
@@ -82,8 +101,14 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                             <td className="py-4 px-4 text-sm">
                                 {(() => {
                                     const method = invoice.paymentMethod || invoice.reservation?.paymentMethod;
+                                    const isPaid = invoice.status === 'PAID';
 
                                     if (method) {
+                                        // Specific rule for CARD: hide entirely if not paid
+                                        if (method === 'CARD' && !isPaid) {
+                                            return <span className="text-slate-400 dark:text-slate-500">-</span>;
+                                        }
+
                                         return (
                                             <div className="flex items-center gap-2">
                                                 <span className="material-symbols-outlined text-sm text-slate-500">
@@ -99,7 +124,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                 })()}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
+                                {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex justify-end gap-2">
@@ -124,14 +149,24 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                     )}
 
                                     {(invoice.status === "PENDING" || invoice.status === "PROCESSING") && !onPay && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => onUpdateStatus(invoice.id, "PAID")}
-                                            title={t('actions.markPaid')}
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">check_circle</span>
-                                        </Button>
+                                        <>
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => onUpdateStatus(invoice.id, "PAID")}
+                                                title={t('actions.markPaid')}
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                                            </Button>
+                                            <Button
+                                                variant="danger"
+                                                size="sm"
+                                                onClick={() => onUpdateStatus(invoice.id, "OVERDUE")}
+                                                title={t('actions.markOverdue')}
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">cancel</span>
+                                            </Button>
+                                        </>
                                     )}
                                 </div>
                             </td>

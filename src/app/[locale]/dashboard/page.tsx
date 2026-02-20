@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { DashboardClient as AdminDashboard } from "@/components/dashboard/DashboardClient";
 import { ResidentDashboard } from "@/components/dashboard/ResidentDashboard";
 import { OperatorDashboard } from "@/components/dashboard/OperatorDashboard";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { Role } from "@/types/roles";
 import { getTranslations } from 'next-intl/server';
 import Link from "next/link";
 
@@ -25,11 +25,26 @@ async function getStats(userId: string, role: string) {
 
         if (!resident) return null;
 
+        const startDate = new Date(resident.startDate);
+        const startYear = startDate.getFullYear();
+        const startMonth = startDate.getMonth() + 1;
+
         const [invoicesRaw, reservationsRaw, incidentsRaw] = await Promise.all([
             prisma.invoice.findMany({
-                where: { unitId: resident.unitId },
-                orderBy: { createdAt: 'desc' },
-                take: 5
+                where: {
+                    unitId: resident.unitId,
+                    OR: [
+                        { year: { gt: startYear } },
+                        {
+                            AND: [
+                                { year: startYear },
+                                { month: { gte: startMonth } }
+                            ]
+                        }
+                    ]
+                },
+                orderBy: { dueDate: 'asc' },
+                take: 10
             }),
             prisma.reservation.findMany({
                 where: { userId },
@@ -44,6 +59,8 @@ async function getStats(userId: string, role: string) {
                 include: { complex: true }
             })
         ]);
+
+        const recentInvoicesRaw = [...invoicesRaw].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
         const pendingInvoices = invoicesRaw
             .filter((inv: any) => inv.status === 'PENDING')
@@ -76,7 +93,7 @@ async function getStats(userId: string, role: string) {
                 details: inc.title,
                 href: `/dashboard/incidents/${inc.id}`
             })),
-            ...invoicesRaw.map((inv: any) => ({
+            ...recentInvoicesRaw.map((inv: any) => ({
                 reference: inv.number,
                 type: 'Factura',
                 status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
@@ -105,7 +122,7 @@ async function getStats(userId: string, role: string) {
         };
     }
 
-    if (role === Role.OPERATOR || role === Role.GUARD) {
+    if (role === Role.BOARD_OF_DIRECTORS || role === Role.GUARD) {
         const user = await prisma.user.findUnique({
             where: { id: userId },
             select: { complexId: true }
@@ -311,7 +328,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     const statsResult: any = await getStats(session.user.id as string, session.user.role as string);
 
     const isResident = session.user.role === Role.RESIDENT;
-    const isOperator = session.user.role === Role.OPERATOR || session.user.role === Role.GUARD;
+    const isOperator = session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD;
 
     return (
         <MainLayout user={session.user}>
@@ -333,15 +350,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                     }
                 />
 
-                {isResident && statsResult.residentData && (
+                {isResident && statsResult?.residentData && (
                     <ResidentDashboard data={statsResult.residentData} />
                 )}
 
-                {isOperator && statsResult.operatorData && (
+                {isOperator && statsResult?.operatorData && (
                     <OperatorDashboard data={statsResult.operatorData} />
                 )}
 
-                {!isResident && !isOperator && statsResult.adminData && (
+                {!isResident && !isOperator && statsResult?.adminData && (
                     <AdminDashboard stats={statsResult.adminData} />
                 )}
             </div>

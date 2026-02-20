@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { residentSchema } from "@/lib/validations/resident";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
+import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
                     return NextResponse.json([]);
                 }
                 complexId = adminComplex.id;
-            } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+            } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
                 const user = await (prisma as any).user.findUnique({
                     where: { id: session.user.id },
                     select: { complexId: true }
@@ -120,21 +121,46 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Este usuario ya está asignado como residente a una unidad" }, { status: 400 });
         }
 
-        const resident = await prisma.resident.create({
-            data: {
-                type: validatedData.type,
-                startDate: validatedData.startDate,
-                endDate: validatedData.endDate,
-                emergencyContact: (validatedData.emergencyContact as any) || {},
-                userId: validatedData.userId,
-                unitId: validatedData.unitId,
-            },
-        });
+        // Perform all updates in a single transaction
+        const resident = await (prisma as any).$transaction(async (tx: any) => {
+            const newResident = await tx.resident.create({
+                data: {
+                    type: validatedData.type,
+                    startDate: validatedData.startDate,
+                    endDate: validatedData.endDate,
+                    emergencyContact: (validatedData.emergencyContact as any) || {},
+                    userId: validatedData.userId,
+                    unitId: validatedData.unitId,
+                },
+            });
 
-        // Update unit status to OCCUPIED
-        await prisma.unit.update({
-            where: { id: validatedData.unitId },
-            data: { status: "OCCUPIED" }
+            // Update unit status to OCCUPIED
+            await tx.unit.update({
+                where: { id: validatedData.unitId },
+                data: { status: "OCCUPIED" }
+            });
+
+            // Auto-generate invoice if billing for this month has already started in the complex
+            const startDate = new Date(validatedData.startDate);
+            const month = startDate.getMonth() + 1;
+            const year = startDate.getFullYear();
+
+            const existingInvoices = await tx.invoice.findFirst({
+                where: {
+                    complexId: unitExists.complexId,
+                    month,
+                    year
+                }
+            });
+
+            if (existingInvoices) {
+                console.log(`Auto-generating invoice for new resident in unit ${unitExists.number} for ${month}/${year}`);
+                await generateInvoicesForComplex(tx, unitExists.complexId, month, year, validatedData.unitId);
+            }
+
+            return newResident;
+        }, {
+            timeout: 15000 // 15 seconds should be enough for a single unit
         });
 
         return NextResponse.json(resident, { status: 201 });

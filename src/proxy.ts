@@ -30,5 +30,5 @@ export default auth((req) => {
 export const config = {
     // Skip all internal paths (_next, static files, etc.)
     // Except for the ones we want to internationalize
-    matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+    matcher: ['/((?!api|_next/static|_next/image|favicon.ico|uploads).*)'],
 };

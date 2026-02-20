@@ -137,7 +137,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                     <p className="font-bold text-sm">{formatPrice(inv.totalAmount)}</p>
                                     <div className="flex flex-col items-end gap-1">
                                         <Badge variant={inv.status === 'PAID' ? 'success' : 'warning'}>{inv.status}</Badge>
-                                        {inv.paymentMethod && (
+                                        {inv.paymentMethod && !(inv.paymentMethod === 'CARD' && inv.status !== 'PAID') && (
                                             <div className="flex items-center gap-1 text-[10px] text-slate-500">
                                                 <span className="material-symbols-outlined text-xs">
                                                     {inv.paymentMethod === 'CARD' ? 'credit_card' : inv.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}

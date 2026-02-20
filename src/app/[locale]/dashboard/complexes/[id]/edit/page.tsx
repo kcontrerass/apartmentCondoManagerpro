@@ -3,7 +3,7 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ComplexForm } from "@/components/complexes/ComplexForm";
 import { Card } from "@/components/ui/Card";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 
 interface RouteParams {

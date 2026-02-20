@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { ServicesClient } from "./ServicesClient";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export default async function ServicesPage() {
     const session = await auth();

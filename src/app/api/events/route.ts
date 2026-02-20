@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { eventCreateSchema } from '@/lib/validations/event';
 
 /**
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
  * POST /api/events
  * Create a new event
  * 
- * Permissions: ADMIN, OPERATOR
+ * Permissions: ADMIN, BOARD_OF_DIRECTORS
  */
 export async function POST(request: NextRequest) {
     try {
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
         // Check permissions
         const userRole = session.user.role;
-        if (!['SUPER_ADMIN', 'ADMIN', 'OPERATOR'].includes(userRole)) {
+        if (!['SUPER_ADMIN', 'ADMIN', 'BOARD_OF_DIRECTORS'].includes(userRole)) {
             return NextResponse.json(
                 { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permisos para crear eventos' } },
                 { status: 403 }

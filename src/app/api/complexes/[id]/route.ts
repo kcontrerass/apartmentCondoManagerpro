@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { ComplexUpdateSchema } from "@/lib/validations/complex";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface RouteParams {
     params: Promise<{ id: string }>;

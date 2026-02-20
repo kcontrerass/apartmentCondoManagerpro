@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { staffCreateSchema, staffUpdateSchema } from "@/lib/validations/staff";
 import { Button } from "@/components/ui/Button"; // Check path, usually components/ui
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { useTranslations } from "next-intl";
 
 interface StaffFormProps {
@@ -100,7 +100,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                         <option value={Role.GUARD}>Guardia de Seguridad</option>
-                        <option value={Role.OPERATOR}>Operador / Admin Jr.</option>
+                        <option value={Role.BOARD_OF_DIRECTORS}>Junta Directiva</option>
                         {currentUserRole === Role.SUPER_ADMIN && (
                             <>
                                 <option value={Role.ADMIN}>Administrador</option>
@@ -135,20 +135,22 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                     </div>
                 )}
 
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Contraseña {isEditing && "(Dejar en blanco para no cambiar)"}
-                    </label>
-                    <input
-                        {...register("password")}
-                        type="password"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        placeholder="******"
-                    />
-                    {errors.password && (
-                        <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>
-                    )}
-                </div>
+                {!isEditing && (
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            Contraseña
+                        </label>
+                        <input
+                            {...register("password")}
+                            type="password"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            placeholder="******"
+                        />
+                        {errors.password && (
+                            <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">

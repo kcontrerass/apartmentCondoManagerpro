@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { announcementUpdateSchema } from '@/lib/validations/announcement';
 
 /**
@@ -76,7 +76,7 @@ export async function PUT(
 
         // Validate permission
         const userRole = session.user.role;
-        if (!['SUPER_ADMIN', 'ADMIN', 'OPERATOR'].includes(userRole)) {
+        if (!['SUPER_ADMIN', 'ADMIN', 'BOARD_OF_DIRECTORS'].includes(userRole)) {
             return NextResponse.json(
                 { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permisos para editar avisos' } },
                 { status: 403 }

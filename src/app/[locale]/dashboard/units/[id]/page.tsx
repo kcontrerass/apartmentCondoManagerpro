@@ -3,11 +3,12 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { UnitServicesManager } from "@/components/units/UnitServicesManager";
+import { DeleteResidentButton } from "@/components/units/DeleteResidentButton";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -49,7 +50,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                             <Link href={`/dashboard/units?complexId=${unit.complexId}`}>
                                 <Button variant="secondary" icon="arrow_back">Volver a lista</Button>
                             </Link>
-                            {session.user.role !== 'GUARD' && session.user.role !== 'OPERATOR' && (
+                            {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
                                 <Button variant="primary" icon="edit">Editar Unidad</Button>
                             )}
                         </div>
@@ -99,9 +100,18 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                                     {resident.endDate ? ` - ${new Date(resident.endDate).toLocaleDateString()}` : " - Actual"}
                                                 </p>
                                             </div>
-                                            <Badge variant={!resident.endDate || new Date(resident.endDate) > new Date() ? "success" : "neutral"}>
-                                                {!resident.endDate || new Date(resident.endDate) > new Date() ? "Activo" : "Pasado"}
-                                            </Badge>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant={!resident.endDate || new Date(resident.endDate) > new Date() ? "success" : "neutral"}>
+                                                    {!resident.endDate || new Date(resident.endDate) > new Date() ? "Activo" : "Pasado"}
+                                                </Badge>
+                                                {(!resident.endDate || new Date(resident.endDate) > new Date()) &&
+                                                    session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                                                        <DeleteResidentButton
+                                                            residentId={resident.id}
+                                                            residentName={resident.user.name}
+                                                        />
+                                                    )}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -127,14 +137,22 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                             <p className="text-xs text-slate-500">{currentResident.user.email}</p>
                                         </div>
                                     </div>
-                                    <Link href={`/dashboard/residents/${currentResident.id}`} className="block">
-                                        <Button variant="outline" className="w-full">Ver Perfil</Button>
-                                    </Link>
+                                    <div className="flex gap-2">
+                                        <Link href={`/dashboard/residents/${currentResident.id}`} className="flex-1">
+                                            <Button variant="outline" className="w-full">Ver Perfil</Button>
+                                        </Link>
+                                        {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                                            <DeleteResidentButton
+                                                residentId={currentResident.id}
+                                                residentName={currentResident.user.name}
+                                            />
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-4">
                                     <p className="text-sm text-slate-500">Sin residente activo</p>
-                                    {session.user.role !== 'GUARD' && session.user.role !== 'OPERATOR' && (
+                                    {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
                                         <Link href={`/dashboard/residents?unitId=${unit.id}`}>
                                             <Button variant="secondary" size="sm" className="mt-2">Asignar uno</Button>
                                         </Link>

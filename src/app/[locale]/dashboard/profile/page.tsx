@@ -3,8 +3,10 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
+import { ProfileForm } from "@/components/profile/ProfileForm";
+import { PasswordForm } from "@/components/profile/PasswordForm";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -81,51 +83,14 @@ export default async function ProfilePage() {
                         </div>
                     </Card>
 
-                    {/* Information Form Placeholder */}
+                    {/* Interactive Forms */}
                     <div className="lg:col-span-2 space-y-8">
                         <Card className="p-8">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">person</span>
                                 Información Personal
                             </h3>
-
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nombre Completo</label>
-                                        <input
-                                            type="text"
-                                            defaultValue={user.name || ''}
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                                            readOnly
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Correo Electrónico</label>
-                                        <input
-                                            type="email"
-                                            defaultValue={user.email}
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-500 focus:outline-none cursor-not-allowed"
-                                            disabled
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Teléfono</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Introduce tu teléfono"
-                                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                                            readOnly
-                                        />
-                                    </div>
-                                </div>
-                                <div className="pt-4">
-                                    <p className="text-xs text-slate-500 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg flex items-center gap-2">
-                                        <span className="material-symbols-outlined text-[16px]">info</span>
-                                        La edición del perfil estará disponible en las próximas actualizaciones.
-                                    </p>
-                                </div>
-                            </div>
+                            <ProfileForm user={user} />
                         </Card>
 
                         <Card className="p-8">
@@ -133,24 +98,7 @@ export default async function ProfilePage() {
                                 <span className="material-symbols-outlined">security</span>
                                 Seguridad
                             </h3>
-                            <div className="flex items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800">
-                                <div>
-                                    <p className="font-medium text-slate-900 dark:text-white">Contraseña</p>
-                                    <p className="text-sm text-slate-500">Cambia tu contraseña para mantener tu cuenta segura.</p>
-                                </div>
-                                <button className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
-                                    Cambiar
-                                </button>
-                            </div>
-                            <div className="flex items-center justify-between py-4">
-                                <div>
-                                    <p className="font-medium text-slate-900 dark:text-white">Sesiones Activas</p>
-                                    <p className="text-sm text-slate-500">Cierra sesión en todos tus dispositivos.</p>
-                                </div>
-                                <button className="text-sm font-semibold text-red-600 hover:text-red-700 transition-colors">
-                                    Cerrar todo
-                                </button>
-                            </div>
+                            <PasswordForm />
                         </Card>
                     </div>
                 </div>

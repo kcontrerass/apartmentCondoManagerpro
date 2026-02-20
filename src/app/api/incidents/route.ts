@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { incidentSchema } from '@/lib/validations/incident';
 
 /**
  * GET /api/incidents
  * List incidents across all complexes (SUPER_ADMIN only)
  * or incidents reported by the current user (RESIDENT)
- * or incidents in the assigned complex (ADMIN/OPERATOR/GUARD)
+ * or incidents in the assigned complex (ADMIN/BOARD_OF_DIRECTORS/GUARD)
  */
 export async function GET(request: NextRequest) {
     try {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         const userRole = session.user.role;
         if (userRole === 'RESIDENT') {
             where.reporterId = session.user.id;
-        } else if (userRole === 'ADMIN' || userRole === 'OPERATOR' || userRole === 'GUARD') {
+        } else if (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD') {
             const complexId = (session.user as any).complexId;
             if (!complexId) {
                 return NextResponse.json(
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
                     { status: 403 }
                 );
             }
-        } else if (session.user.role === 'GUARD' || session.user.role === 'OPERATOR' || session.user.role === 'ADMIN') {
+        } else if (session.user.role === 'GUARD' || session.user.role === 'BOARD_OF_DIRECTORS' || session.user.role === 'ADMIN') {
             // Ensure the staff member is assigned to this complex
             const user = await prisma.user.findUnique({
                 where: { id: session.user.id },

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -51,7 +51,7 @@ export async function PATCH(req: Request) {
         }
 
         const body = await req.json();
-        const { name } = body;
+        const { name, phone } = body;
 
         if (!name) {
             return new NextResponse("Name is required", { status: 400 });
@@ -61,6 +61,7 @@ export async function PATCH(req: Request) {
             where: { id: session.user.id },
             data: {
                 name,
+                phone,
             }
         });
 

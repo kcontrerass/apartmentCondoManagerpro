@@ -2,8 +2,8 @@ import { StaffClient } from "./StaffClient";
 import { MainLayout } from "@/components/layouts/MainLayout"; // Verify import path
 import { auth } from "@/auth"; // Verify import path
 
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { Role } from "@/types/roles";
 
 export default async function StaffPage() {
     const session = await auth();

@@ -117,12 +117,6 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                     error={errors.location?.message as string}
                 />
 
-                <Input
-                    label="URL de Imagen (Opcional)"
-                    placeholder="https://..."
-                    {...register('imageUrl')}
-                    error={errors.imageUrl?.message as string}
-                />
 
                 {/* Hidden fields */}
                 <input type="hidden" {...register('complexId')} />

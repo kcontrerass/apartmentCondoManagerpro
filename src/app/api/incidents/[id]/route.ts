@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { updateIncidentSchema } from '@/lib/validations/incident';
 
 /**
@@ -32,7 +32,7 @@ export async function GET(
         if (userRole === 'RESIDENT' && incident.reporterId !== session.user.id) {
             return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
         }
-        if (userRole === 'ADMIN' || userRole === 'OPERATOR' || userRole === 'GUARD') {
+        if (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD') {
             if (incident.complexId !== (session.user as any).complexId) {
                 return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
             }
@@ -67,7 +67,7 @@ export async function PATCH(
         // Permission check: only admin/operator or reporter (limited)
         const userRole = session.user.role;
         const isReporter = currentIncident.reporterId === session.user.id;
-        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'OPERATOR' || userRole === 'GUARD';
+        const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD';
 
         if (!isAdmin && !isReporter) return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
 

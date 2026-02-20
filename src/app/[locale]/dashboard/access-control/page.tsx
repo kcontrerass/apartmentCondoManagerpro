@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { AccessControlClient } from "./AccessControlClient";
 import { getTranslations } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { Role } from "@/types/roles";
 
 export default async function AccessControlPage({
     params,
@@ -28,7 +28,7 @@ export default async function AccessControlPage({
             where: { adminId: session.user.id },
             select: { id: true, name: true }
         });
-    } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+    } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
         const user = await (prisma as any).user.findUnique({
             where: { id: session.user.id },
             select: { complexId: true }

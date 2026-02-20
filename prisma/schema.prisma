@@ -28,6 +28,7 @@ model User {
   residentProfile      Resident?
   assignedComplex      Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
   visitorLogs          VisitorLog[]  @relation("CreatedVisitorLogs")
+  documents            Document[]    @relation("UserDocuments")
 
   @@index([complexId], map: "users_complex_id_fkey")
   @@map("users")
@@ -53,6 +54,7 @@ model Complex {
   units         Unit[]
   staff         User[]         @relation("StaffComplex")
   visitorLogs   VisitorLog[]
+  documents     Document[]
 
   @@map("complexes")
 }
@@ -325,7 +327,7 @@ model Incident {
 enum Role {
   SUPER_ADMIN
   ADMIN
-  OPERATOR
+  BOARD_OF_DIRECTORS
   GUARD
   RESIDENT
 }
@@ -438,4 +440,24 @@ enum IncidentType {
   NOISE
   CLEANING
   OTHER
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  category    String?
+  fileUrl     String   @map("file_url")
+  fileSize    Int?     @map("file_size")
+  fileType    String?  @map("file_type")
+  complexId   String   @map("complex_id")
+  authorId    String   @map("author_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  complex     Complex  @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  author      User     @relation("UserDocuments", fields: [authorId], references: [id])
+
+  @@index([complexId])
+  @@index([authorId])
+  @@map("documents")
 }

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { assignServiceSchema } from "@/lib/validations/service";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
+import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 
 export async function GET(
     request: Request,
@@ -120,29 +121,27 @@ export async function POST(
                 },
             });
 
-            // 2. Check for existing invoice for the current month/year
+            // 2. Auto-generate invoice if billing for this month has already started
             const now = new Date();
             const currentMonth = now.getMonth() + 1;
             const currentYear = now.getFullYear();
 
-            // Debug logging to a file
-            const logMsg = `[${now.toISOString()}] Unit: ${unitId}, Month: ${currentMonth}, Year: ${currentYear}\n`;
-            try { require('fs').appendFileSync('billing_debug.log', logMsg); } catch (e) { }
-
-            const existingInvoice = await tx.invoice.findFirst({
+            const existingInvoices = await tx.invoice.findFirst({
                 where: {
-                    unitId,
+                    complexId: unit.complexId,
                     month: currentMonth,
-                    year: currentYear,
-                    status: { not: 'CANCELLED' }
-                },
-                orderBy: { createdAt: 'desc' }
+                    year: currentYear
+                }
             });
 
-            // 3. (REMOVED) Immediate invoice generation.
-            // Invoices are now only generated manually by the Admin via the /api/invoices/generate endpoint.
+            if (existingInvoices) {
+                console.log(`Auto-generating complementary invoice for unit ${unit.number} for service ${validatedData.serviceId}`);
+                await generateInvoicesForComplex(tx, unit.complexId, currentMonth, currentYear, unitId);
+            }
 
             return newUnitService;
+        }, {
+            timeout: 15000 // 15 seconds
         });
 
         return NextResponse.json(unitService, { status: 201 });

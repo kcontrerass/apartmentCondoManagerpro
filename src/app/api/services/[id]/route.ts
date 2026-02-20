@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { serviceUpdateSchema } from "@/lib/validations/service";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(
     request: Request,

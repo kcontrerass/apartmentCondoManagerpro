@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
-import { Role, UserStatus } from "@prisma/client";
+import { UserStatus } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 interface StaffUser {
     id: string;
@@ -31,7 +32,7 @@ export const StaffTable = ({ staff, onEdit, onDelete, currentUserRole }: StaffTa
             case Role.SUPER_ADMIN: return "info";
             case Role.ADMIN: return "info";
             case Role.GUARD: return "warning";
-            case Role.OPERATOR: return "success"; // Or 'neutral'
+            case Role.BOARD_OF_DIRECTORS: return "success"; // Or 'neutral'
             default: return "neutral";
         }
     };

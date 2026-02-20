@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { updateInvoiceSchema } from "@/lib/validations/invoice";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(
     request: Request,
@@ -88,8 +88,8 @@ export async function PATCH(
             }
         } else if (session.user.role === Role.RESIDENT) {
             return NextResponse.json({ error: "Los residentes no pueden editar facturas" }, { status: 403 });
-        } else if (session.user.role !== Role.OPERATOR) {
-            // For now allow OPERATOR, block others (like GUARD if they shouldn't mark as paid)
+        } else if (session.user.role !== Role.BOARD_OF_DIRECTORS) {
+            // For now allow BOARD_OF_DIRECTORS, block others (like GUARD if they shouldn't mark as paid)
             return NextResponse.json({ error: "No tienes permiso para marcar facturas como pagadas" }, { status: 403 });
         }
 

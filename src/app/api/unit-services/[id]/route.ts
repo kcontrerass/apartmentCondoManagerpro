@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { updateUnitServiceSchema } from "@/lib/validations/service";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function PATCH(
     request: Request,
@@ -104,7 +104,8 @@ export async function DELETE(
             include: {
                 unit: {
                     include: { complex: true }
-                }
+                },
+                service: true
             },
         });
 
@@ -127,26 +128,9 @@ export async function DELETE(
             }
 
             // A resident cannot delete a mandatory service
-            const service = await prisma.service.findUnique({
-                where: { id: unitService.serviceId },
-                select: { isRequired: true }
-            });
-
-            if (service?.isRequired) {
+            if (unitService.service.isRequired) {
                 return NextResponse.json(
                     { error: "No se puede eliminar un servicio obligatorio" },
-                    { status: 403 }
-                );
-            }
-
-            // Enforce 1-month retention period for residents
-            const startDate = new Date(unitService.startDate);
-            const oneMonthAgo = new Date();
-            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-            if (startDate > oneMonthAgo) {
-                return NextResponse.json(
-                    { error: "Debe cumplir al menos un mes de contratación para dar de baja este servicio." },
                     { status: 403 }
                 );
             }
@@ -160,6 +144,69 @@ export async function DELETE(
                 { error: "Solo administradores pueden eliminar asignaciones" },
                 { status: 403 }
             );
+        }
+
+        // Adjust invoice if a PENDING one exists for the current month
+        const now = new Date();
+        const month = now.getMonth() + 1;
+        const year = now.getFullYear();
+
+        const itemWithInvoice = await prisma.invoiceItem.findFirst({
+            where: {
+                serviceId: unitService.serviceId,
+                invoice: {
+                    unitId: unitService.unitId,
+                    month,
+                    year,
+                    status: "PENDING"
+                }
+            },
+            include: {
+                invoice: true
+            }
+        });
+
+        if (itemWithInvoice) {
+            const { invoice, ...item } = itemWithInvoice;
+            const lastDayOfMonth = new Date(year, month, 0).getDate();
+            const startDate = new Date(unitService.startDate);
+            let activeDays = now.getDate();
+
+            // If the service started this month or earlier, we calculate its usage
+            if (startDate.getFullYear() === year && (startDate.getMonth() + 1) === month) {
+                activeDays = Math.max(0, now.getDate() - startDate.getDate() + 1);
+            } else if (startDate > now) {
+                activeDays = 0;
+            }
+
+            // Only adjust if cancellation happens before the last day of the month
+            if (activeDays < lastDayOfMonth) {
+                const basePrice = Number(unitService.customPrice ?? unitService.service.basePrice);
+                const quantity = unitService.quantity || 1;
+                const fullMonthAmount = basePrice * quantity;
+
+                const proratedAmount = Number(((fullMonthAmount / lastDayOfMonth) * activeDays).toFixed(2));
+                const originalItemAmount = Number(item.amount);
+                const difference = originalItemAmount - proratedAmount;
+
+                if (difference > 0) {
+                    await prisma.$transaction([
+                        prisma.invoiceItem.update({
+                            where: { id: item.id },
+                            data: {
+                                amount: proratedAmount,
+                                description: `${unitService.service.name}${quantity > 1 ? ` (x${quantity})` : ''} (Prorrateo final por cancelación)`
+                            }
+                        }),
+                        prisma.invoice.update({
+                            where: { id: invoice.id },
+                            data: {
+                                totalAmount: { decrement: difference }
+                            }
+                        })
+                    ]);
+                }
+            }
         }
 
         await prisma.unitService.delete({

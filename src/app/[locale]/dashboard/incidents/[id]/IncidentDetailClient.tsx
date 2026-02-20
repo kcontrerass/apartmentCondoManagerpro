@@ -10,6 +10,7 @@ import { es } from 'date-fns/locale';
 import { useRouter } from '@/i18n/routing';
 import { toast } from 'react-hot-toast';
 import { Breadcrumbs } from '@/components/dashboard/Breadcrumbs';
+import { Modal } from '@/components/ui/Modal';
 
 interface IncidentDetailClientProps {
     incidentId: string;
@@ -20,6 +21,8 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
     const { updateIncident, deleteIncident } = useIncidents();
     const [incident, setIncident] = useState<any | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -46,7 +49,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
     const handleUpdateStatus = async (status: IncidentStatus) => {
         try {
             const updated = await updateIncident(incidentId, { status });
-            setIncident(prev => prev ? { ...prev, ...updated } : null);
+            setIncident((prev: any) => prev ? { ...prev, ...updated } : null);
             toast.success(`Estado actualizado a ${status}`);
         } catch (error: any) {
             toast.error(error.message);
@@ -56,7 +59,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
     const handleUpdatePriority = async (priority: IncidentPriority) => {
         try {
             const updated = await updateIncident(incidentId, { priority });
-            setIncident(prev => prev ? { ...prev, ...updated } : null);
+            setIncident((prev: any) => prev ? { ...prev, ...updated } : null);
             toast.success(`Prioridad actualizada a ${priority}`);
         } catch (error: any) {
             toast.error(error.message);
@@ -64,13 +67,16 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('¿Eliminar este incidente definitivamente?')) return;
+        setIsDeleting(true);
         try {
             await deleteIncident(incidentId);
             toast.success('Incidente eliminado');
+            setIsDeleteModalOpen(false);
             router.push('/dashboard/incidents');
         } catch (error: any) {
             toast.error(error.message);
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -94,7 +100,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
         }
     };
 
-    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'OPERATOR' || userRole === 'GUARD';
+    const isAdmin = userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD';
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 pb-20">
@@ -177,7 +183,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
 
                     {userRole === 'RESIDENT' && incident.status === 'REPORTED' && (
                         <div className="flex justify-end pt-4">
-                            <Button onClick={handleDelete} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
+                            <Button onClick={() => setIsDeleteModalOpen(true)} variant="outline" className="text-red-400 border-red-400/20 hover:bg-red-400/10" icon="delete">
                                 Eliminar Reporte
                             </Button>
                         </div>
@@ -258,6 +264,36 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                     </div>
                 </div>
             </div>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Reporte"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        ¿Estás seguro de que deseas eliminar este incidente definitivamente? Esta acción no se puede deshacer.
+                    </p>
+                </div>
+            </Modal>
         </div>
     );
 }

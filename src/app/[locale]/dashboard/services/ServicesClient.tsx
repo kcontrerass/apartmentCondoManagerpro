@@ -11,7 +11,8 @@ import { ServiceTable } from "@/components/services/ServiceTable";
 import { ServiceForm } from "@/components/services/ServiceForm";
 import { ServiceSchema } from "@/lib/validations/service";
 import { useTranslations } from 'next-intl';
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
+import { toast } from "sonner";
 
 export function ServicesClient({ userRole, userId }: { userRole: Role, userId: string }) {
     const t = useTranslations('Services');
@@ -26,6 +27,20 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [subscribingId, setSubscribingId] = useState<string | null>(null);
     const [residentUnitId, setResidentUnitId] = useState<string | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        type: 'DELETE' | 'SUBSCRIBE' | 'UNSUBSCRIBE';
+        isLoading?: boolean;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        type: 'DELETE'
+    });
 
     useEffect(() => {
         const fetchComplexes = async () => {
@@ -100,9 +115,10 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                 setIsModalOpen(false);
                 setEditingService(null);
                 fetchServices();
+                toast.success(t('successSave'));
             } else {
                 const errorData = await response.json();
-                alert(errorData.error || t('errorSaving'));
+                toast.error(errorData.error || t('errorSaving'));
             }
         } catch (error) {
             console.error("Error saving service:", error);
@@ -113,57 +129,75 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
 
     const handleSubscribe = async (service: any, quantity: number = 1) => {
         if (!residentUnitId) {
-            alert(t('errorNoUnit'));
+            toast.error(t('errorNoUnit'));
             return;
         }
 
-        if (!confirm(`¿Desea contratar el servicio ${service.name}${service.hasQuantity ? ` (Cantidad: ${quantity})` : ''}?`)) return;
+        setConfirmModal({
+            isOpen: true,
+            title: 'Confirmar Contratación',
+            message: `¿Desea contratar el servicio ${service.name}${service.hasQuantity ? ` (Cantidad: ${quantity})` : ''}?`,
+            type: 'SUBSCRIBE',
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isLoading: true }));
+                try {
+                    const response = await fetch(`/api/units/${residentUnitId}/services`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            serviceId: service.id,
+                            quantity: quantity,
+                            status: "ACTIVE",
+                        }),
+                    });
 
-        setSubscribingId(service.id);
-        try {
-            const response = await fetch(`/api/units/${residentUnitId}/services`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    serviceId: service.id,
-                    quantity: quantity,
-                    status: "ACTIVE",
-                }),
-            });
-
-            if (response.ok) {
-                fetchServices();
-            } else {
-                const errorData = await response.json();
-                alert(errorData.error || t('errorSaving'));
+                    if (response.ok) {
+                        toast.success("Servicio contratado exitosamente");
+                        fetchServices();
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    } else {
+                        const errorData = await response.json();
+                        toast.error(errorData.error || t('errorSaving'));
+                    }
+                } catch (error) {
+                    console.error("Error subscribing to service:", error);
+                    toast.error("Error al procesar la solicitud");
+                } finally {
+                    setConfirmModal(prev => ({ ...prev, isLoading: false }));
+                }
             }
-        } catch (error) {
-            console.error("Error subscribing to service:", error);
-        } finally {
-            setSubscribingId(null);
-        }
+        });
     };
 
     const handleUnsubscribe = async (unitServiceId: string) => {
-        if (!confirm('¿Seguro que desea dar de baja este servicio?')) return;
+        setConfirmModal({
+            isOpen: true,
+            title: 'Cancelar Servicio',
+            message: '¿Seguro que desea dar de baja este servicio? Ya no se incluirá en las próximas facturas.',
+            type: 'UNSUBSCRIBE',
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isLoading: true }));
+                try {
+                    const response = await fetch(`/api/unit-services/${unitServiceId}`, {
+                        method: "DELETE",
+                    });
 
-        setSubscribingId(unitServiceId);
-        try {
-            const response = await fetch(`/api/unit-services/${unitServiceId}`, {
-                method: "DELETE",
-            });
-
-            if (response.ok) {
-                fetchServices();
-            } else {
-                const errorData = await response.json();
-                alert(errorData.error || t('errorSaving'));
+                    if (response.ok) {
+                        toast.success("Servicio cancelado exitosamente");
+                        fetchServices();
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    } else {
+                        const errorData = await response.json();
+                        toast.error(errorData.error || t('errorSaving'));
+                    }
+                } catch (error) {
+                    console.error("Error unsubscribing from service:", error);
+                    toast.error("Error al procesar la solicitud");
+                } finally {
+                    setConfirmModal(prev => ({ ...prev, isLoading: false }));
+                }
             }
-        } catch (error) {
-            console.error("Error unsubscribing from service:", error);
-        } finally {
-            setSubscribingId(null);
-        }
+        });
     };
 
     const handleUpdateQuantity = async (unitServiceId: string, quantity: number) => {
@@ -176,10 +210,11 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
             });
 
             if (response.ok) {
+                toast.success("Cantidad actualizada");
                 fetchServices();
             } else {
                 const errorData = await response.json();
-                alert(errorData.error || t('errorSaving'));
+                toast.error(errorData.error || t('errorSaving'));
             }
         } catch (error) {
             console.error("Error updating service quantity:", error);
@@ -189,16 +224,31 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm(t('deleteConfirm'))) return;
-
-        try {
-            const response = await fetch(`/api/services/${id}`, { method: "DELETE" });
-            if (response.ok) {
-                fetchServices();
+        setConfirmModal({
+            isOpen: true,
+            title: 'Eliminar Servicio',
+            message: t('deleteConfirm'),
+            type: 'DELETE',
+            onConfirm: async () => {
+                setConfirmModal(prev => ({ ...prev, isLoading: true }));
+                try {
+                    const response = await fetch(`/api/services/${id}`, { method: "DELETE" });
+                    if (response.ok) {
+                        toast.success("Servicio eliminado permanentemente");
+                        fetchServices();
+                        setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                    } else {
+                        const errorData = await response.json();
+                        toast.error(errorData.error || "Error al eliminar");
+                    }
+                } catch (error) {
+                    console.error("Error deleting service:", error);
+                    toast.error("Error al procesar la eliminación");
+                } finally {
+                    setConfirmModal(prev => ({ ...prev, isLoading: false }));
+                }
             }
-        } catch (error) {
-            console.error("Error deleting service:", error);
-        }
+        });
     };
 
     return (
@@ -207,7 +257,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('subtitle') : t('allServices')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && userRole !== Role.RESIDENT && (
+                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && userRole !== Role.RESIDENT && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -260,6 +310,37 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                     showComplexSelector={!complexIdFromQuery && !editingService}
                     defaultComplexId={complexIdFromQuery || undefined}
                 />
+            </Modal>
+
+            <Modal
+                isOpen={confirmModal.isOpen}
+                onClose={() => !confirmModal.isLoading && setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                title={confirmModal.title}
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                            disabled={confirmModal.isLoading}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant={confirmModal.type === 'DELETE' ? 'danger' : 'primary'}
+                            onClick={confirmModal.onConfirm}
+                            isLoading={confirmModal.isLoading}
+                        >
+                            {confirmModal.type === 'DELETE' ? 'Eliminar' :
+                                confirmModal.type === 'SUBSCRIBE' ? 'Contratar' : 'Confirmar Baja'}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        {confirmModal.message}
+                    </p>
+                </div>
             </Modal>
         </div>
     );

@@ -10,7 +10,9 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
+import { toast } from "sonner";
+import { Modal } from "@/components/ui/Modal";
 
 const AnnouncementDetailClient = () => {
     const { id } = useParams();
@@ -20,6 +22,8 @@ const AnnouncementDetailClient = () => {
 
     const [announcement, setAnnouncement] = useState<any>(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         const fetchDetail = async () => {
@@ -42,12 +46,22 @@ const AnnouncementDetailClient = () => {
     };
 
     const handleDelete = async () => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este aviso?')) return;
-        if (id) {
+        if (!id) return;
+        setIsDeleting(true);
+        try {
             const success = await deleteAnnouncement(id as string);
             if (success) {
+                toast.success("Aviso eliminado exitosamente");
                 router.push('/dashboard/announcements');
+            } else {
+                toast.error("Error al eliminar el aviso");
             }
+        } catch (error) {
+            console.error(error);
+            toast.error("Ocurrió un error inesperado");
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
         }
     };
 
@@ -77,7 +91,7 @@ const AnnouncementDetailClient = () => {
     }
 
     const userRole = session?.user?.role;
-    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR].includes(userRole as any);
+    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(userRole as any);
     const isAuthor = announcement.authorId === session?.user?.id;
     const isAdminInSameComplex = userRole === Role.ADMIN && announcement.complexId === session?.user?.complexId;
     const canEdit = isAuthor || isAdminInSameComplex || userRole === Role.SUPER_ADMIN;
@@ -98,7 +112,7 @@ const AnnouncementDetailClient = () => {
                                     <Button variant="secondary" icon="edit" onClick={() => setIsEditing(true)}>
                                         Editar
                                     </Button>
-                                    <Button variant="outline" icon="delete" className="text-red-500 border-red-100 hover:bg-red-50" onClick={handleDelete}>
+                                    <Button variant="outline" icon="delete" className="text-red-500 border-red-100 hover:bg-red-50" onClick={() => setIsDeleteModalOpen(true)}>
                                         Eliminar
                                     </Button>
                                 </>
@@ -125,6 +139,36 @@ const AnnouncementDetailClient = () => {
                     onBack={() => router.push('/dashboard/announcements')}
                 />
             )}
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="danger"
+                            onClick={handleDelete}
+                            isLoading={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Aviso"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        ¿Estás seguro de que deseas eliminar este aviso definitivamente? Esta acción no se puede deshacer.
+                    </p>
+                </div>
+            </Modal>
         </div>
     );
 };

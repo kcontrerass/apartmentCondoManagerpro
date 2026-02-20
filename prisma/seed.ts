@@ -46,14 +46,14 @@ async function main() {
         },
     });
 
-    const operator = await prisma.user.upsert({
-        where: { email: 'operator@condomanager.com' },
+    const boardMember = await prisma.user.upsert({
+        where: { email: 'board@condomanager.com' },
         update: {},
         create: {
-            email: 'operator@condomanager.com',
-            name: 'Staff Operator',
+            email: 'board@condomanager.com',
+            name: 'Junta Directiva Test',
             password: commonPassword,
-            role: Role.OPERATOR,
+            role: Role.BOARD_OF_DIRECTORS,
             status: UserStatus.ACTIVE,
         },
     });
@@ -141,7 +141,7 @@ async function main() {
     }
 
     // 4. Assign Staff to Complex
-    await prisma.user.update({ where: { id: operator.id }, data: { complexId: complex.id } as any });
+    await prisma.user.update({ where: { id: boardMember.id }, data: { complexId: complex.id } as any });
     await prisma.user.update({ where: { id: guard.id }, data: { complexId: complex.id } as any });
     console.log('👮 Staff assigned to complex.');
 

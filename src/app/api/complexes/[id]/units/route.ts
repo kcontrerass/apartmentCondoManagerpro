@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { unitSchema } from "@/lib/validations/unit";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export const dynamic = "force-dynamic";
 

@@ -2,7 +2,8 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Unit, Resident, User, Role } from "@prisma/client";
+import { Unit, Resident, User } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { useState } from "react";
 
 interface UnitWithResidents extends Unit {
@@ -73,7 +74,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                                    {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                                         <>
                                             <Button
                                                 variant="secondary"

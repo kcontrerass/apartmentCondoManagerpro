@@ -10,9 +10,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { ResidentTable } from "@/components/residents/ResidentTable";
 import { ResidentForm } from "@/components/residents/ResidentForm";
 import { ResidentInput } from "@/lib/validations/resident";
-import { Resident, Unit, User, Role } from "@prisma/client";
+import { Resident, Unit, User } from "@prisma/client";
+import { Role } from "@/types/roles";
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
+import { toast } from "sonner";
 
 interface ResidentWithExtras extends Resident {
     user: {
@@ -41,6 +43,9 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState<ResidentWithExtras | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [residentToDelete, setResidentToDelete] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -96,9 +101,10 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                 setIsModalOpen(false);
                 setEditingResident(null);
                 fetchData();
+                toast.success("Residente guardado exitosamente");
             } else {
                 const errorData = await response.json();
-                alert(errorData.error || "Ocurrió un error al guardar al residente");
+                toast.error(errorData.error || "Ocurrió un error al guardar al residente");
             }
         } catch (error) {
             console.error("Error saving resident:", error);
@@ -107,16 +113,26 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("¿Está seguro de eliminar esta asignación de residente?")) return;
+    const handleDelete = async () => {
+        if (!residentToDelete) return;
 
+        setIsDeleting(true);
         try {
-            const response = await fetch(`/api/residents/${id}`, { method: "DELETE" });
+            const response = await fetch(`/api/residents/${residentToDelete}`, { method: "DELETE" });
             if (response.ok) {
+                toast.success("Asignación de residente eliminada");
+                setIsDeleteModalOpen(false);
+                setResidentToDelete(null);
                 fetchData();
+            } else {
+                const data = await response.json();
+                toast.error(data.error || "Error al eliminar la asignación");
             }
         } catch (error) {
             console.error("Error deleting resident:", error);
+            toast.error("Error al procesar la eliminación");
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -126,7 +142,7 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                 title={t('title')}
                 subtitle={t('subtitle')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.OPERATOR && (
+                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -154,7 +170,10 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                             setEditingResident(resident);
                             setIsModalOpen(true);
                         }}
-                        onDelete={handleDelete}
+                        onDelete={(id) => {
+                            setResidentToDelete(id);
+                            setIsDeleteModalOpen(true);
+                        }}
                         onView={(id) => router.push(`/dashboard/residents/${id}`)}
                     />
                 )}
@@ -176,6 +195,40 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                     users={users}
                     units={units}
                 />
+            </Modal>
+
+            <Modal
+                isOpen={isDeleteModalOpen}
+                onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+                title="Confirmar Eliminación"
+                footer={
+                    <div className="flex gap-3">
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            disabled={isDeleting}
+                        >
+                            Cancelar
+                        </Button>
+                        <Button
+                            variant="primary"
+                            onClick={handleDelete}
+                            disabled={isDeleting}
+                            className="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar Asignación"}
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4">
+                    <p className="text-slate-600 dark:text-slate-400">
+                        ¿Está seguro de eliminar esta asignación de residente?
+                    </p>
+                    <p className="text-sm text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg border border-amber-100 dark:border-amber-900/30">
+                        <strong>Atención:</strong> Esta acción desvinculará al residente de la unidad. Si es el único residente, la unidad pasará a estar vacante.
+                    </p>
+                </div>
             </Modal>
         </div>
     );

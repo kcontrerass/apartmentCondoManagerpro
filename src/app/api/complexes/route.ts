@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { ComplexCreateSchema } from "@/lib/validations/complex";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(request: Request) {
     try {
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
             }
 
             whereClause.AND.push({ id: adminComplex.id });
-        } else if (session.user.role === Role.OPERATOR || session.user.role === Role.GUARD) {
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
             const user = await (prisma as any).user.findUnique({
                 where: { id: session.user.id },
                 select: { complexId: true }

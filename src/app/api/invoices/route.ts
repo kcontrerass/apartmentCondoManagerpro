@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(request: Request) {
     try {
@@ -38,10 +38,36 @@ export async function GET(request: Request) {
             });
             if (!resident) return NextResponse.json([]);
             whereClause.unitId = resident.unitId;
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.OPERATOR) {
+
+            // Filter by startDate: only show invoices for months including or after joining
+            const startDate = new Date(resident.startDate);
+            const startYear = startDate.getFullYear();
+            const startMonth = startDate.getMonth() + 1;
+
+            whereClause.OR = [
+                { year: { gt: startYear } },
+                {
+                    AND: [
+                        { year: startYear },
+                        { month: { gte: startMonth } }
+                    ]
+                }
+            ];
+        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             // Guards or other roles might not have access to billing list
             return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }
+
+        // Auto-mark overdue invoices before fetching
+        // This runs on every page load to keep statuses current (Option C)
+        await (prisma as any).invoice.updateMany({
+            where: {
+                status: "PENDING",
+                dueDate: { lt: new Date() },
+                number: { not: { startsWith: "RES-" } }
+            },
+            data: { status: "OVERDUE" }
+        });
 
         const invoices = await (prisma as any).invoice.findMany({
             where: whereClause,
@@ -54,6 +80,13 @@ export async function GET(request: Request) {
                 },
                 reservation: {
                     select: { id: true, paymentMethod: true }
+                },
+                items: {
+                    select: {
+                        description: true,
+                        amount: true,
+                        serviceId: true
+                    }
                 }
             },
             orderBy: {

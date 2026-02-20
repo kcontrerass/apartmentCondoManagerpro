@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { residentSchema } from "@/lib/validations/resident";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET(
     request: Request,
@@ -123,12 +123,39 @@ export async function DELETE(
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
+        // Get resident to find unitId before deleting
+        const resident = await prisma.resident.findUnique({
+            where: { id },
+            select: { unitId: true }
+        });
+
+        if (!resident) {
+            return NextResponse.json({ error: "Residente no encontrado" }, { status: 404 });
+        }
+
+        const unitId = resident.unitId;
+
+        // Delete the resident
         await prisma.resident.delete({
             where: { id },
         });
 
+        // Check if there are any other active residents for this unit
+        const remainingResidents = await prisma.resident.count({
+            where: { unitId }
+        });
+
+        // If no residents left, mark unit as VACANT
+        if (remainingResidents === 0) {
+            await prisma.unit.update({
+                where: { id: unitId },
+                data: { status: "VACANT" }
+            });
+        }
+
         return NextResponse.json({ message: "Residente eliminado exitosamente" });
     } catch (error) {
+        console.error("Error deleting resident:", error);
         return NextResponse.json(
             { error: "Error al eliminar el residente" },
             { status: 500 }

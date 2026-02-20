@@ -11,7 +11,8 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
-import { Role } from '@prisma/client';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { Role } from "@/types/roles";
 
 const EventsClient = () => {
     const { data: session } = useSession();
@@ -21,6 +22,7 @@ const EventsClient = () => {
     const [userRole, setUserRole] = useState<string | null>(session?.user?.role || null);
     const [complexId, setComplexId] = useState<string | null>(session?.user?.complexId || null);
     const [isRecovering, setIsRecovering] = useState(false);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
     // Sync state with session when it loads
     useEffect(() => {
@@ -102,7 +104,7 @@ const EventsClient = () => {
         router.push(`/dashboard/events/${event.id}`);
     };
 
-    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.OPERATOR].includes(userRole as any);
+    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(userRole as any);
 
     return (
         <div className="space-y-8">
@@ -204,7 +206,7 @@ const EventsClient = () => {
                     <EventTable
                         events={events}
                         onEdit={handleEdit}
-                        onDelete={deleteEvent}
+                        onDelete={setConfirmDeleteId}
                         canManage={canManage}
                     />
                 </Card>
@@ -215,6 +217,21 @@ const EventsClient = () => {
                     ))}
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={!!confirmDeleteId}
+                onClose={() => setConfirmDeleteId(null)}
+                onConfirm={() => {
+                    if (confirmDeleteId) {
+                        deleteEvent(confirmDeleteId);
+                        setConfirmDeleteId(null);
+                    }
+                }}
+                title="Eliminar Evento"
+                message="¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+            />
         </div>
     );
 };

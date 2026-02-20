@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { Role } from "@prisma/client";
+import { Role } from "@/types/roles";
 
 export async function GET() {
     try {
@@ -30,7 +30,7 @@ export async function GET() {
             stats.totalComplexes = await prisma.complex.count();
             stats.totalUnits = await prisma.unit.count();
             stats.totalResidents = await prisma.resident.count();
-        } else if (role === Role.ADMIN || role === Role.OPERATOR) {
+        } else if (role === Role.ADMIN || role === Role.BOARD_OF_DIRECTORS) {
             // Get complexes managed by this user (or where they have access)
             const managedComplexes = await prisma.complex.findMany({
                 where: { adminId: userId },

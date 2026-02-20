@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const userRoleEnum = z.enum(['SUPER_ADMIN', 'ADMIN', 'OPERATOR', 'GUARD', 'RESIDENT']);
+const userRoleEnum = z.enum(['SUPER_ADMIN', 'ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD', 'RESIDENT']);
 const announcementPriorityEnum = z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']);
 
 /**

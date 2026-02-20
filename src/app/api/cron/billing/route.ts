@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/db";
 
 // This endpoint is designed to be called by a CRON job (e.g., daily)
 // It checks for active optional services that need to be billed for the current month

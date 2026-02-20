@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import IncidentsClient from './IncidentsClient';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 import { MainLayout } from '@/components/layouts/MainLayout';
 
 export default async function IncidentsPage() {

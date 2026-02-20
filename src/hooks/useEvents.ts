@@ -88,8 +88,6 @@ export const useEvents = (complexId?: string) => {
     }, []);
 
     const deleteEvent = useCallback(async (id: string) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este evento?')) return;
-
         setLoading(true);
         try {
             const response = await fetch(`/api/events/${id}`, {

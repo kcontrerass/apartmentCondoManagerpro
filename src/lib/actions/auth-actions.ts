@@ -2,7 +2,7 @@
 
 import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

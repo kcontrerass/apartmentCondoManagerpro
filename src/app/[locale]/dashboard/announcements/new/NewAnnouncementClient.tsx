@@ -10,7 +10,7 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ComplexSelector } from '@/components/dashboard/ComplexSelector';
-import { Role } from '@prisma/client';
+import { Role } from "@/types/roles";
 
 const NewAnnouncementClient = () => {
     const { data: session } = useSession();
@@ -18,7 +18,7 @@ const NewAnnouncementClient = () => {
     const t = useTranslations('announcements');
     const { createAnnouncement, loading } = useAnnouncements();
     const sessionComplexId = session?.user?.complexId;
-    const [selectedComplexId, setSelectedComplexId] = React.useState<string | null>(sessionComplexId || null);
+
 
     const isSuperAdmin = session?.user?.role === Role.SUPER_ADMIN;
     const [complexId, setComplexId] = React.useState<string | null>(sessionComplexId || null);
@@ -83,8 +83,8 @@ const NewAnnouncementClient = () => {
             {isSuperAdmin && !sessionComplexId && (
                 <Card className="p-6">
                     <ComplexSelector
-                        value={selectedComplexId}
-                        onChange={setSelectedComplexId}
+                        value={complexId}
+                        onChange={setComplexId}
                     />
                 </Card>
             )}
