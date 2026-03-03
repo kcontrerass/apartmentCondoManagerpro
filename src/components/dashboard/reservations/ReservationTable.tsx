@@ -38,6 +38,8 @@ export default function ReservationTable() {
     const [loading, setLoading] = useState(true);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [refundReservationId, setRefundReservationId] = useState<string | null>(null);
+    const [isProcessingRefund, setIsProcessingRefund] = useState(false);
 
     const dateLocale = locale === 'es' ? es : enUS;
 
@@ -70,13 +72,31 @@ export default function ReservationTable() {
         }
     };
 
-    const handleStatusChange = async (id: string, status: ReservationStatus) => {
+    const handleStatusChange = async (id: string, data: any) => {
         try {
-            await updateReservation(id, { status });
+            await updateReservation(id, data);
             await fetchData();
         } catch (e: any) {
             console.error(e);
             alert(`Error: ${e.message || 'No se pudo actualizar la reserva'}`);
+        }
+    };
+
+    const handleRefund = async () => {
+        if (!refundReservationId) return;
+        setIsProcessingRefund(true);
+        try {
+            await updateReservation(refundReservationId, {
+                depositStatus: 'REFUNDED',
+                refundMethod: 'CASH'
+            } as any);
+            await fetchData();
+            setRefundReservationId(null);
+        } catch (e: any) {
+            console.error(e);
+            alert(`Error al procesar reembolso: ${e.message}`);
+        } finally {
+            setIsProcessingRefund(false);
         }
     };
 
@@ -105,10 +125,12 @@ export default function ReservationTable() {
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.amenity')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.resident')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Unidad</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.start')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.end')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.status')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.payment')}</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Depósito</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">{tCommon('actions')}</th>
                     </tr>
                 </thead>
@@ -121,6 +143,9 @@ export default function ReservationTable() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                 {r.user?.name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 font-bold">
+                                {r.user?.residentProfile?.unit?.number || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                                 {format(new Date(r.startTime), 'PPp', { locale: dateLocale })}
@@ -156,31 +181,87 @@ export default function ReservationTable() {
                                     <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
                                 )}
                             </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                                {r.depositAmount > 0 ? (
+                                    <div className="flex flex-col gap-1">
+                                        <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            ${Number(r.depositAmount).toFixed(2)}
+                                        </div>
+                                        <Badge variant={r.depositStatus === 'PAID' ? 'success' : r.depositStatus === 'REFUNDED' ? 'info' : r.depositStatus === 'PENDING' ? 'warning' : 'neutral'}>
+                                            {t(`depositStatus.${r.depositStatus}` as any)}
+                                        </Badge>
+                                        {r.depositStatus === 'REFUNDED' && r.refundMethod && (
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-500 uppercase font-bold mt-1">
+                                                <span className="material-symbols-outlined text-[12px]">
+                                                    {r.refundMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                                </span>
+                                                {t(`paymentMethod.${r.refundMethod}` as any)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <span className="text-sm text-slate-400 dark:text-slate-500">-</span>
+                                )}
+                            </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                {session?.user?.role !== Role.RESIDENT && (r.status === ReservationStatus.PENDING || r.status === ReservationStatus.PROCESSING) && (
-                                    <>
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => handleStatusChange(r.id, ReservationStatus.APPROVED)}
-                                        >
-                                            {t('actions.approve')}
-                                        </Button>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => handleStatusChange(r.id, ReservationStatus.REJECTED)}
-                                        >
-                                            {t('actions.reject')}
-                                        </Button>
-                                    </>
+                                {session?.user?.role !== Role.RESIDENT && (
+                                    <div className="flex justify-end gap-2">
+                                        {(r.status === ReservationStatus.PENDING || r.status === ReservationStatus.PROCESSING) && (
+                                            <>
+                                                <Button
+                                                    variant="primary"
+                                                    size="sm"
+                                                    onClick={() => handleStatusChange(r.id, { status: ReservationStatus.APPROVED })}
+                                                >
+                                                    {t('actions.approve')}
+                                                </Button>
+                                                <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => handleStatusChange(r.id, { status: ReservationStatus.REJECTED })}
+                                                >
+                                                    {t('actions.reject')}
+                                                </Button>
+                                            </>
+                                        )}
+                                        {r.depositAmount > 0 && r.depositStatus === 'PENDING' && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => handleStatusChange(r.id, { depositStatus: 'PAID' })}
+                                                className="bg-blue-50 text-blue-600 hover:bg-blue-100 border-none px-3"
+                                            >
+                                                {t('depositStatus.markPaid' as any) || "Marcar Pago Depósito"}
+                                            </Button>
+                                        )}
+                                        {r.depositStatus === 'PAID' && (
+                                            <>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => setRefundReservationId(r.id)}
+                                                    className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-none px-3"
+                                                >
+                                                    Devolver
+                                                </Button>
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    onClick={() => handleStatusChange(r.id, { depositStatus: 'RETAINED' } as any)}
+                                                    className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-none"
+                                                >
+                                                    Retener
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
                                 )}
                             </td>
                         </tr>
                     ))}
                     {reservations.length === 0 && (
                         <tr>
-                            <td colSpan={7} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
+                            <td colSpan={9} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                 {t('noReservations' as any)}
                             </td>
                         </tr>
@@ -197,6 +278,18 @@ export default function ReservationTable() {
                 isLoading={isDeleting}
                 confirmText={tCommon('delete')}
                 cancelText={tCommon('cancel')}
+            />
+
+            <ConfirmModal
+                isOpen={!!refundReservationId}
+                onClose={() => setRefundReservationId(null)}
+                onConfirm={handleRefund}
+                title={t('refundModal.title')}
+                isLoading={isProcessingRefund}
+                confirmText={t('refundModal.confirm')}
+                cancelText={tCommon('cancel')}
+                type="primary"
+                message={t('refundModal.message')}
             />
         </div>
     );

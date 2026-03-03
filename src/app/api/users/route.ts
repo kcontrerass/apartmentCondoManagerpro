@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         const session = await auth();
         if (!session || !session.user) {
@@ -15,10 +15,17 @@ export async function GET() {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
+        const { searchParams } = new URL(request.url);
+        const includeUserId = searchParams.get("includeUserId");
+
         const users = await prisma.user.findMany({
             where: {
                 role: Role.RESIDENT,
-                residentProfile: null
+                status: "ACTIVE",
+                OR: [
+                    { residentProfile: null },
+                    includeUserId ? { id: includeUserId } : {}
+                ].filter(condition => Object.keys(condition).length > 0)
             },
             select: {
                 id: true,

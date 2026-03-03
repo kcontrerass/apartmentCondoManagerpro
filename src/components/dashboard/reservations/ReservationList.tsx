@@ -80,6 +80,21 @@ export default function ReservationList({ reservations, onCancel }: ReservationL
                                     <span>{t(`paymentMethod.${r.paymentMethod}` as any)}</span>
                                 </div>
                             )}
+                            {r.depositAmount > 0 && (
+                                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Depósito</span>
+                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                            ${Number(r.depositAmount).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="mt-1 flex justify-end">
+                                        <Badge variant={r.depositStatus === 'PAID' ? 'success' : r.depositStatus === 'PENDING' ? 'warning' : 'neutral'} className="text-[10px] py-0 px-2">
+                                            {t(`depositStatus.${r.depositStatus}` as any)}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            )}
                             {r.notes && (
                                 <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded italic text-xs">
                                     "{r.notes}"

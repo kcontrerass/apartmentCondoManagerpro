@@ -128,7 +128,7 @@ export async function POST(request: Request) {
         const body = await request.json();
         const validatedData = serviceSchema.parse(body);
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the specific complex can create services
+        // RBAC: Only SUPER_ADMIN, ADMIN or BOARD_OF_DIRECTORS of the specific complex can create services
         if (session.user.role === Role.ADMIN) {
             const complex = await prisma.complex.findUnique({
                 where: { id: validatedData.complexId },
@@ -137,7 +137,18 @@ export async function POST(request: Request) {
 
             if (!complex || complex.adminId !== session.user.id) {
                 return NextResponse.json(
-                    { error: "No tiene permiso para crear servicios en este complejo" },
+                    { error: "No tienes permiso para crear servicios en este complejo" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (!user || user.complexId !== validatedData.complexId) {
+                return NextResponse.json(
+                    { error: "No tienes permiso para crear servicios en este complejo" },
                     { status: 403 }
                 );
             }

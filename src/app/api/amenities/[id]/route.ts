@@ -69,7 +69,19 @@ export async function PATCH(
         }
 
         // RBAC Check
-        if (session.user.role === Role.ADMIN && amenity.complex.adminId !== session.user.id) {
+        const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
+        const isAdminOfComplex = session.user.role === Role.ADMIN && (amenity as any).complex.adminId === session.user.id;
+
+        let isBoardMemberOfComplex = false;
+        if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isBoardMemberOfComplex = user?.complexId === (amenity as any).complexId;
+        }
+
+        if (!isSuperAdmin && !isAdminOfComplex && !isBoardMemberOfComplex) {
             return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
         }
 
@@ -83,10 +95,11 @@ export async function PATCH(
                 capacity: validatedData.capacity,
                 operatingHours: validatedData.operatingHours ? {
                     ...validatedData.operatingHours,
-                    days: validatedData.operatingHours.days || [0, 1, 2, 3, 4, 5, 6]
+                    days: (validatedData.operatingHours as any).days || [0, 1, 2, 3, 4, 5, 6]
                 } : undefined,
                 costPerDay: validatedData.costPerDay,
-                costPerHour: validatedData.costPerHour
+                costPerHour: validatedData.costPerHour,
+                securityDeposit: validatedData.securityDeposit
             }
         });
 
@@ -124,7 +137,19 @@ export async function DELETE(
         }
 
         // RBAC Check
-        if (session.user.role === Role.ADMIN && amenity.complex.adminId !== session.user.id) {
+        const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
+        const isAdminOfComplex = session.user.role === Role.ADMIN && (amenity as any).complex.adminId === session.user.id;
+
+        let isBoardMemberOfComplex = false;
+        if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isBoardMemberOfComplex = user?.complexId === (amenity as any).complexId;
+        }
+
+        if (!isSuperAdmin && !isAdminOfComplex && !isBoardMemberOfComplex) {
             return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
         }
 

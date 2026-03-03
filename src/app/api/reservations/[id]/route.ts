@@ -40,7 +40,16 @@ export async function GET(
         const isAdminOfComplex = reservation.amenity.complex.adminId === session.user.id;
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
 
-        if (!isOwner && !isAdminOfComplex && !isSuperAdmin) {
+        let isBoardOfComplex = false;
+        if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isBoardOfComplex = user?.complexId === reservation.amenity.complexId;
+        }
+
+        if (!isOwner && !isAdminOfComplex && !isSuperAdmin && !isBoardOfComplex) {
             return NextResponse.json({ error: "No tienes permiso para ver esta reservación" }, { status: 403 });
         }
 
@@ -78,10 +87,18 @@ export async function PATCH(
         // RBAC Check refined
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
         const isAdminOfComplex = session.user.role === Role.ADMIN && existing.amenity.complex.adminId === session.user.id;
-        const isOperator = session.user.role === Role.BOARD_OF_DIRECTORS;
         const isOwner = existing.userId === session.user.id;
 
-        if (!isSuperAdmin && !isAdminOfComplex && !isOperator && !isOwner) {
+        let isBoardOfComplex = false;
+        if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isBoardOfComplex = user?.complexId === existing.amenity.complexId;
+        }
+
+        if (!isSuperAdmin && !isAdminOfComplex && !isBoardOfComplex && !isOwner) {
             console.warn(`403: User ${session.user.id} (${session.user.role}) attempted to update reservation ${id}`);
             return NextResponse.json({ error: "No tienes permiso para modificar esta reservación" }, { status: 403 });
         }
@@ -145,6 +162,10 @@ export async function PATCH(
         if (session.user.role === Role.RESIDENT) {
             if (Object.keys(body).length > 1 || body.status !== ReservationStatus.CANCELLED) {
                 return NextResponse.json({ error: "Solo puedes cancelar tu propia reservación" }, { status: 403 });
+            }
+            // Ensure they don't try to change depositStatus
+            if (body.depositStatus) {
+                return NextResponse.json({ error: "No puedes modificar el estado del depósito" }, { status: 403 });
             }
         }
 
@@ -244,11 +265,20 @@ export async function DELETE(
             return NextResponse.json({ error: "Reservación no encontrada" }, { status: 404 });
         }
 
-        // RBAC Check: Only Admin or Super Admin can delete (hard delete)
-        const isAdminOfComplex = existing.amenity.complex.adminId === session.user.id;
+        // RBAC Check: Only Admin, Super Admin, or Board of Directors can delete (hard delete)
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
+        const isAdminOfComplex = existing.amenity.complex.adminId === session.user.id;
 
-        if (!isAdminOfComplex && !isSuperAdmin) {
+        let isBoardOfComplex = false;
+        if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isBoardOfComplex = user?.complexId === existing.amenity.complexId;
+        }
+
+        if (!isAdminOfComplex && !isSuperAdmin && !isBoardOfComplex) {
             return NextResponse.json({ error: "No tienes permiso para eliminar esta reservación" }, { status: 403 });
         }
 

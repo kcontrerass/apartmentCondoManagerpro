@@ -55,9 +55,9 @@ export function ConfirmModal({
             }
         >
             <div className="space-y-4">
-                <p className="text-slate-600 dark:text-slate-400">
+                <div className="text-slate-600 dark:text-slate-400">
                     {message}
-                </p>
+                </div>
             </div>
         </Modal>
     );

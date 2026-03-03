@@ -138,7 +138,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING") && onPay && (
+                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && onPay && (
                                         <Button
                                             variant="primary"
                                             size="sm"
@@ -149,7 +149,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         </Button>
                                     )}
 
-                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING") && !onPay && (
+                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && !onPay && (
                                         <>
                                             <Button
                                                 variant="primary"

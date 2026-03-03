@@ -128,7 +128,7 @@ export function AmenitiesClient() {
         setIsBookingModalOpen(true);
     };
 
-    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN;
+    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN || session?.user?.role === Role.BOARD_OF_DIRECTORS;
 
     return (
         <div className="space-y-6">

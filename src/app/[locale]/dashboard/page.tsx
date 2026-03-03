@@ -25,11 +25,13 @@ async function getStats(userId: string, role: string) {
 
         if (!resident) return null;
 
+        const complexSettings = resident.unit.complex.settings;
+
         const startDate = new Date(resident.startDate);
         const startYear = startDate.getFullYear();
         const startMonth = startDate.getMonth() + 1;
 
-        const [invoicesRaw, reservationsRaw, incidentsRaw] = await Promise.all([
+        const [invoicesRaw, reservationsRaw, incidentsRaw, activePolls] = await Promise.all([
             prisma.invoice.findMany({
                 where: {
                     unitId: resident.unitId,
@@ -57,13 +59,49 @@ async function getStats(userId: string, role: string) {
                 take: 5,
                 orderBy: { createdAt: 'desc' },
                 include: { complex: true }
+            }),
+            prisma.poll.findMany({
+                where: {
+                    complexId: resident.unit.complexId,
+                    status: 'OPEN',
+                    OR: [
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } }
+                    ],
+                    votes: {
+                        none: { userId: userId } // Only polls where the user hasn't voted
+                    }
+                },
+                take: 2,
+                include: {
+                    _count: {
+                        select: { votes: true }
+                    }
+                }
+            }).catch(async () => {
+                // Fallback to RAW SQL if Prisma client is desynced
+                const polls: any[] = await prisma.$queryRawUnsafe(`
+                    SELECT p.*,
+                           (SELECT COUNT(*) FROM votes v WHERE v.poll_id = p.id) as voteCount
+                    FROM polls p
+                    WHERE p.complex_id = ? 
+                      AND p.status = 'OPEN'
+                      AND (p.expires_at IS NULL OR p.expires_at > NOW())
+                      AND NOT EXISTS (SELECT 1 FROM votes v WHERE v.poll_id = p.id AND v.user_id = ?)
+                    LIMIT 2
+                `, resident.unit.complexId, userId);
+
+                return polls.map(p => ({
+                    ...p,
+                    _count: { votes: Number(p.voteCount) }
+                }));
             })
         ]);
 
         const recentInvoicesRaw = [...invoicesRaw].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
         const pendingInvoices = invoicesRaw
-            .filter((inv: any) => inv.status === 'PENDING')
+            .filter((inv: any) => inv.status === 'PENDING' || inv.status === 'OVERDUE')
             .slice(0, 3)
             .map((inv: any) => ({
                 ...inv,
@@ -114,10 +152,12 @@ async function getStats(userId: string, role: string) {
         return {
             residentData: {
                 resident,
+                complexSettings,
                 pendingInvoices,
                 upcomingReservations,
                 recentIncidents: incidentsRaw.slice(0, 3),
-                activities
+                activities,
+                activePolls
             }
         };
     }
@@ -125,7 +165,7 @@ async function getStats(userId: string, role: string) {
     if (role === Role.BOARD_OF_DIRECTORS || role === Role.GUARD) {
         const user = await prisma.user.findUnique({
             where: { id: userId },
-            select: { complexId: true }
+            select: { complexId: true, assignedComplex: { select: { settings: true } } }
         });
 
         if (!user?.complexId) {
@@ -209,7 +249,8 @@ async function getStats(userId: string, role: string) {
                 occupiedUnits,
                 pendingReservations,
                 recentIncidents,
-                activities
+                activities,
+                complexSettings: user.assignedComplex?.settings
             }
         };
     }
@@ -227,6 +268,8 @@ async function getStats(userId: string, role: string) {
     };
 
     let managedComplexIds: string[] = [];
+    let complexSettings: any = null;
+
     if (role === Role.SUPER_ADMIN) {
         const complexes = await prisma.complex.findMany({ select: { id: true } });
         managedComplexIds = complexes.map(c => c.id);
@@ -234,10 +277,13 @@ async function getStats(userId: string, role: string) {
     } else {
         const managedComplexes = await prisma.complex.findMany({
             where: { adminId: userId },
-            select: { id: true },
+            select: { id: true, settings: true },
         });
         managedComplexIds = managedComplexes.map((c) => c.id);
         stats.totalComplexes = managedComplexIds.length;
+        if (managedComplexes.length > 0) {
+            complexSettings = managedComplexes[0].settings;
+        }
     }
 
     const [unitStats, residentsRaw, pendingIncidents, recentIncidentsRaw, recentInvoicesRaw, recentReservationsRaw] = await Promise.all([
@@ -315,6 +361,8 @@ async function getStats(userId: string, role: string) {
             href: `/dashboard/reservations`
         }))
     ].sort((a, b) => new Date(b.datetime).getTime() - new Date(a.datetime).getTime()).slice(0, 5);
+
+    stats.complexSettings = complexSettings;
 
     return { adminData: stats };
 }

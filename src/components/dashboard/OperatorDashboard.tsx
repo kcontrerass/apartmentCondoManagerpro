@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Link } from '@/i18n/routing';
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
+import { Role } from '@/types/roles';
 
 interface OperatorDashboardProps {
     data: {
@@ -15,11 +16,19 @@ interface OperatorDashboardProps {
         pendingReservations: number;
         recentIncidents: any[];
         activities: any[];
+        complexSettings?: any;
     };
 }
 
 export function OperatorDashboard({ data }: OperatorDashboardProps) {
     const t = useTranslations("Dashboard");
+
+    const hasPermission = (module: string) => {
+        // Enforce Guard Role by default if it's an operator
+        const permissions = data.complexSettings?.permissions?.[Role.GUARD];
+        if (!permissions) return true; // Default true
+        return permissions[module] !== false; // Explicit false
+    };
 
     return (
         <div className="space-y-8">
@@ -48,29 +57,33 @@ export function OperatorDashboard({ data }: OperatorDashboardProps) {
                     iconBgColor="bg-orange-50 dark:bg-orange-900/20"
                     iconColor="text-orange-500"
                 />
-                <StatCard
-                    icon="event_note"
-                    label={t("pendingReservations")}
-                    value={data.pendingReservations.toString()}
-                    subtitle={t("toReview")}
-                    iconBgColor="bg-amber-50 dark:bg-amber-900/20"
-                    iconColor="text-amber-500"
-                />
+                {hasPermission('reservations') && (
+                    <StatCard
+                        icon="event_note"
+                        label={t("pendingReservations")}
+                        value={data.pendingReservations.toString()}
+                        subtitle={t("toReview")}
+                        iconBgColor="bg-amber-50 dark:bg-amber-900/20"
+                        iconColor="text-amber-500"
+                    />
+                )}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <ActivityTable activities={data.activities || []} />
                 </div>
-                <div className="lg:col-span-1 border-slate-200 dark:border-slate-800">
-                    <Card className="p-6 h-full">
-                        <h3 className="font-bold mb-4">{t("operatorDashboard.todayVisitors")}</h3>
-                        <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                            <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">no_accounts</span>
-                            <p className="text-sm text-slate-500">No hay ingresos registrados hoy.</p>
-                        </div>
-                    </Card>
-                </div>
+                {hasPermission('accessControl') && (
+                    <div className="lg:col-span-1 border-slate-200 dark:border-slate-800">
+                        <Card className="p-6 h-full">
+                            <h3 className="font-bold mb-4">{t("operatorDashboard.todayVisitors")}</h3>
+                            <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">no_accounts</span>
+                                <p className="text-sm text-slate-500">{t("operatorDashboard.noVisitorsToday")}</p>
+                            </div>
+                        </Card>
+                    </div>
+                )}
             </div>
         </div>
     );

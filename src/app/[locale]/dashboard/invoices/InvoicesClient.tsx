@@ -14,6 +14,7 @@ import { GenerateInvoicesSchema } from "@/lib/validations/invoice";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
+import { Input } from "@/components/ui/Input";
 
 export function InvoicesClient() {
     const t = useTranslations('Invoices');
@@ -32,6 +33,13 @@ export function InvoicesClient() {
     const [paymentInvoice, setPaymentInvoice] = useState<any | null>(null);
     const [selectedMethod, setSelectedMethod] = useState<'CARD' | 'CASH' | 'TRANSFER'>('CARD');
     const [showInstructions, setShowInstructions] = useState(false);
+
+    // Filters state
+    const [searchTerm, setSearchTerm] = useState("");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [monthFilter, setMonthFilter] = useState("ALL");
+    const [serviceFilter, setServiceFilter] = useState("ALL");
+
     const { data: session } = useSession();
 
     const isResident = session?.user?.role === Role.RESIDENT;
@@ -170,6 +178,28 @@ export function InvoicesClient() {
         }
     };
 
+    // Extract unique services from all invoices for the filter dropdown
+    const availableServices = Array.from(new Set(
+        invoices.flatMap(invoice => invoice.items?.map((item: any) => item.description) || [])
+    )).filter(Boolean);
+
+    const filteredInvoices = invoices.filter(invoice => {
+        const matchesSearch =
+            invoice.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            invoice.unit?.number?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesStatus = statusFilter === "ALL" || invoice.status === statusFilter;
+
+        const matchesMonth = monthFilter === "ALL" || invoice.month?.toString() === monthFilter;
+
+        const matchesService = serviceFilter === "ALL" ||
+            (invoice.items && invoice.items.some((item: any) =>
+                item.description === serviceFilter
+            ));
+
+        return matchesSearch && matchesStatus && matchesMonth && matchesService;
+    });
+
     return (
         <div className="space-y-8">
             <PageHeader
@@ -188,6 +218,82 @@ export function InvoicesClient() {
                 }
             />
 
+            <Card className="p-4 flex flex-col sm:flex-row gap-4 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                    <Input
+                        name="search"
+                        label={t('searchPlaceholder') || "Buscar por unidad o número..."}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Ej. A-101 o INV-001"
+                    />
+                </div>
+                <div className="w-full sm:w-auto min-w-[150px]">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        {t('modal.selectMonth') || "Mes"}
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={monthFilter}
+                            onChange={(e) => setMonthFilter(e.target.value)}
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                        >
+                            <option value="ALL">Todos los meses</option>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                                <option key={month} value={month.toString()}>
+                                    {new Date(2000, month - 1, 1).toLocaleString('es', { month: 'long' }).charAt(0).toUpperCase() + new Date(2000, month - 1, 1).toLocaleString('es', { month: 'long' }).slice(1)}
+                                </option>
+                            ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            expand_more
+                        </span>
+                    </div>
+                </div>
+                <div className="w-full sm:w-auto min-w-[150px]">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Servicio
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={serviceFilter}
+                            onChange={(e) => setServiceFilter(e.target.value)}
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                        >
+                            <option value="ALL">Todos los servicios</option>
+                            {availableServices.map((serviceName: any, idx) => (
+                                <option key={idx} value={serviceName}>{serviceName}</option>
+                            ))}
+                        </select>
+                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            expand_more
+                        </span>
+                    </div>
+                </div>
+                <div className="w-full sm:w-auto min-w-[150px]">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        {t('table.status') || "Estado"}
+                    </label>
+                    <div className="relative">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                        >
+                            <option value="ALL">{t('filterAll', { defaultValue: 'Todos los estados' })}</option>
+                            <option value="PENDING">{t('status.PENDING', { defaultValue: 'Pendiente' })}</option>
+                            <option value="PAID">{t('status.PAID', { defaultValue: 'Pagado' })}</option>
+                            <option value="OVERDUE">{t('status.OVERDUE', { defaultValue: 'Vencido' })}</option>
+                            <option value="PROCESSING">{t('status.PROCESSING', { defaultValue: 'En Proceso' })}</option>
+                            <option value="CANCELLED">{t('status.CANCELLED', { defaultValue: 'Cancelado' })}</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                            expand_more
+                        </span>
+                    </div>
+                </div>
+            </Card>
+
             <Card>
                 {isLoading && invoices.length === 0 ? (
                     <div className="flex justify-center py-12">
@@ -195,7 +301,7 @@ export function InvoicesClient() {
                     </div>
                 ) : (
                     <InvoiceTable
-                        invoices={invoices}
+                        invoices={filteredInvoices}
                         onViewDetail={handleViewDetail}
                         onUpdateStatus={handleUpdateStatus}
                         onPay={isResident ? handlePay : undefined}

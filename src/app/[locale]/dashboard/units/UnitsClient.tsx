@@ -138,7 +138,7 @@ export function UnitsClient({ userRole }: { userRole?: Role }) {
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('managingUnits') : t('allRegistered')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                    userRole !== Role.GUARD && (
                         <Button
                             variant="primary"
                             icon="add"

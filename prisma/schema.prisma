@@ -29,6 +29,10 @@ model User {
   assignedComplex      Complex?      @relation("StaffComplex", fields: [complexId], references: [id])
   visitorLogs          VisitorLog[]  @relation("CreatedVisitorLogs")
   documents            Document[]    @relation("UserDocuments")
+  incidentComments     IncidentComment[] @relation("CommentAuthor")
+  polls                Poll[]            @relation("PollAuthor")
+  votes                Vote[]
+
 
   @@index([complexId], map: "users_complex_id_fkey")
   @@map("users")
@@ -55,6 +59,8 @@ model Complex {
   staff         User[]         @relation("StaffComplex")
   visitorLogs   VisitorLog[]
   documents     Document[]
+  polls         Poll[]
+
 
   @@map("complexes")
 }
@@ -108,6 +114,7 @@ model Amenity {
   operatingHours  Json?         @map("operating_hours")
   costPerDay      Decimal?      @map("cost_per_day") @db.Decimal(10, 2)
   costPerHour     Decimal?      @map("cost_per_hour") @db.Decimal(10, 2)
+  securityDeposit Decimal?      @map("security_deposit") @db.Decimal(10, 2)
   complexId       String        @map("complex_id")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -120,25 +127,36 @@ model Amenity {
 }
 
 model Reservation {
-  id            String            @id @default(cuid())
-  startTime     DateTime          @map("start_date_time")
-  endTime       DateTime          @map("end_date_time")
-  status        ReservationStatus @default(PENDING)
-  notes         String?           @db.Text
-  totalCost     Decimal?          @map("total_cost") @db.Decimal(10, 2)
-  userId        String            @map("user_id")
-  amenityId     String            @map("amenity_id")
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  invoiceId     String?           @unique @map("invoice_id")
-  paymentMethod PaymentMethod?    @map("payment_method")
-  amenity       Amenity           @relation(fields: [amenityId], references: [id], onDelete: Cascade)
-  invoice       Invoice?          @relation(fields: [invoiceId], references: [id])
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id              String            @id @default(cuid())
+  startTime       DateTime          @map("start_date_time")
+  endTime         DateTime          @map("end_date_time")
+  status          ReservationStatus @default(PENDING)
+  notes           String?           @db.Text
+  totalCost       Decimal?          @map("total_cost") @db.Decimal(10, 2)
+  depositAmount   Decimal?          @map("deposit_amount") @db.Decimal(10, 2)
+  depositStatus   DepositStatus     @default(NONE) @map("deposit_status")
+  userId          String            @map("user_id")
+  amenityId       String            @map("amenity_id")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  invoiceId       String?           @unique @map("invoice_id")
+  paymentMethod   PaymentMethod?    @map("payment_method")
+  refundMethod    PaymentMethod?    @map("refund_method")
+  amenity         Amenity           @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  invoice         Invoice?          @relation(fields: [invoiceId], references: [id])
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([amenityId], map: "reservations_amenity_id_fkey")
   @@index([userId], map: "reservations_user_id_fkey")
   @@map("reservations")
+}
+
+enum DepositStatus {
+  NONE
+  PENDING
+  PAID
+  REFUNDED
+  RETAINED
 }
 
 model Service {
@@ -317,12 +335,29 @@ model Incident {
   reporter    User             @relation("Reporter", fields: [reporterId], references: [id])
   resolver    User?            @relation("Resolver", fields: [resolverId], references: [id])
   unit        Unit?            @relation(fields: [unitId], references: [id])
+  comments    IncidentComment[]
 
   @@index([complexId])
   @@index([reporterId])
   @@index([resolverId], map: "incidents_resolver_id_fkey")
   @@index([unitId], map: "incidents_unit_id_fkey")
   @@map("incidents")
+}
+
+model IncidentComment {
+  id         String   @id @default(cuid())
+  content    String   @db.Text
+  incidentId String   @map("incident_id")
+  authorId   String   @map("author_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  incident Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  author   User     @relation("CommentAuthor", fields: [authorId], references: [id])
+
+  @@index([incidentId])
+  @@index([authorId])
+  @@map("incident_comments")
 }
 
 enum Role {
@@ -343,6 +378,7 @@ enum ComplexType {
   BUILDING
   RESIDENTIAL
   CONDO
+  SHOPPING_CENTER
 }
 
 enum UnitStatus {
@@ -461,4 +497,56 @@ model Document {
   @@index([complexId])
   @@index([authorId])
   @@map("documents")
+}
+
+model Poll {
+  id          String       @id @default(cuid())
+  title       String
+  description String?      @db.Text
+  status      PollStatus   @default(OPEN)
+  expiresAt   DateTime?    @map("expires_at")
+  complexId   String       @map("complex_id")
+  authorId    String       @map("author_id")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  complex     Complex      @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  author      User         @relation("PollAuthor", fields: [authorId], references: [id])
+  options     PollOption[]
+  votes       Vote[]
+
+  @@index([complexId])
+  @@map("polls")
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  text   String
+  pollId String @map("poll_id")
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  Vote[]
+
+  @@map("poll_options")
+}
+
+model Vote {
+  id        String   @id @default(cuid())
+  pollId    String   @map("poll_id")
+  optionId  String   @map("option_id")
+  userId    String   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  poll   Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  option PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId]) // Una persona, un voto por encuesta
+  @@index([pollId])
+  @@index([userId])
+  @@map("votes")
+}
+
+enum PollStatus {
+  OPEN
+  CLOSED
 }

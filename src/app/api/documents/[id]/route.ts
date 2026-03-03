@@ -25,12 +25,20 @@ export async function PATCH(
             return new NextResponse("Not Found", { status: 404 });
         }
 
-        // Permission check: Only author, Super Admin, or Complex Admin can edit
+        // Permission check: Only author, Super Admin, or Complex Staff (Admin/Board) can edit
         const isAuthor = document.authorId === session.user.id;
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
-        const isAdmin = session.user.role === Role.ADMIN && document.complexId === session.user.complexId;
 
-        if (!isAuthor && !isSuperAdmin && !isAdmin) {
+        let isStaffInComplex = false;
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isStaffInComplex = user?.complexId === document.complexId;
+        }
+
+        if (!isAuthor && !isSuperAdmin && !isStaffInComplex) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
@@ -70,12 +78,20 @@ export async function DELETE(
             return new NextResponse("Not Found", { status: 404 });
         }
 
-        // Permission check: Only author, Super Admin, or Complex Admin can delete
+        // Permission check: Only author, Super Admin, or Complex Staff (Admin/Board) can delete
         const isAuthor = document.authorId === session.user.id;
         const isSuperAdmin = session.user.role === Role.SUPER_ADMIN;
-        const isAdmin = session.user.role === Role.ADMIN && document.complexId === session.user.complexId;
 
-        if (!isAuthor && !isSuperAdmin && !isAdmin) {
+        let isStaffInComplex = false;
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            isStaffInComplex = user?.complexId === document.complexId;
+        }
+
+        if (!isAuthor && !isSuperAdmin && !isStaffInComplex) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 

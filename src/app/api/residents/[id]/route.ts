@@ -51,8 +51,33 @@ export async function PATCH(
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
+        }
+
+        // Get resident to check complex permission
+        const residentToCheck = await prisma.resident.findUnique({
+            where: { id },
+            include: { unit: { include: { complex: true } } }
+        });
+
+        if (!residentToCheck) {
+            return NextResponse.json({ error: "Residente no encontrado" }, { status: 404 });
+        }
+
+        // RBAC: Verify user has permission to manage residents in this complex
+        if (session.user.role === Role.ADMIN) {
+            if (residentToCheck.unit.complex.adminId !== session.user.id) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== residentToCheck.unit.complexId) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
         }
 
         const body = await request.json();
@@ -119,18 +144,33 @@ export async function DELETE(
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
-        // Get resident to find unitId before deleting
+        // Get resident to find unitId and check complex permission
         const resident = await prisma.resident.findUnique({
             where: { id },
-            select: { unitId: true }
+            include: { unit: { include: { complex: true } } }
         });
 
         if (!resident) {
             return NextResponse.json({ error: "Residente no encontrado" }, { status: 404 });
+        }
+
+        // RBAC: Verify user has permission to manage residents in this complex
+        if (session.user.role === Role.ADMIN) {
+            if (resident.unit.complex.adminId !== session.user.id) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== resident.unit.complexId) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
         }
 
         const unitId = resident.unitId;

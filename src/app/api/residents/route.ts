@@ -90,7 +90,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -107,10 +107,26 @@ export async function POST(request: Request) {
 
         // Verify unit exists
         const unitExists = await prisma.unit.findUnique({
-            where: { id: validatedData.unitId }
+            where: { id: validatedData.unitId },
+            include: { complex: true }
         });
         if (!unitExists) {
             return NextResponse.json({ error: "La unidad especificada no existe" }, { status: 404 });
+        }
+
+        // RBAC: Verify user has permission to manage residents in this complex
+        if (session.user.role === Role.ADMIN) {
+            if (unitExists.complex.adminId !== session.user.id) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== unitExists.complexId) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar residentes en este complejo" }, { status: 403 });
+            }
         }
 
         // Check if user is already a resident

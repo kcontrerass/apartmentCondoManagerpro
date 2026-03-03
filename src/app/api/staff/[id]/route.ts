@@ -15,7 +15,7 @@ export async function PUT(
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -34,7 +34,7 @@ export async function PUT(
         }
 
         // Check Permissions
-        if (session.user.role === Role.ADMIN) {
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
             // Only update staff in their managed complex
             const adminComplexId = (session.user as any).complexId;
 
@@ -42,10 +42,18 @@ export async function PUT(
                 return NextResponse.json({ error: "No tienes permiso sobre este usuario" }, { status: 403 });
             }
 
-            // Prevent Admin from modifying Super Admins or other Admins
-            if (userToUpdate.role === Role.SUPER_ADMIN || userToUpdate.role === Role.ADMIN) {
-                if (userToUpdate.id !== session.user.id) {
-                    return NextResponse.json({ error: "No puedes modificar a otros administradores" }, { status: 403 });
+            // Prevent Admin from modifying Super Admins, other Admins, or Board of Directors
+            if (session.user.role === Role.ADMIN) {
+                if (userToUpdate.role === Role.SUPER_ADMIN || userToUpdate.role === Role.ADMIN || userToUpdate.role === Role.BOARD_OF_DIRECTORS) {
+                    if (userToUpdate.id !== session.user.id) {
+                        return NextResponse.json({ error: "No puedes modificar a administradores o superiores" }, { status: 403 });
+                    }
+                }
+            }
+            // Prevent Board of Directors from modifying Super Admins
+            if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+                if (userToUpdate.role === Role.SUPER_ADMIN) {
+                    return NextResponse.json({ error: "No puedes modificar a súper administradores" }, { status: 403 });
                 }
             }
         }
@@ -127,7 +135,7 @@ export async function DELETE(
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -144,15 +152,22 @@ export async function DELETE(
         }
 
         // RBAC Checks for Delete (same as Update)
-        if (session.user.role === Role.ADMIN) {
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
             const adminComplexId = (session.user as any).complexId;
 
             if (!adminComplexId || userToDelete.complexId !== adminComplexId) {
                 return NextResponse.json({ error: "No tienes permiso sobre este usuario" }, { status: 403 });
             }
 
-            if (userToDelete.role === Role.SUPER_ADMIN || userToDelete.role === Role.ADMIN) {
-                return NextResponse.json({ error: "No puedes eliminar administradores" }, { status: 403 });
+            if (session.user.role === Role.ADMIN) {
+                if (userToDelete.role === Role.SUPER_ADMIN || userToDelete.role === Role.ADMIN || userToDelete.role === Role.BOARD_OF_DIRECTORS) {
+                    return NextResponse.json({ error: "No puedes eliminar administradores o superiores" }, { status: 403 });
+                }
+            }
+            if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+                if (userToDelete.role === Role.SUPER_ADMIN) {
+                    return NextResponse.json({ error: "No puedes eliminar súper administradores" }, { status: 403 });
+                }
             }
         }
 

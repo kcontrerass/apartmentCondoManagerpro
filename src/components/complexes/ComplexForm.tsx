@@ -122,6 +122,7 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
                             { label: "Edificio", value: ComplexType.BUILDING },
                             { label: "Residencial", value: ComplexType.RESIDENTIAL },
                             { label: "Condominio", value: ComplexType.CONDO },
+                            { label: "Centro Comercial", value: ComplexType.SHOPPING_CENTER },
                         ]}
                         error={errors.type?.message}
                     />

@@ -15,7 +15,7 @@ export async function GET(
         if (!session?.user) return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED' } }, { status: 401 });
 
         const { id } = await params;
-        const incident = await prisma.incident.findUnique({
+        const incident: any = await prisma.incident.findUnique({
             where: { id },
             include: {
                 reporter: { select: { id: true, name: true, image: true, email: true, phone: true } },
@@ -25,16 +25,77 @@ export async function GET(
             }
         });
 
+        if (incident) {
+            try {
+                // Fetch comments using RAW SQL to bypass Prisma client desync
+                const rawComments: any[] = await prisma.$queryRawUnsafe(
+                    `SELECT c.id, c.content, c.created_at as createdAt, 
+                            u.id as authorId, u.name as authorName, u.image as authorImage, u.role as authorRole
+                     FROM incident_comments c
+                     JOIN users u ON c.author_id = u.id
+                     WHERE c.incident_id = ?
+                     ORDER BY c.created_at ASC`,
+                    id
+                );
+
+                incident.comments = rawComments.map(c => ({
+                    id: c.id,
+                    content: c.content,
+                    createdAt: c.createdAt,
+                    author: {
+                        id: c.authorId,
+                        name: c.authorName,
+                        image: c.authorImage,
+                        role: c.authorRole
+                    }
+                }));
+            } catch (rawError: any) {
+                console.warn(`[INCIDENT_GET_RAW_ERROR] Failed to fetch comments: ${rawError.message}`);
+                incident.comments = [];
+            }
+        }
+
         if (!incident) return NextResponse.json({ success: false, error: { code: 'NOT_FOUND' } }, { status: 404 });
 
         // Access check
         const userRole = session.user.role;
-        if (userRole === 'RESIDENT' && incident.reporterId !== session.user.id) {
-            return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
-        }
-        if (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD') {
-            if (incident.complexId !== (session.user as any).complexId) {
+        const userComplexId = (session.user as any).complexId;
+
+        console.debug(`[INCIDENT_GET] ID: ${id} | Role: ${userRole} | UserComplexId: ${userComplexId} | IncidentComplexId: ${incident.complexId}`);
+
+        if (userRole === 'SUPER_ADMIN') {
+            // Super admin has full access
+        } else if (userRole === 'RESIDENT') {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+            const isReporter = incident.reporterId === session.user.id;
+            const isConcernedUnit = incident.unitId === resident?.unitId;
+
+            if (!isReporter && !isConcernedUnit) {
+                console.warn(`[INCIDENT_FORBIDDEN] Resident ${session.user.id} not reporter AND not in unit ${incident.unitId}`);
                 return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
+            }
+        } else if (['ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD'].includes(userRole)) {
+            // Check if incident belongs to user's complex
+            if (incident.complexId !== userComplexId) {
+                // Double check: if session is desynced, try to fetch from DB
+                const userObj = await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: {
+                        complexId: true,
+                        managedComplexes: { select: { id: true } },
+                        residentProfile: { include: { unit: true } }
+                    }
+                });
+
+                let actualComplexId = userObj?.complexId || userObj?.managedComplexes?.id || userObj?.residentProfile?.unit?.complexId;
+
+                if (incident.complexId !== actualComplexId) {
+                    console.warn(`[INCIDENT_FORBIDDEN] ActualComplexId: ${actualComplexId} does not match Incident: ${incident.complexId}`);
+                    return NextResponse.json({ success: false, error: { code: 'FORBIDDEN' } }, { status: 403 });
+                }
             }
         }
 

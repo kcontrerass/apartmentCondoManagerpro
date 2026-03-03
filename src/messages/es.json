@@ -33,6 +33,7 @@
         "incidents": "Incidentes",
         "reports": "Reportes",
         "documents": "Documentos",
+        "polls": "Votaciones",
         "close": "Cerrar"
     },
     "Dashboard": {
@@ -67,6 +68,10 @@
         "boardOfDirectorsDashboard": {
             "todayVisitors": "Visitantes de Hoy",
             "recentIncidents": "Incidentes Recientes"
+        },
+        "operatorDashboard": {
+            "todayVisitors": "Visitantes de Hoy",
+            "noVisitorsToday": "No hay ingresos registrados hoy."
         },
         "pendingReservations": "Reservas Pendientes",
         "inComplex": "En el complejo",
@@ -111,10 +116,13 @@
         "subtitle": "Gestión de servicios base (Agua, Mantenimiento, etc.)",
         "newService": "Nuevo Servicio",
         "editService": "Editar Servicio",
+        "delete": "Eliminar",
+        "book": "Contratar",
         "name": "Nombre",
         "description": "Descripción",
         "basePrice": "Precio Base",
         "frequency": "Frecuencia",
+        "quantity": "Cantidad",
         "complex": "Complejo",
         "assignedUnits": "Unidades Asignadas",
         "allServices": "Todos los servicios registrados",
@@ -125,11 +133,25 @@
         "unitServices": "Servicios de la Unidad",
         "customPrice": "Precio Personalizado",
         "startDate": "Fecha de Inicio",
-        "endDate": "Fecha de Finalización"
+        "endDate": "Fecha de Finalización",
+        "successSave": "Servicio guardado exitosamente",
+        "successSubscribe": "Servicio contratado exitosamente",
+        "successUnsubscribe": "Servicio cancelado exitosamente",
+        "successUpdateQuantity": "Cantidad actualizada",
+        "successDelete": "Servicio eliminado permanentemente",
+        "confirmSubscribeTitle": "Confirmar Contratación",
+        "confirmSubscribeMessage": "¿Desea contratar el servicio {name}{quantity}?",
+        "confirmUnsubscribeTitle": "Cancelar Servicio",
+        "confirmUnsubscribeMessage": "¿Seguro que desea dar de baja este servicio? Ya no se incluirá en las próximas facturas.",
+        "confirmDeleteTitle": "Eliminar Servicio",
+        "errorProcess": "Error al procesar la solicitud",
+        "errorDelete": "Error al eliminar el servicio"
     },
     "Invoices": {
         "title": "Facturación",
         "subtitle": "Gestión de cobros y facturas",
+        "searchPlaceholder": "Buscar por unidad o número...",
+        "filterAll": "Todos los estados",
         "generate": "Generar Facturas",
         "table": {
             "number": "Número",
@@ -234,7 +256,8 @@
             "selectComplex": "Seleccionar Complejo",
             "requiresPayment": "Requiere Pago",
             "costs": "Costos de Reserva",
-            "costsHelp": "Define el costo por reserva (por día o por hora). Si es 0, la reserva será gratuita."
+            "costsHelp": "Define el costo por reserva (por día o por hora). Si es 0, la reserva será gratuita.",
+            "securityDeposit": "Depósito de Seguridad"
         },
         "deleteConfirm": "¿Estás seguro de eliminar esta amenidad?",
         "confirmDeleteTitle": "Eliminar Amenidad",
@@ -279,6 +302,14 @@
             "COMPLETED": "Completada",
             "PROCESSING": "En Proceso"
         },
+        "depositStatus": {
+            "NONE": "No Requerido",
+            "PENDING": "Pendiente de Pago",
+            "PAID": "Pagado",
+            "REFUNDED": "Devuelto",
+            "RETAINED": "Retenido",
+            "markPaid": "Marcar Pago Depósito"
+        },
         "form": {
             "startTime": "Fecha y Hora de Inicio",
             "endTime": "Fecha y Hora de Fin",
@@ -296,11 +327,17 @@
             "delete": "Eliminar"
         },
         "deleteConfirm": "¿Seguro que deseas eliminar esta reserva?",
+        "confirmDeleteTitle": "Eliminar Reserva",
         "cancelConfirm": "¿Deseas cancelar tu reserva?",
         "confirmCancelTitle": "Cancelar Reserva",
         "confirmCancel": "Sí, cancelar",
         "cancelling": "Cancelando...",
         "noReservations": "No se encontraron reservaciones.",
+        "refundModal": {
+            "title": "Confirmar Reembolso",
+            "message": "¿Estás seguro de que deseas marcar este depósito como devuelto en efectivo?",
+            "confirm": "Sí, marcar como devuelto"
+        },
         "adminPlaceholder": "Funcionalidad de creación manual por administrador en desarrollo.",
         "paymentInstructions": {
             "transfer": {

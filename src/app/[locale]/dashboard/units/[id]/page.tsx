@@ -50,7 +50,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                             <Link href={`/dashboard/units?complexId=${unit.complexId}`}>
                                 <Button variant="secondary" icon="arrow_back">Volver a lista</Button>
                             </Link>
-                            {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                            {session.user.role !== 'GUARD' && (
                                 <Button variant="primary" icon="edit">Editar Unidad</Button>
                             )}
                         </div>
@@ -105,7 +105,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                                     {!resident.endDate || new Date(resident.endDate) > new Date() ? "Activo" : "Pasado"}
                                                 </Badge>
                                                 {(!resident.endDate || new Date(resident.endDate) > new Date()) &&
-                                                    session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                                                    session.user.role !== 'GUARD' && (
                                                         <DeleteResidentButton
                                                             residentId={resident.id}
                                                             residentName={resident.user.name}
@@ -141,7 +141,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                         <Link href={`/dashboard/residents/${currentResident.id}`} className="flex-1">
                                             <Button variant="outline" className="w-full">Ver Perfil</Button>
                                         </Link>
-                                        {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                                        {session.user.role !== 'GUARD' && (
                                             <DeleteResidentButton
                                                 residentId={currentResident.id}
                                                 residentName={currentResident.user.name}
@@ -152,7 +152,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                             ) : (
                                 <div className="text-center py-4">
                                     <p className="text-sm text-slate-500">Sin residente activo</p>
-                                    {session.user.role !== 'GUARD' && session.user.role !== 'BOARD_OF_DIRECTORS' && (
+                                    {session.user.role !== 'GUARD' && (
                                         <Link href={`/dashboard/residents?unitId=${unit.id}`}>
                                             <Button variant="secondary" size="sm" className="mt-2">Asignar uno</Button>
                                         </Link>

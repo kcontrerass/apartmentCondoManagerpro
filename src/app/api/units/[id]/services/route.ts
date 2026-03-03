@@ -72,12 +72,15 @@ export async function POST(
                     { status: 403 }
                 );
             }
-        } else if (session.user.role === Role.ADMIN && unit.complex.adminId !== session.user.id) {
-            return NextResponse.json(
-                { error: "No tiene permiso para asignar servicios a esta unidad" },
-                { status: 403 }
-            );
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        } else if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== unit.complexId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para asignar servicios a esta unidad" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             return NextResponse.json(
                 { error: "Solo administradores pueden asignar servicios" },
                 { status: 403 }

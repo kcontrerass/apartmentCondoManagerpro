@@ -53,7 +53,14 @@ export async function GET(request: Request) {
                     ]
                 }
             ];
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (!user?.complexId) return NextResponse.json([]);
+            whereClause.complexId = user.complexId;
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             // Guards or other roles might not have access to billing list
             return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }

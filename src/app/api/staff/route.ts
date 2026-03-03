@@ -21,7 +21,7 @@ export async function GET(request: Request) {
         // Re-check role enum usage. The user session role might be string or enum. 
         // Best to use the Prisma imported Role enum.
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
         let effectiveComplexId = queryComplexId;
 
-        if (session.user.role === Role.ADMIN) {
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
             // Force complexId from session
             const adminComplexId = (session.user as any).complexId;
 
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
         // RBAC: Logic for complex association
         let targetComplexId = validatedData.complexId || null;
 
-        if (session.user.role === Role.ADMIN) {
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
             // Force assignment to Admin's complex from session
             const adminComplexId = (session.user as any).complexId;
 
@@ -115,8 +115,9 @@ export async function POST(request: Request) {
             }
 
             // Add check: Admin cannot create another ADMIN, only GUARD/BOARD_OF_DIRECTORS
-            if (validatedData.role === Role.ADMIN || validatedData.role === Role.SUPER_ADMIN) {
-                return NextResponse.json({ error: "Solo súper administradores pueden crear otros administradores" }, { status: 403 });
+            // Add check: Admin cannot create another ADMIN, only GUARD/BOARD_OF_DIRECTORS
+            if (session.user.role === Role.ADMIN && (validatedData.role === Role.ADMIN || validatedData.role === Role.SUPER_ADMIN)) {
+                return NextResponse.json({ error: "Solo súper administradores o Junta Directiva pueden crear administradores locales" }, { status: 403 });
             }
 
             targetComplexId = adminComplexId;

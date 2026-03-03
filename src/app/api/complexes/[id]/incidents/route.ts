@@ -59,6 +59,18 @@ export async function GET(
 
         const where: any = { complexId };
 
+        // Ensure residents only see their own or their unit's incidents
+        if (session.user.role === 'RESIDENT') {
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+            where.OR = [
+                { reporterId: session.user.id },
+                { unitId: resident?.unitId }
+            ];
+        }
+
         if (status && status !== 'ALL') where.status = status;
         if (priority && priority !== 'ALL') where.priority = priority;
         if (type && type !== 'ALL') where.type = type;

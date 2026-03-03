@@ -15,14 +15,10 @@ export async function POST(request: Request) {
         const body = await request.json();
         const validatedData = generateInvoicesSchema.parse(body);
 
-        // RBAC check: Only SUPER_ADMIN or ADMIN of the complex
-        if (session.user.role === Role.ADMIN) {
-            const complex = await prisma.complex.findUnique({
-                where: { id: validatedData.complexId },
-                select: { adminId: true },
-            });
-
-            if (!complex || complex.adminId !== session.user.id) {
+        // RBAC check: Only SUPER_ADMIN, ADMIN or BOARD_OF_DIRECTORS of the complex
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== validatedData.complexId) {
                 return NextResponse.json(
                     { error: "No tiene permiso sobre este complejo" },
                     { status: 403 }

@@ -8,7 +8,10 @@ const baseReservationSchema = z.object({
     amenityId: z.string().min(1),
     userId: z.string().min(1),
     totalCost: z.number().optional(),
+    depositAmount: z.number().optional(),
+    depositStatus: z.enum(["NONE", "PENDING", "PAID", "REFUNDED", "RETAINED"]).optional(),
     paymentMethod: z.enum(["CARD", "CASH", "TRANSFER"]).optional(),
+    refundMethod: z.enum(["CARD", "CASH", "TRANSFER"]).optional(),
 });
 
 export const reservationSchema = baseReservationSchema.refine((data) => data.endTime > data.startTime, {

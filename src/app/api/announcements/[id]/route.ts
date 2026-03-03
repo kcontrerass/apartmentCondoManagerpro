@@ -101,9 +101,10 @@ export async function PUT(
         // Check ownership/complex permission
         if (userRole !== 'SUPER_ADMIN') {
             const isAuthor = currentAnnouncement.authorId === session.user.id;
-            const isAdminInSameComplex = userRole === 'ADMIN' && currentAnnouncement.complexId === (session.user as any).complexId;
+            const isStaffInSameComplex = (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS') &&
+                currentAnnouncement.complexId === (session.user as any).complexId;
 
-            if (!isAuthor && !isAdminInSameComplex) {
+            if (!isAuthor && !isStaffInSameComplex) {
                 return NextResponse.json(
                     { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permiso para modificar este aviso' } },
                     { status: 403 }
@@ -189,7 +190,7 @@ export async function DELETE(
 
         // Check permissions
         const userRole = session.user.role;
-        if (!['SUPER_ADMIN', 'ADMIN'].includes(userRole)) {
+        if (!['SUPER_ADMIN', 'ADMIN', 'BOARD_OF_DIRECTORS'].includes(userRole)) {
             return NextResponse.json(
                 { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permisos para eliminar avisos' } },
                 { status: 403 }
@@ -208,8 +209,8 @@ export async function DELETE(
             );
         }
 
-        // Complex check for ADMIN
-        if (userRole === 'ADMIN' && announcement.complexId !== (session.user as any).complexId) {
+        // Complex check for ADMIN/BOARD_OF_DIRECTORS
+        if ((userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS') && announcement.complexId !== (session.user as any).complexId) {
             return NextResponse.json(
                 { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permisos para eliminar avisos de otro complejo' } },
                 { status: 403 }

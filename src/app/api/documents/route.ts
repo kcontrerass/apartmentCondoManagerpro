@@ -71,8 +71,8 @@ export async function POST(req: Request) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // Only Admin or Super Admin can upload documents
-        if (session.user.role !== Role.ADMIN && session.user.role !== Role.SUPER_ADMIN) {
+        // Only Admin, Super Admin, or Board of Directors can upload documents
+        if (session.user.role !== Role.ADMIN && session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
@@ -89,9 +89,28 @@ export async function POST(req: Request) {
             if (session.user.role === Role.SUPER_ADMIN) {
                 const firstComplex = await prisma.complex.findFirst();
                 if (firstComplex) finalComplexId = firstComplex.id;
+            } else {
+                // For Admin/Board, get their assigned complex
+                const user = await prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { complexId: true }
+                });
+                finalComplexId = user?.complexId;
             }
+
             if (!finalComplexId) {
                 return new NextResponse("Missing complexId and no complex found", { status: 400 });
+            }
+        }
+
+        // RBAC: Verify user has permission for this complex
+        if (session.user.role !== Role.SUPER_ADMIN) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== finalComplexId) {
+                return new NextResponse("Forbidden - Not your complex", { status: 403 });
             }
         }
 

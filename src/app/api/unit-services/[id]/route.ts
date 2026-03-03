@@ -57,12 +57,15 @@ export async function PATCH(
                     { status: 403 }
                 );
             }
-        } else if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
-            return NextResponse.json(
-                { error: "No tiene permiso para editar esta asignación" },
-                { status: 403 }
-            );
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        } else if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== unitService.unit.complexId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para editar esta asignación" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             return NextResponse.json(
                 { error: "Solo administradores pueden editar asignaciones" },
                 { status: 403 }
@@ -134,12 +137,15 @@ export async function DELETE(
                     { status: 403 }
                 );
             }
-        } else if (session.user.role === Role.ADMIN && unitService.unit.complex.adminId !== session.user.id) {
-            return NextResponse.json(
-                { error: "No tiene permiso para eliminar esta asignación" },
-                { status: 403 }
-            );
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        } else if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== unitService.unit.complexId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para eliminar esta asignación" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             return NextResponse.json(
                 { error: "Solo administradores pueden eliminar asignaciones" },
                 { status: 403 }

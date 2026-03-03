@@ -135,8 +135,11 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
 
         setConfirmModal({
             isOpen: true,
-            title: 'Confirmar Contratación',
-            message: `¿Desea contratar el servicio ${service.name}${service.hasQuantity ? ` (Cantidad: ${quantity})` : ''}?`,
+            title: t('confirmSubscribeTitle'),
+            message: t('confirmSubscribeMessage', {
+                name: service.name,
+                quantity: service.hasQuantity ? ` (${t('quantity')}: ${quantity})` : ''
+            }),
             type: 'SUBSCRIBE',
             onConfirm: async () => {
                 setConfirmModal(prev => ({ ...prev, isLoading: true }));
@@ -152,7 +155,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                     });
 
                     if (response.ok) {
-                        toast.success("Servicio contratado exitosamente");
+                        toast.success(t('successSubscribe'));
                         fetchServices();
                         setConfirmModal(prev => ({ ...prev, isOpen: false }));
                     } else {
@@ -161,7 +164,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                     }
                 } catch (error) {
                     console.error("Error subscribing to service:", error);
-                    toast.error("Error al procesar la solicitud");
+                    toast.error(t('errorProcess'));
                 } finally {
                     setConfirmModal(prev => ({ ...prev, isLoading: false }));
                 }
@@ -172,8 +175,8 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
     const handleUnsubscribe = async (unitServiceId: string) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Cancelar Servicio',
-            message: '¿Seguro que desea dar de baja este servicio? Ya no se incluirá en las próximas facturas.',
+            title: t('confirmUnsubscribeTitle'),
+            message: t('confirmUnsubscribeMessage'),
             type: 'UNSUBSCRIBE',
             onConfirm: async () => {
                 setConfirmModal(prev => ({ ...prev, isLoading: true }));
@@ -183,7 +186,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                     });
 
                     if (response.ok) {
-                        toast.success("Servicio cancelado exitosamente");
+                        toast.success(t('successUnsubscribe'));
                         fetchServices();
                         setConfirmModal(prev => ({ ...prev, isOpen: false }));
                     } else {
@@ -192,7 +195,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                     }
                 } catch (error) {
                     console.error("Error unsubscribing from service:", error);
-                    toast.error("Error al procesar la solicitud");
+                    toast.error(t('errorProcess'));
                 } finally {
                     setConfirmModal(prev => ({ ...prev, isLoading: false }));
                 }
@@ -210,7 +213,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
             });
 
             if (response.ok) {
-                toast.success("Cantidad actualizada");
+                toast.success(t('successUpdateQuantity'));
                 fetchServices();
             } else {
                 const errorData = await response.json();
@@ -218,6 +221,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
             }
         } catch (error) {
             console.error("Error updating service quantity:", error);
+            toast.error(t('errorProcess'));
         } finally {
             setSubscribingId(null);
         }
@@ -226,7 +230,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
     const handleDelete = async (id: string) => {
         setConfirmModal({
             isOpen: true,
-            title: 'Eliminar Servicio',
+            title: t('confirmDeleteTitle'),
             message: t('deleteConfirm'),
             type: 'DELETE',
             onConfirm: async () => {
@@ -234,16 +238,16 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                 try {
                     const response = await fetch(`/api/services/${id}`, { method: "DELETE" });
                     if (response.ok) {
-                        toast.success("Servicio eliminado permanentemente");
+                        toast.success(t('successDelete'));
                         fetchServices();
                         setConfirmModal(prev => ({ ...prev, isOpen: false }));
                     } else {
                         const errorData = await response.json();
-                        toast.error(errorData.error || "Error al eliminar");
+                        toast.error(errorData.error || t('errorDelete'));
                     }
                 } catch (error) {
                     console.error("Error deleting service:", error);
-                    toast.error("Error al procesar la eliminación");
+                    toast.error(t('errorProcess'));
                 } finally {
                     setConfirmModal(prev => ({ ...prev, isLoading: false }));
                 }
@@ -257,7 +261,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('subtitle') : t('allServices')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && userRole !== Role.RESIDENT && (
+                    userRole !== Role.GUARD && userRole !== Role.RESIDENT && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -330,8 +334,8 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                             onClick={confirmModal.onConfirm}
                             isLoading={confirmModal.isLoading}
                         >
-                            {confirmModal.type === 'DELETE' ? 'Eliminar' :
-                                confirmModal.type === 'SUBSCRIBE' ? 'Contratar' : 'Confirmar Baja'}
+                            {confirmModal.type === 'DELETE' ? t('delete') :
+                                confirmModal.type === 'SUBSCRIBE' ? t('book') : t('confirmUnsubscribeTitle')}
                         </Button>
                     </div>
                 }

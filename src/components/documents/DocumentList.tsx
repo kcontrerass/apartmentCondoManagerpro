@@ -49,7 +49,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
         fetchDocuments();
     }, [complexId]);
 
-    const canManage = userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN;
+    const canManage = userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN || userRole === Role.BOARD_OF_DIRECTORS;
 
     const handleDelete = async () => {
         if (!documentToDelete) return;

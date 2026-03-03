@@ -33,32 +33,16 @@ export async function GET(request: Request) {
 
             where.complexId = resident.unit.complexId;
             console.log(`[API Amenities] Resident ${session.user.id} filtering by complex: ${where.complexId}`);
-        } else if (session.user.role === Role.ADMIN) {
-            if (complexId) {
-                // Verify they own the requested complex
-                const complex = await prisma.complex.findUnique({
-                    where: { id: complexId }
-                });
-                if (complex?.adminId !== session.user.id) {
-                    return NextResponse.json({ error: "No tienes permiso para ver amenidades de este complejo" }, { status: 403 });
-                }
-                where.complexId = complexId;
-                console.log(`[API Amenities] Admin ${session.user.id} filtering by specific complex: ${where.complexId}`);
-            } else {
-                // Automatically filter by their managed complex
-                where.complex = { adminId: session.user.id };
-                console.log(`[API Amenities] Admin ${session.user.id} filtering by managed complexes`);
-            }
-        } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
-            const user = await (prisma as any).user.findUnique({
-                where: { id: session.user.id },
-                select: { complexId: true }
-            });
-            if (!user?.complexId) {
+        } else if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId) {
                 return NextResponse.json([]);
             }
-            where.complexId = user.complexId;
-            console.log(`[API Amenities] Staff ${session.user.id} filtering by complex: ${where.complexId}`);
+            if (complexId && complexId !== userComplexId) {
+                return NextResponse.json({ error: "No tienes permiso para ver amenidades de este complejo" }, { status: 403 });
+            }
+            where.complexId = userComplexId;
+            console.log(`[API Amenities] Managed user ${session.user.id} filtering by complex: ${where.complexId}`);
         } else if (complexId) {
             // Other roles (SUPER_ADMIN) filter by complex if provided
             where.complexId = complexId;
@@ -102,13 +86,11 @@ export async function POST(request: Request) {
         const body = await request.json();
         const validatedData = createAmenitySchema.parse(body);
 
-        // If ADMIN, check if they own the complex
-        if (session.user.role === Role.ADMIN) {
-            const complex = await prisma.complex.findUnique({
-                where: { id: validatedData.complexId }
-            });
-            if (complex?.adminId !== session.user.id) {
-                return NextResponse.json({ error: "No puedes crear amenidades en un complejo que no administras" }, { status: 403 });
+        // RBAC Check per complex
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== validatedData.complexId) {
+                return NextResponse.json({ error: "No tienes permiso para gestionar amenidades en este complejo" }, { status: 403 });
             }
         }
 
@@ -121,10 +103,11 @@ export async function POST(request: Request) {
                 capacity: validatedData.capacity,
                 operatingHours: validatedData.operatingHours ? {
                     ...validatedData.operatingHours,
-                    days: validatedData.operatingHours.days || [0, 1, 2, 3, 4, 5, 6]
+                    days: (validatedData.operatingHours as any).days || [0, 1, 2, 3, 4, 5, 6]
                 } : undefined,
                 costPerDay: validatedData.costPerDay,
                 costPerHour: validatedData.costPerHour,
+                securityDeposit: validatedData.securityDeposit,
                 complexId: validatedData.complexId
             }
         });

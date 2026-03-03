@@ -36,6 +36,14 @@ export async function GET(
             if (invoice.complex.adminId !== session.user.id) {
                 return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
             }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (invoice.complexId !== user?.complexId) {
+                return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
+            }
         } else if (session.user.role === Role.RESIDENT) {
             const resident = await prisma.resident.findUnique({
                 where: { userId: session.user.id }
@@ -86,10 +94,18 @@ export async function PATCH(
                 console.warn(`403: Admin ${session.user.id} tried to update invoice ${id} for complex ${invoice.complexId} (owned by ${invoice.complex.adminId})`);
                 return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
             }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (invoice.complexId !== user?.complexId) {
+                return NextResponse.json({ error: "No tienes permiso para marcar facturas como pagadas en este complejo" }, { status: 403 });
+            }
         } else if (session.user.role === Role.RESIDENT) {
             return NextResponse.json({ error: "Los residentes no pueden editar facturas" }, { status: 403 });
-        } else if (session.user.role !== Role.BOARD_OF_DIRECTORS) {
-            // For now allow BOARD_OF_DIRECTORS, block others (like GUARD if they shouldn't mark as paid)
+        } else {
+            // Block others (like GUARD if they shouldn't mark as paid)
             return NextResponse.json({ error: "No tienes permiso para marcar facturas como pagadas" }, { status: 403 });
         }
 

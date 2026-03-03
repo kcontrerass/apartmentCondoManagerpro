@@ -32,9 +32,12 @@ export async function GET(
             return NextResponse.json({ error: "Servicio no encontrado" }, { status: 404 });
         }
 
-        // Role check for ADMIN: Can only see services of their complex
-        if (session.user.role === Role.ADMIN && service.complex.adminId !== session.user.id) {
-            return NextResponse.json({ error: "No tiene permiso para ver este servicio" }, { status: 403 });
+        // Role check for ADMIN or BOARD_OF_DIRECTORS: Can only see services of their complex
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== service.complexId) {
+                return NextResponse.json({ error: "No tiene permiso para ver este servicio" }, { status: 403 });
+            }
         }
 
         return NextResponse.json(service);
@@ -70,13 +73,16 @@ export async function PATCH(
             return NextResponse.json({ error: "Servicio no encontrado" }, { status: 404 });
         }
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the complex
-        if (session.user.role === Role.ADMIN && service.complex.adminId !== session.user.id) {
-            return NextResponse.json(
-                { error: "No tiene permiso para editar este servicio" },
-                { status: 403 }
-            );
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        // RBAC: Only SUPER_ADMIN, BOARD_OF_DIRECTORS or the ADMIN of the complex
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== service.complexId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para editar este servicio" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             return NextResponse.json(
                 { error: "Solo administradores pueden editar servicios" },
                 { status: 403 }
@@ -122,15 +128,18 @@ export async function DELETE(
             return NextResponse.json({ error: "Servicio no encontrado" }, { status: 404 });
         }
 
-        // RBAC: Only SUPER_ADMIN or the ADMIN of the complex
-        if (session.user.role === Role.ADMIN && service.complex.adminId !== session.user.id) {
+        // RBAC: Only SUPER_ADMIN, BOARD_OF_DIRECTORS or the ADMIN of the complex
+        if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const userComplexId = (session.user as any).complexId;
+            if (!userComplexId || userComplexId !== service.complexId) {
+                return NextResponse.json(
+                    { error: "No tiene permiso para eliminar este servicio" },
+                    { status: 403 }
+                );
+            }
+        } else if (session.user.role !== Role.SUPER_ADMIN) {
             return NextResponse.json(
-                { error: "No tiene permiso para eliminar este servicio" },
-                { status: 403 }
-            );
-        } else if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
-            return NextResponse.json(
-                { error: "Solo administradores pueden eliminar servicios" },
+                { error: "Solo administradores y Junta Directiva pueden eliminar servicios" },
                 { status: 403 }
             );
         }

@@ -230,7 +230,7 @@ export function ServiceTable({
                                             );
                                         })()
                                     ) : (
-                                        userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                                        userRole !== Role.GUARD && (
                                             <>
                                                 <Button
                                                     variant="secondary"

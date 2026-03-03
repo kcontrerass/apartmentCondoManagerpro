@@ -142,7 +142,7 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                 title={t('title')}
                 subtitle={t('subtitle')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                    userRole !== Role.GUARD && (
                         <Button
                             variant="primary"
                             icon="add"
@@ -168,6 +168,14 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                         userRole={userRole}
                         onEdit={(resident) => {
                             setEditingResident(resident);
+                            // Ensure the current resident's user is in the select options
+                            if (resident.user && !users.find(u => u.id === resident.userId)) {
+                                setUsers(prev => [...prev, {
+                                    id: resident.userId,
+                                    name: resident.user.name,
+                                    email: resident.user.email
+                                }].sort((a, b) => a.name.localeCompare(b.name)));
+                            }
                             setIsModalOpen(true);
                         }}
                         onDelete={(id) => {

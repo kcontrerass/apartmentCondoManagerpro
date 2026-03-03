@@ -88,7 +88,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
         }
 
@@ -99,6 +99,24 @@ export async function POST(request: Request) {
         const complexIdToUse = body.complexId || unitData.complexId;
         if (!complexIdToUse) {
             return NextResponse.json({ error: "complexId es requerido" }, { status: 400 });
+        }
+
+        // RBAC: Verify user has permission to manage units in this complex
+        if (session.user.role === Role.ADMIN) {
+            const complex = await prisma.complex.findFirst({
+                where: { id: complexIdToUse, adminId: session.user.id }
+            });
+            if (!complex) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar unidades en este complejo" }, { status: 403 });
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== complexIdToUse) {
+                return NextResponse.json({ error: "No tienes permisos para gestionar unidades en este complejo" }, { status: 403 });
+            }
         }
 
         // Check for duplicate unit number in this complex

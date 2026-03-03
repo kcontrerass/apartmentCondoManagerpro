@@ -16,6 +16,7 @@ export const createAmenitySchema = z.object({
     operatingHours: operatingHoursSchema.optional(),
     costPerDay: z.number().nonnegative("El costo debe ser 0 o más").optional(),
     costPerHour: z.number().nonnegative("El costo debe ser 0 o más").optional(),
+    securityDeposit: z.number().nonnegative("El depósito debe ser 0 o más").optional(),
     complexId: z.string().cuid("ID de complejo inválido")
 });
 

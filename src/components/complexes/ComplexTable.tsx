@@ -28,6 +28,8 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                 return "success";
             case ComplexType.CONDO:
                 return "warning";
+            case ComplexType.SHOPPING_CENTER:
+                return "neutral";
             default:
                 return "neutral";
         }

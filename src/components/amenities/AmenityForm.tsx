@@ -27,6 +27,7 @@ export function AmenityForm({ onSubmit, initialData, isLoading, complexes }: Ame
             capacity: initialData?.capacity ? Number(initialData.capacity) : undefined,
             costPerDay: initialData?.costPerDay ? Number(initialData.costPerDay) : 0,
             costPerHour: initialData?.costPerHour ? Number(initialData.costPerHour) : 0,
+            securityDeposit: initialData?.securityDeposit ? Number(initialData.securityDeposit) : 0,
         }
     });
 
@@ -105,6 +106,13 @@ export function AmenityForm({ onSubmit, initialData, isLoading, complexes }: Ame
                     step="0.01"
                     {...register("costPerHour", { valueAsNumber: true })}
                     error={errors.costPerHour?.message}
+                />
+                <Input
+                    label={t('form.securityDeposit')}
+                    type="number"
+                    step="0.01"
+                    {...register("securityDeposit", { valueAsNumber: true })}
+                    error={errors.securityDeposit?.message}
                 />
             </div>
 

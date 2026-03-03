@@ -18,8 +18,18 @@ async function getReportsData(userId: string, role: string, selectedComplexId?: 
             managedComplexIds = complexes.map(c => c.id);
         }
     } else {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { complexId: true }
+        });
+
         const managedComplexes = await prisma.complex.findMany({
-            where: { adminId: userId },
+            where: {
+                OR: [
+                    { adminId: userId },
+                    { id: user?.complexId || 'undefined' }
+                ]
+            },
             select: { id: true },
         });
         const allManagedIds = managedComplexes.map((c) => c.id);
@@ -191,14 +201,39 @@ export default async function ReportsPage({
             orderBy: { name: 'asc' }
         });
     } else {
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { complexId: true }
+        });
+
         complexes = await prisma.complex.findMany({
-            where: { adminId: session.user.id },
+            where: {
+                OR: [
+                    { adminId: session.user.id },
+                    { id: user?.complexId || 'undefined' }
+                ]
+            },
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
         });
     }
 
     const data = await getReportsData(session.user.id, session.user.role, complexId);
+
+    // Dynamic Permission Check
+    // If a complex is selected, check its settings. Otherwise check user's default complex settings.
+    const targetComplexId = complexId || complexes[0]?.id;
+    if (targetComplexId && session.user.role !== Role.SUPER_ADMIN) {
+        const complexWithSettings = await prisma.complex.findUnique({
+            where: { id: targetComplexId },
+            select: { settings: true }
+        });
+
+        const permissions = (complexWithSettings?.settings as any)?.permissions?.[session.user.role];
+        if (permissions && permissions.reports === false) {
+            redirect('/dashboard');
+        }
+    }
 
     return (
         <MainLayout user={session.user}>

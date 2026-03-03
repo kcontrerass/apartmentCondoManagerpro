@@ -135,7 +135,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 });
         }
 
-        if (invoice.status !== "PENDING" && invoice.status !== "PROCESSING") {
+        if (invoice.status !== "PENDING" && invoice.status !== "PROCESSING" && invoice.status !== "OVERDUE") {
             return NextResponse.json({ error: "Esta factura ya no está pendiente de pago" }, { status: 400 });
         }
 

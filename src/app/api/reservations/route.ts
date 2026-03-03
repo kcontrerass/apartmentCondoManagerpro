@@ -60,7 +60,21 @@ export async function GET(request: Request) {
         const reservations = await (prisma as any).reservation.findMany({
             where,
             include: {
-                user: { select: { name: true, email: true } },
+                user: {
+                    select: {
+                        name: true,
+                        email: true,
+                        residentProfile: {
+                            select: {
+                                unit: {
+                                    select: {
+                                        number: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 amenity: {
                     select: {
                         name: true,
@@ -204,7 +218,7 @@ export async function POST(request: Request) {
             );
         }
 
-        // 4. Calculate Cost
+        // 4. Calculate Cost and Deposit
         let totalCost = 0;
         const start = new Date(validatedData.startTime);
         const end = new Date(validatedData.endTime);
@@ -217,6 +231,9 @@ export async function POST(request: Request) {
             totalCost = days * Number(amenity.costPerDay);
         }
 
+        const depositAmount = (amenity as any).securityDeposit ? Number((amenity as any).securityDeposit) : 0;
+        const depositStatus = depositAmount > 0 ? 'PENDING' : 'NONE';
+
         // 4. Create reservation
         const reservation = await (prisma as any).reservation.create({
             data: {
@@ -226,14 +243,18 @@ export async function POST(request: Request) {
                 userId: validatedData.userId,
                 amenityId: validatedData.amenityId,
                 totalCost: totalCost,
+                depositAmount: depositAmount,
+                depositStatus: depositStatus,
                 paymentMethod: (body as any).paymentMethod,
                 status: session.user.role === Role.RESIDENT ? ReservationStatus.PENDING : ReservationStatus.APPROVED
             }
         });
 
-        // 5. Create Invoice if cost > 0
+        // 5. Create Invoice if cost > 0 or deposit > 0
         let invoiceId = null;
-        if (totalCost > 0) {
+        const totalInvoiceAmount = totalCost + depositAmount;
+
+        if (totalInvoiceAmount > 0) {
             const resident = await prisma.resident.findUnique({
                 where: { userId: validatedData.userId },
                 include: { unit: true }
@@ -243,22 +264,33 @@ export async function POST(request: Request) {
                 const now = new Date();
                 const invoiceNumber = `RES-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+                const invoiceItems = [];
+                if (totalCost > 0) {
+                    invoiceItems.push({
+                        description: `Reserva Amenidad: ${amenity.name}`,
+                        amount: totalCost
+                    });
+                }
+                if (depositAmount > 0) {
+                    invoiceItems.push({
+                        description: `Depósito de Seguridad: ${amenity.name}`,
+                        amount: depositAmount
+                    });
+                }
+
                 const invoice = await (prisma as any).invoice.create({
                     data: {
                         number: invoiceNumber,
                         month: now.getMonth() + 1,
                         year: now.getFullYear(),
                         dueDate: now, // Due immediately
-                        totalAmount: totalCost,
+                        totalAmount: totalInvoiceAmount,
                         status: ReservationStatus.PENDING, // Initial status
                         unitId: resident.unit.id,
                         complexId: resident.unit.complexId,
                         paymentMethod: (body as any).paymentMethod,
                         items: {
-                            create: {
-                                description: `Reserva Amenidad: ${amenity.name}`,
-                                amount: totalCost
-                            }
+                            create: invoiceItems
                         }
                     }
                 });

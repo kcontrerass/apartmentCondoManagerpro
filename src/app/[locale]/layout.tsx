@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
+import { ComplexProvider } from "@/components/providers/ComplexProvider";
 
 export default async function LocaleLayout({
   children,
@@ -40,7 +41,9 @@ export default async function LocaleLayout({
       <body className="antialiased">
         <AuthProvider>
           <NextIntlClientProvider messages={messages} locale={locale}>
-            {children}
+            <ComplexProvider>
+              {children}
+            </ComplexProvider>
           </NextIntlClientProvider>
         </AuthProvider>
       </body>

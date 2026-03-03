@@ -115,9 +115,10 @@ export async function PUT(
         const userRole = session.user.role;
         if (userRole !== 'SUPER_ADMIN') {
             const isOrganizer = currentEvent.organizerId === session.user.id;
-            const isAdminInSameComplex = userRole === 'ADMIN' && currentEvent.complexId === (session.user as any).complexId;
+            const isStaffInSameComplex = (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS') &&
+                currentEvent.complexId === (session.user as any).complexId;
 
-            if (!isOrganizer && !isAdminInSameComplex) {
+            if (!isOrganizer && !isStaffInSameComplex) {
                 return NextResponse.json(
                     { success: false, error: { code: 'FORBIDDEN', message: 'No tienes permiso para modificar este evento' } },
                     { status: 403 }
@@ -201,7 +202,7 @@ export async function DELETE(
         }
 
         const userRole = session.user.role;
-        if (userRole === 'SUPER_ADMIN' || (userRole === 'ADMIN' && event.complexId === (session.user as any).complexId)) {
+        if (userRole === 'SUPER_ADMIN' || ((userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS') && event.complexId === (session.user as any).complexId)) {
             await prisma.event.delete({
                 where: { id },
             });

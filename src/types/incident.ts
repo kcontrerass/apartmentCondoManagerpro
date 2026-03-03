@@ -23,6 +23,19 @@ export interface Incident extends PrismaIncident {
         id: string;
         number: string;
     } | null;
+    comments?: IncidentComment[];
+}
+
+export interface IncidentComment {
+    id: string;
+    content: string;
+    createdAt: string | Date;
+    author: {
+        id: string;
+        name: string;
+        image: string | null;
+        role: string;
+    };
 }
 
 /**

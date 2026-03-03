@@ -31,7 +31,14 @@ export async function GET(request: NextRequest) {
         // Role-based filtering
         const userRole = session.user.role;
         if (userRole === 'RESIDENT') {
-            where.reporterId = session.user.id;
+            const resident = await prisma.resident.findUnique({
+                where: { userId: session.user.id },
+                select: { unitId: true }
+            });
+            where.OR = [
+                { reporterId: session.user.id },
+                { unitId: resident?.unitId || 'no-unit' }
+            ];
         } else if (userRole === 'ADMIN' || userRole === 'BOARD_OF_DIRECTORS' || userRole === 'GUARD') {
             const complexId = (session.user as any).complexId;
             if (!complexId) {
