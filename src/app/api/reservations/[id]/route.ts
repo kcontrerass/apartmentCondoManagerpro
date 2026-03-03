@@ -77,7 +77,7 @@ export async function PATCH(
         const body = await request.json();
         const existing = await prisma.reservation.findUnique({
             where: { id },
-            include: { amenity: { select: { complex: { select: { adminId: true } } } } }
+            include: { amenity: { select: { complexId: true, complex: { select: { adminId: true } } } } }
         });
 
         if (!existing) {
@@ -258,7 +258,7 @@ export async function DELETE(
 
         const existing = await prisma.reservation.findUnique({
             where: { id },
-            include: { amenity: { select: { complex: { select: { adminId: true } } } } }
+            include: { amenity: { select: { complexId: true, complex: { select: { adminId: true } } } } }
         });
 
         if (!existing) {
