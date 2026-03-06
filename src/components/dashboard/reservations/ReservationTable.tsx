@@ -185,7 +185,7 @@ export default function ReservationTable() {
                                 {r.depositAmount > 0 ? (
                                     <div className="flex flex-col gap-1">
                                         <div className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            ${Number(r.depositAmount).toFixed(2)}
+                                            Q{Number(r.depositAmount).toFixed(2)}
                                         </div>
                                         <Badge variant={r.depositStatus === 'PAID' ? 'success' : r.depositStatus === 'REFUNDED' ? 'info' : r.depositStatus === 'PENDING' ? 'warning' : 'neutral'}>
                                             {t(`depositStatus.${r.depositStatus}` as any)}

@@ -44,20 +44,20 @@ export function Modal({ isOpen, onClose, title, children, footer, className, siz
 
     return createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <Card className={cn("w-full shadow-xl animate-in zoom-in-95 duration-200", sizes[size], className)}>
-                <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+            <Card className={cn("w-full max-h-[90vh] flex flex-col shadow-xl animate-in zoom-in-95 duration-200", sizes[size], className)}>
+                <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
                     <CardTitle>{title}</CardTitle>
                     <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 rounded-full">
                         <span className="material-symbols-outlined">close</span>
                     </Button>
                 </div>
 
-                <CardContent className="p-6">
+                <CardContent className="p-6 overflow-y-auto flex-1 custom-scrollbar">
                     {children}
                 </CardContent>
 
                 {footer && (
-                    <div className="flex items-center justify-end gap-2 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
+                    <div className="flex-shrink-0 flex items-center justify-end gap-2 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
                         {footer}
                     </div>
                 )}

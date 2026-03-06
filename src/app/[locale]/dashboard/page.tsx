@@ -115,10 +115,12 @@ async function getStats(userId: string, role: string) {
             .map((res: any) => ({
                 ...res,
                 totalCost: res.totalCost ? Number(res.totalCost) : null,
+                depositAmount: res.depositAmount ? Number(res.depositAmount) : 0,
                 amenity: res.amenity ? {
                     ...res.amenity,
                     costPerDay: res.amenity.costPerDay ? Number(res.amenity.costPerDay) : null,
                     costPerHour: res.amenity.costPerHour ? Number(res.amenity.costPerHour) : null,
+                    securityDeposit: res.amenity.securityDeposit ? Number(res.amenity.securityDeposit) : 0,
                 } : null
             }));
 

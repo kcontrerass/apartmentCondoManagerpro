@@ -6,7 +6,7 @@ import { routing } from '@/i18n/routing';
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "CondoManager Pro",
+  title: "ADESSO",
   description: "Sistema Integral de Gestión de Condominios",
 };
 

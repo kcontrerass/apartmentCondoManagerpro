@@ -85,7 +85,7 @@ export default function ReservationList({ reservations, onCancel }: ReservationL
                                     <div className="flex justify-between items-center">
                                         <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Depósito</span>
                                         <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            ${Number(r.depositAmount).toFixed(2)}
+                                            Q{Number(r.depositAmount).toFixed(2)}
                                         </span>
                                     </div>
                                     <div className="mt-1 flex justify-end">

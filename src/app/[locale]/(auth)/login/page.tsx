@@ -17,18 +17,22 @@ export default function LoginPage() {
             <div>
                 <label
                     htmlFor="email"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                 >
-                    Email address
+                    Correo Electrónico
                 </label>
-                <div className="mt-1">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <span className="material-symbols-outlined text-[20px]">mail</span>
+                    </div>
                     <input
                         id="email"
                         name="email"
                         type="email"
                         autoComplete="email"
                         required
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 dark:text-white transition-all duration-200"
+                        placeholder="tu@correo.com"
                     />
                 </div>
             </div>
@@ -36,65 +40,74 @@ export default function LoginPage() {
             <div>
                 <label
                     htmlFor="password"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5"
                 >
-                    Password
+                    Contraseña
                 </label>
-                <div className="mt-1">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <span className="material-symbols-outlined text-[20px]">lock</span>
+                    </div>
                     <input
                         id="password"
                         name="password"
                         type="password"
                         autoComplete="current-password"
                         required
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 dark:text-white transition-all duration-200"
+                        placeholder="••••••••"
                     />
                 </div>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center">
                     <input
                         id="remember_me"
                         name="remember_me"
                         type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50 bg-white dark:bg-slate-800 dark:border-slate-600 transition-colors cursor-pointer"
                     />
                     <label
                         htmlFor="remember_me"
-                        className="ml-2 block text-sm text-gray-900 dark:text-gray-300"
+                        className="ml-2 block text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none"
                     >
-                        Remember me
+                        Recordarme
                     </label>
                 </div>
 
                 <div className="text-sm">
                     <Link
                         href="/forgot-password"
-                        className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                        className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                     >
-                        Forgot your password?
+                        ¿Olvidaste tu contraseña?
                     </Link>
                 </div>
             </div>
 
-            <div>
+            <div className="pt-2">
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    className="flex w-full justify-center items-center gap-2 rounded-xl border border-transparent bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
                 >
-                    {isPending ? 'Signing in...' : 'Sign in'}
+                    {isPending ? (
+                        <>
+                            <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                            Iniciando sesión...
+                        </>
+                    ) : 'Ingresar al Portal'}
                 </button>
             </div>
-            <div>
-                <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-                    Not a member?{' '}
+            <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+                    ¿Nuevo en ADESSO?{' '}
                     <a
                         href="/register"
-                        className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                        className="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                     >
-                        Register
+                        Regístrate aquí
                     </a>
                 </p>
             </div>

@@ -418,7 +418,7 @@
     },
     "Unassigned": {
         "title": "Assignment Pending",
-        "message": "Welcome to CondoManager Pro. Your account has been created, but you haven't been assigned to a residential complex yet.",
+        "message": "Welcome to ADESSO. Your account has been created, but you haven't been assigned to a residential complex yet.",
         "subtitle": "What should I do?",
         "instruction1": "Contact your building's administration to be registered.",
         "instruction2": "Ensure you have provided the correct email address associated with your unit.",
