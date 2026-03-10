@@ -78,25 +78,27 @@ export async function POST(
             };
 
             // Notify parties
-            if (userRole === Role.RESIDENT) {
+            if (userRole === 'RESIDENT') {
                 // If resident comments, notify staff
-                await sendComplexNotification(incident.complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS, Role.SUPER_ADMIN], {
+                await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                     title: `Nuevo comentario en Incidente`,
                     body: `${author?.name || 'Un residente'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
                     url: `/dashboard/incidents/${id}`
                 });
             } else {
                 // If staff comments, notify reporter
-                await sendUserNotification(incident.reporterId, {
-                    title: `Actualización en tu Incidente`,
-                    body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-                    url: `/dashboard/incidents/${id}`
-                });
+                if (incident.reporterId) {
+                    await sendUserNotification(incident.reporterId, {
+                        title: `Actualización en tu Incidente`,
+                        body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+                        url: `/dashboard/incidents/${id}`
+                    });
+                }
 
                 // Also notify other staff members (except the author)
-                await sendComplexNotification(incident.complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS, Role.SUPER_ADMIN], {
+                await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                     title: `Comentario administrativo - Incidente`,
-                    body: `${author?.name}: ${content.trim().substring(0, 50)}...`,
+                    body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}...`,
                     url: `/dashboard/incidents/${id}`
                 });
             }
