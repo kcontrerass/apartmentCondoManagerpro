@@ -9,14 +9,19 @@ export function NotificationManager() {
     const [permission, setPermission] = useState<NotificationPermission>('default');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [testLoading, setTestLoading] = useState(false);
 
     const [isiOS, setIsiOS] = useState(false);
     const [isSecure, setIsSecure] = useState(true);
+    const [isStandalone, setIsStandalone] = useState(false);
 
     useEffect(() => {
         const ua = window.navigator.userAgent;
         setIsiOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
         setIsSecure(window.isSecureContext);
+
+        const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+        setIsStandalone(isStandaloneMode);
 
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             setIsSupported(true);
@@ -81,6 +86,53 @@ export function NotificationManager() {
         }
     };
 
+    const unsubscribeUser = async () => {
+        setLoading(true);
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+
+            if (subscription) {
+                await subscription.unsubscribe();
+            }
+
+            // Remove from server
+            await fetch('/api/notifications/unsubscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            setIsSubscribed(false);
+            toast.success('Notificaciones desactivadas');
+        } catch (error) {
+            console.error('Error unsubscribing:', error);
+            toast.error('Error al desactivar las notificaciones');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const sendTestNotification = async () => {
+        setTestLoading(true);
+        try {
+            const response = await fetch('/api/notifications/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send test notification');
+            }
+
+            toast.success('Notificación de prueba enviada');
+        } catch (error) {
+            console.error('Error sending test push:', error);
+            toast.error('Error al enviar la notificación de prueba');
+        } finally {
+            setTestLoading(false);
+        }
+    };
+
     const urlBase64ToUint8Array = (base64String: string) => {
         console.log('🧪 Decoding key:', base64String);
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -93,6 +145,8 @@ export function NotificationManager() {
         console.log('✅ Decoded Uint8Array length:', outputArray.length);
         return outputArray;
     };
+
+    if (!isStandalone) return null;
 
     if (!isSupported) {
         return (
@@ -123,10 +177,31 @@ export function NotificationManager() {
             <p className="text-sm text-slate-500 mb-4">
                 Activa las notificaciones para recibir avisos e incidentes importantes directamente en tu dispositivo.
             </p>
+
             {isSubscribed ? (
-                <div className="text-sm text-green-600 flex items-center gap-2">
-                    <span className="material-symbols-outlined">check_circle</span>
-                    Notificaciones activadas
+                <div className="space-y-4">
+                    <div className="text-sm text-green-600 flex items-center gap-2">
+                        <span className="material-symbols-outlined font-icon">check_circle</span>
+                        Notificaciones activadas
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={sendTestNotification}
+                            disabled={testLoading}
+                            className="flex-1"
+                        >
+                            {testLoading ? 'Probando...' : 'Probar Notificación'}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={unsubscribeUser}
+                            disabled={loading}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                            Desactivar
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <Button
@@ -137,6 +212,7 @@ export function NotificationManager() {
                     {loading ? 'Procesando...' : 'Activar Notificaciones'}
                 </Button>
             )}
+
             {permission === 'denied' && (
                 <p className="text-xs text-red-500 mt-2">
                     Las notificaciones han sido bloqueadas. Por favor, habilítalas en la configuración de sitios de tu navegador.
