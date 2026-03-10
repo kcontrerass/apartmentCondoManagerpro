@@ -32,6 +32,7 @@ model User {
   incidentComments     IncidentComment[] @relation("CommentAuthor")
   polls                Poll[]            @relation("PollAuthor")
   votes                Vote[]
+  settings             Json?
 
 
   @@index([complexId], map: "users_complex_id_fkey")
