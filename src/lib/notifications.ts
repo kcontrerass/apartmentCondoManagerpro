@@ -49,49 +49,50 @@ export async function sendComplexNotification(complexId: string, roles: string[]
         console.log(`📣 Searching for users in complex ${complexId} with roles: ${roles.join(', ')}`);
 
         const users = await (prisma as any).user.findMany({
-            settings: { not: null },
-            OR: [
-                {
-                    AND: [
-                        { role: { in: roles as any } },
-                        {
-                            OR: [
-                                { complexId: complexId },
-                                { managedComplexes: { id: complexId } },
-                                { residentProfile: { unit: { complexId: complexId } } }
-                            ]
-                        }
-                    ]
-                },
-                { role: 'SUPER_ADMIN' }
-            ]
-        },
+            where: {
+                settings: { not: null },
+                OR: [
+                    {
+                        AND: [
+                            { role: { in: roles as any } },
+                            {
+                                OR: [
+                                    { complexId: complexId },
+                                    { managedComplexes: { id: complexId } },
+                                    { residentProfile: { unit: { complexId: complexId } } }
+                                ]
+                            }
+                        ]
+                    },
+                    { role: 'SUPER_ADMIN' }
+                ]
+            },
             select: { id: true, settings: true, role: true, name: true }
         });
 
-    console.log(`👥 Found ${users.length} potential users with settings.`);
+        console.log(`👥 Found ${users.length} potential users with settings.`);
 
-    const sendPromises = users.map((user: any) => {
-        const settings = user.settings as any;
-        const subscription = settings?.pushSubscription;
+        const sendPromises = users.map((user: any) => {
+            const settings = user.settings as any;
+            const subscription = settings?.pushSubscription;
 
-        if (subscription) {
-            console.log(`📤 Sending push to ${user.name} (${user.role})`);
-            return webpush.sendNotification(subscription, JSON.stringify(payload))
-                .then(() => console.log(`✅ Push delivered to ${user.name}`))
-                .catch(err => {
-                    console.error(`❌ Error sending notification to ${user.id}:`, err.message);
-                    // If 410 Gone or 404 Not Found, we should probably clean up the subscription?
-                });
-        } else {
-            console.log(`ℹ️ User ${user.name} has settings but no pushSubscription.`);
-            return Promise.resolve();
-        }
-    });
+            if (subscription) {
+                console.log(`📤 Sending push to ${user.name} (${user.role})`);
+                return webpush.sendNotification(subscription, JSON.stringify(payload))
+                    .then(() => console.log(`✅ Push delivered to ${user.name}`))
+                    .catch(err => {
+                        console.error(`❌ Error sending notification to ${user.id}:`, err.message);
+                        // If 410 Gone or 404 Not Found, we should probably clean up the subscription?
+                    });
+            } else {
+                console.log(`ℹ️ User ${user.name} has settings but no pushSubscription.`);
+                return Promise.resolve();
+            }
+        });
 
-    await Promise.all(sendPromises);
-    console.log(`🏁 Broadcast notification process finished for ${users.length} users in complex ${complexId}`);
-} catch (error) {
-    console.error(`🚨 Error in broadcast notification for complex ${complexId}:`, error);
-}
+        await Promise.all(sendPromises);
+        console.log(`🏁 Broadcast notification process finished for ${users.length} users in complex ${complexId}`);
+    } catch (error) {
+        console.error(`🚨 Error in broadcast notification for complex ${complexId}:`, error);
+    }
 }
