@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
+import { sendUserNotification, sendComplexNotification } from '@/lib/notifications';
 
 /**
  * POST /api/incidents/[id]/comments
@@ -75,6 +76,23 @@ export async function POST(
                 createdAt: new Date(),
                 author
             };
+
+            // Notify parties
+            if (userRole === Role.RESIDENT) {
+                // If resident comments, notify staff
+                sendComplexNotification(incident.complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS], {
+                    title: `Nuevo comentario en Incidente`,
+                    body: `${author?.name || 'Un residente'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+                    url: `/dashboard/incidents/${id}`
+                });
+            } else {
+                // If staff comments, notify reporter
+                sendUserNotification(incident.reporterId, {
+                    title: `Actualización en tu Incidente`,
+                    body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+                    url: `/dashboard/incidents/${id}`
+                });
+            }
 
             return NextResponse.json({ success: true, data: newComment });
         } catch (rawError: any) {

@@ -185,14 +185,7 @@ export function NotificationManager() {
                         Notificaciones activadas
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <Button
-                            variant="outline"
-                            onClick={sendTestNotification}
-                            disabled={testLoading}
-                            className="flex-1"
-                        >
-                            {testLoading ? 'Probando...' : 'Probar Notificación'}
-                        </Button>
+
                         <Button
                             variant="ghost"
                             onClick={unsubscribeUser}

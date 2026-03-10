@@ -188,15 +188,20 @@ export async function POST(request: NextRequest) {
         });
 
         // Notify target roles
-        const roles = data.targetRoles && data.targetRoles.length > 0
-            ? data.targetRoles
-            : ['RESIDENT', 'ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD'];
+        let targetRoles = data.targetRoles as string[];
+        if (!targetRoles || targetRoles.length === 0) {
+            targetRoles = ['RESIDENT']; // Default to residents as requested
+        }
 
-        sendComplexNotification(data.complexId, roles as string[], {
-            title: `Aviso: ${announcement.title}`,
-            body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
-            url: `/dashboard/announcements/${announcement.id}`
-        });
+        const notificationComplexId = data.complexId || (session.user as any).complexId;
+
+        if (notificationComplexId) {
+            sendComplexNotification(notificationComplexId, targetRoles, {
+                title: `Aviso: ${announcement.title}`,
+                body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
+                url: `/dashboard/announcements/${announcement.id}`
+            });
+        }
 
         return NextResponse.json(
             {

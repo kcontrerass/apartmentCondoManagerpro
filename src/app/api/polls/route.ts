@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
 import { pollSchema } from '@/lib/validations/poll';
+import { sendComplexNotification } from '@/lib/notifications';
 
 /**
  * GET /api/polls
@@ -129,6 +130,13 @@ export async function POST(request: NextRequest) {
             _count: { votes: 0 },
             hasVoted: false
         };
+
+        // Notify residents about new poll
+        sendComplexNotification(complexId, ['RESIDENT'], {
+            title: `Nueva Encuesta: ${title}`,
+            body: `Tu opinión es importante. Participa en nuestra nueva encuesta.`,
+            url: `/dashboard/polls`
+        });
 
         return NextResponse.json({ success: true, data: fullPoll }, { status: 201 });
     } catch (error: any) {
