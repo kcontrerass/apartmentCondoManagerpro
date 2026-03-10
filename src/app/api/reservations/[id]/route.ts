@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { ReservationStatus } from "@prisma/client";
 import { Role } from "@/types/roles";
 import { reservationSchema, updateReservationSchema } from "@/lib/validations/reservation";
+import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
 
 export async function GET(
     request: Request,
@@ -216,6 +217,23 @@ export async function PATCH(
             where: { id },
             data: validatedData
         });
+
+        // Notifications on status change
+        if (validatedData.status === ReservationStatus.APPROVED || validatedData.status === ReservationStatus.REJECTED) {
+            const statusText = validatedData.status === ReservationStatus.APPROVED ? 'Aprobada' : 'Rechazada';
+            await sendUserNotification(reservation.userId, {
+                title: `Reservación ${statusText}`,
+                body: `Tu reservación para ${existing.amenity.name} ha sido ${statusText.toLowerCase()}.`,
+                url: `/dashboard/reservations`
+            });
+        } else if (validatedData.status === ReservationStatus.CANCELLED && isOwner) {
+            // Notify administrative staff if resident cancelled
+            await sendComplexNotification(existing.amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
+                title: 'Reservación Cancelada',
+                body: `El residente ha cancelado su reserva para ${existing.amenity.name}.`,
+                url: `/dashboard/reservations`
+            });
+        }
 
         // --- CANCEL ASSOCIATED INVOICE IF RESERVATION IS CANCELLED ---
         if (reservation.status === ReservationStatus.CANCELLED && reservation.invoiceId) {

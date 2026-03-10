@@ -53,6 +53,27 @@ export async function PATCH(
                 body: `${log.visitorName} ha ingresado para la unidad ${log.unitId || ''}.`,
                 url: '/dashboard/visitors'
             });
+        } else if (status === "DEPARTED" && log.unitId) {
+            const resident = await prisma.resident.findFirst({
+                where: { unitId: log.unitId },
+                select: { userId: true }
+            });
+
+            if (resident) {
+                // Notify the resident
+                await sendUserNotification(resident.userId, {
+                    title: 'Salida de Visitante',
+                    body: `${log.visitorName} ha salido del complejo.`,
+                    url: '/dashboard/visitors'
+                });
+            }
+
+            // Notify administrative staff
+            await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
+                title: 'Check-out de Visitante',
+                body: `${log.visitorName} ha salido del complejo (Unidad ${log.unitId || ''}).`,
+                url: '/dashboard/visitors'
+            });
         }
 
         return NextResponse.json(log);

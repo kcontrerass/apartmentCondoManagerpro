@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { reservationSchema } from "@/lib/validations/reservation";
+import { sendComplexNotification } from "@/lib/notifications";
 
 // Local Constants to avoid Prisma enum import issues in some environments
 const Role = {
@@ -304,15 +305,25 @@ export async function POST(request: Request) {
             }
         }
 
-        return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
-    } catch (error: any) {
-        if (error.name === "ZodError") {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
-        }
-        console.error("Error creating reservation:", error);
-        return NextResponse.json(
-            { error: "Error al crear la reservación" },
-            { status: 500 }
-        );
     }
+        }
+
+// Notify administrative staff
+await sendComplexNotification(amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
+    title: 'Nueva Reservación',
+    body: `Se ha solicitado la amenidad: ${amenity.name}.`,
+    url: `/dashboard/reservations/${reservation.id}`
+});
+
+return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
+    } catch (error: any) {
+    if (error.name === "ZodError") {
+        return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+    console.error("Error creating reservation:", error);
+    return NextResponse.json(
+        { error: "Error al crear la reservación" },
+        { status: 500 }
+    );
+}
 }
