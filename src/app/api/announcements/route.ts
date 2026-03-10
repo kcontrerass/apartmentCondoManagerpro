@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
         // Notify target roles
         let targetRoles = data.targetRoles as string[];
         if (!targetRoles || targetRoles.length === 0) {
-            targetRoles = ['RESIDENT']; // Default to residents as requested
+            targetRoles = ['RESIDENT', 'GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'];
         }
 
         const notificationComplexId = data.complexId || (session.user as any).complexId;

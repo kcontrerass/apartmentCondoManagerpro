@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Notify residents about new event
-        await sendComplexNotification(data.complexId, ['RESIDENT', 'ADMIN', 'BOARD_OF_DIRECTORS'], {
+        await sendComplexNotification(data.complexId, ['RESIDENT', 'ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD', 'SUPER_ADMIN'], {
             title: `Nuevo Evento: ${event.title}`,
             body: `Te invitamos el ${new Date(event.eventDate).toLocaleDateString()} en ${event.location || 'el complejo'}.`,
             url: `/dashboard/events`

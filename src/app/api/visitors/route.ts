@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { visitorLogSchema } from "@/lib/validations/visitor";
 import { Role } from "@/types/roles";
-import { sendUserNotification } from "@/lib/notifications";
+import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
     try {
@@ -92,13 +92,20 @@ export async function POST(request: Request) {
             });
 
             if (resident && resident.userId !== session.user.id) {
-                sendUserNotification(resident.userId, {
+                await sendUserNotification(resident.userId, {
                     title: 'Visitante Programado',
                     body: `Se ha programado una visita para: ${validatedData.visitorName}`,
                     url: '/dashboard/visitors'
                 });
             }
         }
+
+        // Notify guards and admins of the complex
+        await sendComplexNotification(validatedData.complexId, ['GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
+            title: 'Nueva Visita Programada',
+            body: `Se ha registrado una visita para la unidad ${log.unitId || ''}: ${validatedData.visitorName}`,
+            url: '/dashboard/visitors'
+        });
 
         return NextResponse.json(log, { status: 201 });
     } catch (error) {

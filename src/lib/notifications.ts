@@ -53,7 +53,8 @@ export async function sendComplexNotification(complexId: string, roles: string[]
                 OR: [
                     { complexId: complexId },
                     { managedComplexes: { id: complexId } },
-                    { residentProfile: { unit: { complexId: complexId } } }
+                    { residentProfile: { unit: { complexId: complexId } } },
+                    { role: 'SUPER_ADMIN' } // Always include Super Admins
                 ],
                 role: { in: roles as any },
                 settings: { not: null }

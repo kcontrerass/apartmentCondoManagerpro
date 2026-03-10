@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
+import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
 
 export async function PATCH(
     request: Request,
@@ -29,6 +30,30 @@ export async function PATCH(
             where: { id },
             data: updateData
         });
+
+        // Notify the resident of the unit when visitor arrives
+        if (status === "ARRIVED" && log.unitId) {
+            const resident = await prisma.resident.findFirst({
+                where: { unitId: log.unitId },
+                select: { userId: true }
+            });
+
+            if (resident) {
+                // Notify the resident specifically
+                await sendUserNotification(resident.userId, {
+                    title: 'Visitante en Portería',
+                    body: `${log.visitorName} ha llegado al complejo.`,
+                    url: '/dashboard/visitors'
+                });
+            }
+
+            // Notify administrative staff
+            await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
+                title: 'Check-in de Visitante',
+                body: `${log.visitorName} ha ingresado para la unidad ${log.unitId || ''}.`,
+                url: '/dashboard/visitors'
+            });
+        }
 
         return NextResponse.json(log);
     } catch (error) {
