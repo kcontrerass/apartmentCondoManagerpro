@@ -105,8 +105,10 @@ export async function POST(request: Request) {
                     amount_in_cents: Math.round(totalAmount * 100),
                     quantity: 1,
                 }],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success`,
+                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={checkout_session_id}`,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                return_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 metadata: {
                     type: 'RESERVATION',
                     amenityId,
@@ -163,8 +165,10 @@ export async function POST(request: Request) {
                     amount_in_cents: Math.round(Number(invoice.totalAmount) * 100),
                     quantity: 1,
                 }],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success?invoice_id=${invoice.id}`,
+                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={checkout_session_id}&invoice_id=${invoice.id}`,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                return_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 metadata: {
                     type: 'INVOICE',
                     invoiceId: invoice.id,

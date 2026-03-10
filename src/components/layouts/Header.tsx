@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { useSession } from 'next-auth/react';
 import { Role } from "@/types/roles";
 import { useMobileSidebar } from "./MobileSidebarContext";
@@ -105,20 +105,33 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                 // Apply RBAC: Only SUPER_ADMIN can see everything
                 const shouldFilter = session?.user?.role !== Role.SUPER_ADMIN;
                 const complexParam = (shouldFilter && userComplexId) ? `&complexId=${userComplexId}` : '';
+                const complexIdPath = (shouldFilter && userComplexId) ? `/complexes/${userComplexId}` : '';
 
-                console.log('🔍 Search Debug:', {
-                    role: session?.user?.role,
-                    shouldFilter,
-                    userComplexId,
-                    complexParam,
-                    searchQuery
-                });
-
-                const [complexes, units, residents] = await Promise.all([
+                const searchRequests = [
                     fetch(`/api/complexes?search=${searchQuery}${complexParam}`).then(r => r.json()),
                     fetch(`/api/units?search=${searchQuery}${complexParam}`).then(r => r.json()),
-                    fetch(`/api/residents?search=${searchQuery}${complexParam}`).then(r => r.json())
-                ]);
+                    fetch(`/api/residents?search=${searchQuery}${complexParam}`).then(r => r.json()),
+                ];
+
+                if (shouldFilter && userComplexId) {
+                    searchRequests.push(fetch(`/api/complexes/${userComplexId}/incidents?search=${searchQuery}`).then(r => r.json()));
+                    searchRequests.push(fetch(`/api/complexes/${userComplexId}/events?search=${searchQuery}`).then(r => r.json()));
+                    searchRequests.push(fetch(`/api/complexes/${userComplexId}/announcements?search=${searchQuery}`).then(r => r.json()));
+                } else {
+                    searchRequests.push(fetch(`/api/incidents?search=${searchQuery}`).then(r => r.json()));
+                    searchRequests.push(fetch(`/api/events?search=${searchQuery}`).then(r => r.json()));
+                    searchRequests.push(fetch(`/api/announcements?search=${searchQuery}`).then(r => r.json()));
+                }
+
+                // Always search invoices if possible
+                searchRequests.push(fetch(`/api/invoices?search=${searchQuery}${complexParam}`).then(r => r.json()));
+
+                const [complexes, units, residents, incidentsRaw, eventsRaw, announcementsRaw, invoicesRaw] = await Promise.all(searchRequests);
+
+                const incidents = Array.isArray(incidentsRaw) ? incidentsRaw : incidentsRaw?.data || [];
+                const events = Array.isArray(eventsRaw) ? eventsRaw : eventsRaw?.data?.events || [];
+                const announcements = Array.isArray(announcementsRaw) ? announcementsRaw : announcementsRaw?.data?.announcements || [];
+                const invoices = Array.isArray(invoicesRaw) ? invoicesRaw : [];
 
                 const results: any[] = [];
 
@@ -140,6 +153,30 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                     });
                 }
 
+                if (Array.isArray(incidents)) {
+                    incidents.slice(0, 3).forEach((i: any) => {
+                        results.push({ type: 'incident', label: i.title, id: i.id, href: `/dashboard/incidents/${i.id}` });
+                    });
+                }
+
+                if (Array.isArray(events)) {
+                    events.slice(0, 3).forEach((e: any) => {
+                        results.push({ type: 'event', label: e.title, id: e.id, href: `/dashboard/events/${e.id}` });
+                    });
+                }
+
+                if (Array.isArray(announcements)) {
+                    announcements.slice(0, 3).forEach((a: any) => {
+                        results.push({ type: 'announcement', label: a.title, id: a.id, href: `/dashboard/announcements/${a.id}` });
+                    });
+                }
+
+                if (Array.isArray(invoices)) {
+                    invoices.slice(0, 3).forEach((inv: any) => {
+                        results.push({ type: 'invoice', label: `Factura ${inv.number}`, id: inv.id, href: `/dashboard/invoices` });
+                    });
+                }
+
                 setSearchResults(results);
             } catch (error) {
                 console.error('Search error:', error);
@@ -155,35 +192,101 @@ export function Header({ isUnassigned = false }: HeaderProps) {
     const [showMobileSearch, setShowMobileSearch] = useState(false);
 
     return (
-        <header className="h-16 bg-card border-b border-card-border px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
+        <header
+            className="h-16 md:h-16 bg-card border-b border-card-border px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300"
+            style={{
+                paddingTop: 'env(safe-area-inset-top)',
+                height: 'calc(4rem + env(safe-area-inset-top))'
+            }}
+        >
             {/* Mobile Search Overlay */}
             {showMobileSearch && (
-                <div className="absolute inset-0 bg-card z-50 flex items-center px-4 md:hidden animate-in slide-in-from-top duration-200">
-                    <div className="flex-1 relative">
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
-                        </span>
-                        <input
-                            autoFocus
-                            type="search"
-                            placeholder={t('search')}
-                            value={searchQuery}
-                            onChange={(e) => {
-                                setSearchQuery(e.target.value);
-                                setShowResults(true);
-                            }}
-                            className="w-full pl-10 pr-10 py-2 rounded-lg border border-primary bg-slate-50 dark:bg-background-dark text-sm focus:outline-none"
-                        />
-                        <button
-                            onClick={() => {
-                                setShowMobileSearch(false);
-                                setSearchQuery('');
-                            }}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
-                        >
-                            <span className="material-symbols-outlined text-[20px]">close</span>
-                        </button>
+                <div
+                    className="absolute inset-x-0 top-0 bg-card z-50 flex flex-col px-4 md:hidden animate-in slide-in-from-top duration-200"
+                    style={{ paddingTop: 'env(safe-area-inset-top)', minHeight: 'calc(4rem + env(safe-area-inset-top))' }}
+                >
+                    <div className="flex items-center h-16 w-full">
+                        <div className="flex-1 relative">
+                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+                            </span>
+                            <input
+                                autoFocus
+                                type="search"
+                                placeholder={t('search')}
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setShowResults(true);
+                                }}
+                                className="w-full pl-10 pr-10 py-2 rounded-lg border border-primary bg-slate-50 dark:bg-background-dark text-sm focus:outline-none"
+                            />
+                            <button
+                                onClick={() => {
+                                    setShowMobileSearch(false);
+                                    setSearchQuery('');
+                                    setShowResults(false);
+                                }}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                            >
+                                <span className="material-symbols-outlined text-[20px]">close</span>
+                            </button>
+                        </div>
                     </div>
+
+                    {/* Mobile Search Results */}
+                    {showResults && (searchResults.length > 0 || isSearching || searchQuery.length >= 2) && (
+                        <div className="bg-card border-x border-b border-card-border rounded-b-lg shadow-lg max-h-[70vh] overflow-y-auto mb-4">
+                            {isSearching ? (
+                                <div className="p-4 text-center text-sm text-slate-500">
+                                    <span className="material-symbols-outlined animate-spin font-medium text-primary">progress_activity</span>
+                                </div>
+                            ) : searchResults.length > 0 ? (
+                                <div className="py-2">
+                                    {searchResults.map((result, idx) => (
+                                        <div
+                                            key={`${result.type}-${result.id}-${idx}-mobile`}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                console.log('📱 Mobile Search Click:', result.href);
+                                                router.push(result.href);
+                                                setShowResults(false);
+                                                setSearchQuery('');
+                                                setShowMobileSearch(false);
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                        >
+                                            <span className={cn("inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 transition-colors")}>
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    {result.type === 'complex' ? 'domain' :
+                                                        result.type === 'unit' ? 'door_front' :
+                                                            result.type === 'resident' ? 'person' :
+                                                                result.type === 'incident' ? 'report_problem' :
+                                                                    result.type === 'event' ? 'event' :
+                                                                        result.type === 'announcement' ? 'campaign' : 'receipt_long'}
+                                                </span>
+                                            </span>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{result.label}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                    {result.type === 'complex' ? 'Complejo' :
+                                                        result.type === 'unit' ? 'Unidad' :
+                                                            result.type === 'resident' ? 'Residente' :
+                                                                result.type === 'incident' ? 'Incidente' :
+                                                                    result.type === 'event' ? 'Evento' :
+                                                                        result.type === 'announcement' ? 'Aviso' : 'Factura'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-4 text-center text-sm text-slate-500">
+                                    No se encontraron resultados
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -239,12 +342,24 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                                             >
                                                 <span className={cn("inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 transition-colors")}>
                                                     <span className="material-symbols-outlined text-[18px]">
-                                                        {result.type === 'complex' ? 'domain' : result.type === 'unit' ? 'door_front' : 'person'}
+                                                        {result.type === 'complex' ? 'domain' :
+                                                            result.type === 'unit' ? 'door_front' :
+                                                                result.type === 'resident' ? 'person' :
+                                                                    result.type === 'incident' ? 'report_problem' :
+                                                                        result.type === 'event' ? 'event' :
+                                                                            result.type === 'announcement' ? 'campaign' : 'receipt_long'}
                                                     </span>
                                                 </span>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{result.label}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{result.type === 'complex' ? 'Complejo' : result.type === 'unit' ? 'Unidad' : 'Residente'}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                        {result.type === 'complex' ? 'Complejo' :
+                                                            result.type === 'unit' ? 'Unidad' :
+                                                                result.type === 'resident' ? 'Residente' :
+                                                                    result.type === 'incident' ? 'Incidente' :
+                                                                        result.type === 'event' ? 'Evento' :
+                                                                            result.type === 'announcement' ? 'Aviso' : 'Factura'}
+                                                    </p>
                                                 </div>
                                             </Link>
                                         ))}

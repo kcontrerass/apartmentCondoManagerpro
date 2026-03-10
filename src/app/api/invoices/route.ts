@@ -16,6 +16,7 @@ export async function GET(request: Request) {
         const status = searchParams.get("status");
         const month = searchParams.get("month");
         const year = searchParams.get("year");
+        const search = searchParams.get("search");
 
         let whereClause: any = {};
 
@@ -24,6 +25,13 @@ export async function GET(request: Request) {
         if (status) whereClause.status = status;
         if (month) whereClause.month = parseInt(month);
         if (year) whereClause.year = parseInt(year);
+
+        if (search) {
+            whereClause.OR = [
+                { number: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+            ];
+        }
 
         // RBAC filtering
         if (session.user.role === Role.ADMIN) {

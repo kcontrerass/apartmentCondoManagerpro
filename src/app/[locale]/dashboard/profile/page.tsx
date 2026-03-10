@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { PasswordForm } from "@/components/profile/PasswordForm";
+import { NotificationManager } from "@/components/pwa/NotificationManager";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -80,6 +81,10 @@ export default async function ProfilePage() {
                                 <span className="text-slate-500">Complejo</span>
                                 <span className="font-medium text-primary">{complexName || 'Global'}</span>
                             </div>
+                        </div>
+
+                        <div className="w-full mt-6">
+                            <NotificationManager />
                         </div>
                     </Card>
 
