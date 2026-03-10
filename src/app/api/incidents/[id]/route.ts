@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { updateIncidentSchema } from '@/lib/validations/incident';
+import { sendUserNotification } from '@/lib/notifications';
 
 /**
  * GET /api/incidents/[id]
@@ -140,11 +141,23 @@ export async function PATCH(
             }
         }
 
-        const incident = await prisma.incident.update({
+        const incident: any = await prisma.incident.update({
             where: { id },
             data: validation.data,
-            include: { resolver: { select: { id: true, name: true } } }
+            include: {
+                resolver: { select: { id: true, name: true } },
+                complex: { select: { id: true, name: true } }
+            }
         });
+
+        // Notify reporter on status change
+        if (validation.data.status && validation.data.status !== currentIncident.status) {
+            await sendUserNotification(currentIncident.reporterId, {
+                title: `Incidente Actualizado: ${currentIncident.title}`,
+                body: `El estado ha cambiado a: ${incident.status}`,
+                url: `/dashboard/incidents/${id}`
+            });
+        }
 
         return NextResponse.json({ success: true, data: incident });
     } catch (error: any) {
