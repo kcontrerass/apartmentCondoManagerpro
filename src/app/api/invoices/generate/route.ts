@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { generateInvoicesSchema } from "@/lib/validations/invoice";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
+import { sendComplexNotification } from "@/lib/notifications";
 
 export async function POST(request: Request) {
     try {
@@ -39,6 +40,15 @@ export async function POST(request: Request) {
         }, {
             timeout: 30000 // 30 seconds
         });
+
+        if (result.generatedCount > 0) {
+            // Notify residents about new invoices
+            sendComplexNotification(complexId, ['RESIDENT'], {
+                title: 'Nueva Factura Generada',
+                body: `Se han generado las facturas correspondientes a ${month}/${year}.`,
+                url: '/dashboard/invoices'
+            });
+        }
 
         return NextResponse.json({
             message: `Generación completada`,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { incidentSchema } from '@/lib/validations/incident';
+import { sendComplexNotification } from '@/lib/notifications';
 
 /**
  * GET /api/incidents
@@ -184,6 +185,13 @@ export async function POST(request: NextRequest) {
                     select: { id: true, name: true }
                 }
             }
+        });
+
+        // Notify staff (ADMIN, GUARD, BOARD) about new incident
+        sendComplexNotification(data.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS'], {
+            title: `Nuevo Incidente: ${incident.title}`,
+            body: `Reportado por ${incident.reporter.name}. Prioridad: ${incident.priority}`,
+            url: `/dashboard/incidents/${incident.id}`
         });
 
         return NextResponse.json(

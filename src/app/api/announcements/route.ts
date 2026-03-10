@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { announcementCreateSchema } from '@/lib/validations/announcement';
+import { sendComplexNotification } from '@/lib/notifications';
 
 /**
  * GET /api/announcements
@@ -184,6 +185,17 @@ export async function POST(request: NextRequest) {
                     },
                 },
             },
+        });
+
+        // Notify target roles
+        const roles = data.targetRoles && data.targetRoles.length > 0
+            ? data.targetRoles
+            : ['RESIDENT', 'ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD'];
+
+        sendComplexNotification(data.complexId, roles as string[], {
+            title: `Aviso: ${announcement.title}`,
+            body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
+            url: `/dashboard/announcements/${announcement.id}`
         });
 
         return NextResponse.json(

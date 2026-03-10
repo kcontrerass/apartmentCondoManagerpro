@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { sendUserNotification } from "@/lib/notifications";
 
 // This endpoint is designed to be called by a CRON job (e.g., daily)
 // It checks for active optional services that need to be billed for the current month
@@ -102,6 +103,20 @@ export async function GET(request: Request) {
                         }
                     }
                 });
+
+                // Notify user about auto-generated invoice
+                const resident = await prisma.resident.findFirst({
+                    where: { unitId: us.unitId },
+                    select: { userId: true }
+                });
+
+                if (resident) {
+                    sendUserNotification(resident.userId, {
+                        title: 'Servicio Renovado',
+                        body: `Se ha generado una factura por la renovación de ${us.service.name}.`,
+                        url: '/dashboard/invoices'
+                    });
+                }
 
                 processedCount++;
                 console.log(`[AutoBilling] Generated invoice for ${us.service.name} - Unit ${us.unit.number}`);
