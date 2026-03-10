@@ -111,7 +111,7 @@ export async function GET(request: Request) {
                 });
 
                 if (resident) {
-                    sendUserNotification(resident.userId, {
+                    await sendUserNotification(resident.userId, {
                         title: 'Servicio Renovado',
                         body: `Se ha generado una factura por la renovación de ${us.service.name}.`,
                         url: '/dashboard/invoices'

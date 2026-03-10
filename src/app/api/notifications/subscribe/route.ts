@@ -14,14 +14,19 @@ export async function POST(request: NextRequest) {
 
         const subscription = await request.json();
 
-        // Update user with subscription info
-        // We'll store it as a JSON string in a new field if possible, 
-        // or repurpose an existing settings field.
+        // Fetch current settings to preserve them
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: { settings: true }
+        });
+
+        const currentSettings = (user?.settings as any) || {};
+
         await (prisma as any).user.update({
             where: { id: session.user.id },
             data: {
                 settings: {
-                    ...(session.user as any).settings,
+                    ...currentSettings,
                     pushSubscription: subscription
                 }
             }

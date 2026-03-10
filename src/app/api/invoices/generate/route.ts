@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
         if (result.generatedCount > 0) {
             // Notify residents about new invoices
-            sendComplexNotification(complexId, ['RESIDENT'], {
+            await sendComplexNotification(complexId, ['RESIDENT'], {
                 title: 'Nueva Factura Generada',
                 body: `Se han generado las facturas correspondientes a ${month}/${year}.`,
                 url: '/dashboard/invoices'

@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
         const notificationComplexId = data.complexId || (session.user as any).complexId;
 
         if (notificationComplexId) {
-            sendComplexNotification(notificationComplexId, targetRoles, {
+            await sendComplexNotification(notificationComplexId, targetRoles, {
                 title: `Aviso: ${announcement.title}`,
                 body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
                 url: `/dashboard/announcements/${announcement.id}`

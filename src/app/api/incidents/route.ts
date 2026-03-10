@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
         });
 
         // Notify staff (ADMIN, GUARD, BOARD) about new incident
-        sendComplexNotification(data.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS'], {
+        await sendComplexNotification(data.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS'], {
             title: `Nuevo Incidente: ${incident.title}`,
             body: `Reportado por ${incident.reporter.name}. Prioridad: ${incident.priority}`,
             url: `/dashboard/incidents/${incident.id}`

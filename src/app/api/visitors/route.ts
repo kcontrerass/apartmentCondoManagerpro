@@ -84,27 +84,25 @@ export async function POST(request: Request) {
             }
         });
 
-    });
-
-    // Notify the resident of the unit
-    if (validatedData.unitId) {
-        const resident = await prisma.resident.findFirst({
-            where: { unitId: validatedData.unitId },
-            select: { userId: true }
-        });
-
-        if (resident && resident.userId !== session.user.id) {
-            sendUserNotification(resident.userId, {
-                title: 'Visitante Programado',
-                body: `Se ha programado una visita para: ${validatedData.visitorName}`,
-                url: '/dashboard/visitors'
+        // Notify the resident of the unit
+        if (validatedData.unitId) {
+            const resident = await prisma.resident.findFirst({
+                where: { unitId: validatedData.unitId },
+                select: { userId: true }
             });
-        }
-    }
 
-    return NextResponse.json(log, { status: 201 });
-} catch (error) {
-    console.error("Error creating visitor log:", error);
-    return NextResponse.json({ error: "Error al registrar visitante" }, { status: 500 });
-}
+            if (resident && resident.userId !== session.user.id) {
+                sendUserNotification(resident.userId, {
+                    title: 'Visitante Programado',
+                    body: `Se ha programado una visita para: ${validatedData.visitorName}`,
+                    url: '/dashboard/visitors'
+                });
+            }
+        }
+
+        return NextResponse.json(log, { status: 201 });
+    } catch (error) {
+        console.error("Error creating visitor log:", error);
+        return NextResponse.json({ error: "Error al registrar visitante" }, { status: 500 });
+    }
 }
