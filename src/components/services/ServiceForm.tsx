@@ -50,7 +50,7 @@ export function ServiceForm({
                             Complejo
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("complexId")}
                         >
                             <option value="">Seleccione un complejo</option>
@@ -80,7 +80,7 @@ export function ServiceForm({
                         Descripción
                     </label>
                     <textarea
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm min-h-[100px]"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm min-h-[100px]"
                         placeholder="Descripción del servicio..."
                         {...register("description")}
                     />
@@ -106,7 +106,7 @@ export function ServiceForm({
                             Frecuencia
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("frequency")}
                         >
                             <option value="ONCE">Una vez</option>
@@ -127,7 +127,7 @@ export function ServiceForm({
                             Tipo de Servicio
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("isRequired", { setValueAs: (v) => v === "true" })}
                         >
                             <option value="false">Opcional (Disponible para selección)</option>
@@ -146,7 +146,7 @@ export function ServiceForm({
                             ¿Requiere Cantidad?
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("hasQuantity", { setValueAs: (v) => v === "true" })}
                         >
                             <option value="false">No (Precio fijo por unidad)</option>

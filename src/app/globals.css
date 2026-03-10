@@ -3,23 +3,27 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary-DEFAULT: #135bec;
-  --color-primary-dark: #0f4bc2;
-  --color-background-light: #101622;
-  /* Map light to dark for forced theme */
-  --color-background-dark: #101622;
-  --color-emerald-50: #064e3b;
-  --color-emerald-100: #065f46;
-  --color-emerald-500: #10b981;
-  --color-emerald-600: #059669;
-  --color-emerald-700: #047857;
-  --font-sans: Inter, sans-serif;
+  --color-primary: #59BA47;
+  --color-primary-dark: #1a1e1c;
+  --color-secondary: #005780;
+  /* Dynamic theme variables — resolved by :root / .dark */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-sidebar: var(--sidebar);
+  /* Legacy aliases — keep for backward compat with dark:bg-background-dark refs */
+  --color-background-dark: var(--background);
+  --color-background-light: #F8FAFC;
+  --font-sans: 'Akrobat', 'Malik Trial', Inter, sans-serif;
+  --font-malik: 'Malik Trial', sans-serif;
+  --font-akrobat: 'Akrobat', sans-serif;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
 }
 
-/* Material Symbols Class Definition */
+/* Material Symbols Font */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
@@ -39,26 +43,40 @@
 }
 
 :root {
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-border: #E2E8F0;
+  --sidebar: #FFFFFF;
+  color-scheme: light;
+}
+
+.dark {
+  --background: #000000;
+  --foreground: #FFFFFF;
+  --card: #1d1f1e;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --sidebar: #111312;
   color-scheme: dark;
 }
 
 @layer base {
   body {
-    @apply bg-background-dark text-white font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 
-  /* Ensure scrollbars are dark */
+  /* Ensure scrollbars match theme */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-background-dark;
+    @apply bg-background;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-slate-800 rounded-full border-2 border-background-dark hover:bg-slate-700 transition-colors;
+    @apply bg-slate-400 dark:bg-slate-700 rounded-full border-2 border-background hover:bg-primary/50 transition-colors;
   }
 }
 
@@ -72,6 +90,6 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-700/50 rounded-full hover:bg-slate-600/80 transition-colors;
+    @apply bg-slate-400/50 dark:bg-slate-700/50 rounded-full hover:bg-primary/50 transition-colors;
   }
 }

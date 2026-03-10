@@ -31,7 +31,7 @@ export default function LoginPage() {
                         type="email"
                         autoComplete="email"
                         required
-                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 dark:text-white transition-all duration-200"
+                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary dark:text-white transition-all duration-200"
                         placeholder="tu@correo.com"
                     />
                 </div>
@@ -54,7 +54,7 @@ export default function LoginPage() {
                         type="password"
                         autoComplete="current-password"
                         required
-                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 dark:text-white transition-all duration-200"
+                        className="block w-full pl-10 pr-3 py-2.5 bg-slate-50/50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700 rounded-xl text-sm shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary dark:text-white transition-all duration-200"
                         placeholder="••••••••"
                     />
                 </div>
@@ -66,7 +66,7 @@ export default function LoginPage() {
                         id="remember_me"
                         name="remember_me"
                         type="checkbox"
-                        className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500/50 bg-white dark:bg-slate-800 dark:border-slate-600 transition-colors cursor-pointer"
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/50 bg-white dark:bg-background-dark dark:border-slate-600 transition-colors cursor-pointer"
                     />
                     <label
                         htmlFor="remember_me"
@@ -79,7 +79,7 @@ export default function LoginPage() {
                 <div className="text-sm">
                     <Link
                         href="/forgot-password"
-                        className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                        className="font-medium text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80 transition-colors"
                     >
                         ¿Olvidaste tu contraseña?
                     </Link>
@@ -90,7 +90,7 @@ export default function LoginPage() {
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="flex w-full justify-center items-center gap-2 rounded-xl border border-transparent bg-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
+                    className="flex w-full justify-center items-center gap-2 rounded-xl border border-transparent bg-primary px-4 py-3 text-sm font-bold text-white shadow-md shadow-primary/20 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.98]"
                 >
                     {isPending ? (
                         <>
@@ -105,7 +105,7 @@ export default function LoginPage() {
                     ¿Nuevo en ADESSO?{' '}
                     <a
                         href="/register"
-                        className="font-bold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
+                        className="font-bold text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80 transition-colors"
                     >
                         Regístrate aquí
                     </a>

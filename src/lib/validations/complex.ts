@@ -19,6 +19,8 @@ export const ComplexCreateSchema = z.object({
     address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
     type: z.enum(["BUILDING", "RESIDENTIAL", "CONDO", "SHOPPING_CENTER"] as const).default("BUILDING"),
     logoUrl: z.string().url("URL de logo inválida").or(z.literal("")).optional().nullable(),
+    bankAccount: z.string().optional().nullable(),
+    phone: z.string().optional().nullable(),
     settings: z.record(z.string(), z.any()).optional().nullable(),
     adminId: z.string().min(1, "El administrador es obligatorio"),
 });

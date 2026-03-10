@@ -121,7 +121,7 @@ export default function ReservationTable() {
     return (
         <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                <thead className="bg-slate-50 dark:bg-slate-900/50">
+                <thead className="bg-slate-50 dark:bg-background-dark/50">
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.amenity')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.resident')}</th>
@@ -134,7 +134,7 @@ export default function ReservationTable() {
                         <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">{tCommon('actions')}</th>
                     </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
+                <tbody className="bg-white dark:bg-background-dark divide-y divide-slate-200 dark:divide-slate-800">
                     {reservations.map((r) => (
                         <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                             <td className="px-6 py-4 whitespace-nowrap">

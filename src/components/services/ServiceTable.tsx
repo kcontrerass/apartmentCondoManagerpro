@@ -125,7 +125,7 @@ export function ServiceTable({
                                             type="number"
                                             min="1"
                                             defaultValue="1"
-                                            className="w-20 px-2 py-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-700"
+                                            className="w-20 px-2 py-1 text-sm border rounded dark:bg-background-dark dark:border-slate-700"
                                         />
                                     ) : service.hasQuantity && service.unitServices?.length ? (
                                         <input
@@ -133,7 +133,7 @@ export function ServiceTable({
                                             type="number"
                                             min="1"
                                             defaultValue={service.unitServices[0].quantity}
-                                            className="w-20 px-2 py-1 text-sm border rounded dark:bg-slate-800 dark:border-slate-700 border-emerald-200 dark:border-emerald-800"
+                                            className="w-20 px-2 py-1 text-sm border rounded dark:bg-background-dark dark:border-slate-700 border-emerald-200 dark:border-emerald-800"
                                             disabled={service.isRequired || userRole === Role.RESIDENT}
                                         />
                                     ) : (

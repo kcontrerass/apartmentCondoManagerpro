@@ -20,7 +20,7 @@ export default function RegisterPage() {
                         type="text"
                         autoComplete="name"
                         required
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
             </div>
@@ -36,7 +36,7 @@ export default function RegisterPage() {
                         type="email"
                         autoComplete="email"
                         required
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
             </div>
@@ -51,7 +51,7 @@ export default function RegisterPage() {
                         name="phone"
                         type="tel"
                         autoComplete="tel"
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
             </div>
@@ -68,7 +68,7 @@ export default function RegisterPage() {
                         autoComplete="new-password"
                         required
                         minLength={6}
-                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-primary focus:outline-none focus:ring-primary sm:text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                 </div>
             </div>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                 <button
                     type="submit"
                     disabled={isPending}
-                    className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-indigo-400 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                    className="flex w-full justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:bg-primary/70 dark:bg-primary dark:hover:bg-primary-dark"
                 >
                     {isPending ? 'Creating account...' : 'Create account'}
                 </button>
@@ -86,7 +86,7 @@ export default function RegisterPage() {
             <div>
                 <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
                     Already have an account?{' '}
-                    <a href="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                    <a href="/login" className="font-medium text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80">
                         Sign in
                     </a>
                 </p>

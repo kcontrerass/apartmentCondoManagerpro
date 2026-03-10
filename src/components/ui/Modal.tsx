@@ -57,7 +57,7 @@ export function Modal({ isOpen, onClose, title, children, footer, className, siz
                 </CardContent>
 
                 {footer && (
-                    <div className="flex-shrink-0 flex items-center justify-end gap-2 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 rounded-b-xl">
+                    <div className="flex-shrink-0 flex items-center justify-end gap-2 p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-background-dark/50 rounded-b-xl">
                         {footer}
                     </div>
                 )}

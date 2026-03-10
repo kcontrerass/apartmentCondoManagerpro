@@ -110,7 +110,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                         Complejo
                     </label>
                     <select
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("complexId")}
                     >
                         <option value="">Seleccione un complejo</option>
@@ -136,7 +136,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                         Tipo
                     </label>
                     <select
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("type")}
                     >
                         <option value="Apartamento">Apartamento</option>
@@ -184,7 +184,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                         Estado
                     </label>
                     <select
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("status")}
                     >
                         <option value="VACANT">Vacante</option>

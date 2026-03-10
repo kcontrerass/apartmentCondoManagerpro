@@ -116,7 +116,7 @@ export default async function UnitDetailPage({ params }: RouteParams) {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                <div className="text-center py-8 bg-slate-50 dark:bg-background-dark/50 rounded-lg">
                                     <p className="text-slate-500">No hay historial de residentes.</p>
                                 </div>
                             )}

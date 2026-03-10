@@ -2,12 +2,15 @@
 
 import { Button } from "@/components/ui/Button";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
+import { cn } from "@/lib/utils";
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { Role } from "@/types/roles";
+import { useMobileSidebar } from "./MobileSidebarContext";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 interface HeaderProps {
     isUnassigned?: boolean;
@@ -18,6 +21,8 @@ export function Header({ isUnassigned = false }: HeaderProps) {
     const router = useRouter();
     const pathname = usePathname();
     const t = useTranslations('Common');
+    const { isOpen, setIsOpen } = useMobileSidebar();
+    const { theme, toggleTheme } = useTheme();
 
     const toggleLanguage = () => {
         const nextLocale = locale === 'es' ? 'en' : 'es';
@@ -147,14 +152,54 @@ export function Header({ isUnassigned = false }: HeaderProps) {
         return () => clearTimeout(debounce);
     }, [searchQuery]);
 
+    const [showMobileSearch, setShowMobileSearch] = useState(false);
+
     return (
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
+        <header className="h-16 bg-card border-b border-card-border px-4 md:px-8 flex items-center justify-between sticky top-0 z-30 transition-all duration-300">
+            {/* Mobile Search Overlay */}
+            {showMobileSearch && (
+                <div className="absolute inset-0 bg-card z-50 flex items-center px-4 md:hidden animate-in slide-in-from-top duration-200">
+                    <div className="flex-1 relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <span className="material-symbols-outlined text-slate-400 text-[20px]">search</span>
+                        </span>
+                        <input
+                            autoFocus
+                            type="search"
+                            placeholder={t('search')}
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                setShowResults(true);
+                            }}
+                            className="w-full pl-10 pr-10 py-2 rounded-lg border border-primary bg-slate-50 dark:bg-background-dark text-sm focus:outline-none"
+                        />
+                        <button
+                            onClick={() => {
+                                setShowMobileSearch(false);
+                                setSearchQuery('');
+                            }}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                        >
+                            <span className="material-symbols-outlined text-[20px]">close</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Mobile Menu Toggle */}
+            <div className="md:hidden mr-2">
+                <Button variant="ghost" size="icon" onClick={() => setIsOpen(true)} className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white">
+                    <span className="material-symbols-outlined">menu</span>
+                </Button>
+            </div>
+
             {/* Breadcrumbs */}
-            <div className="flex-1 lg:flex-none">
+            <div className="flex-1 lg:flex-none hidden sm:block">
                 <Breadcrumbs />
             </div>
 
-            {/* Search Bar - Hide on small mobile, show expand button or make smaller */}
+            {/* Search Bar - Desktop */}
             {!isUnassigned && (
                 <div className="flex-1 max-w-md mx-4 hidden md:block" ref={searchRef}>
                     <div className="relative group">
@@ -170,15 +215,15 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                                 setShowResults(true);
                             }}
                             onFocus={() => setShowResults(true)}
-                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-card-border bg-background text-foreground text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-slate-400"
                         />
 
                         {/* Search Results Dropdown */}
                         {showResults && (searchResults.length > 0 || isSearching || searchQuery.length >= 2) && (
-                            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-card-border rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
                                 {isSearching ? (
                                     <div className="p-4 text-center text-sm text-slate-500">
-                                        <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                                        <span className="material-symbols-outlined animate-spin font-medium text-primary">progress_activity</span>
                                     </div>
                                 ) : searchResults.length > 0 ? (
                                     <div className="py-2">
@@ -192,12 +237,14 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                                                 }}
                                                 className="flex items-center gap-3 px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
                                             >
-                                                <span className="material-symbols-outlined text-slate-400 text-[20px]">
-                                                    {result.type === 'complex' ? 'domain' : result.type === 'unit' ? 'door_front' : 'person'}
+                                                <span className={cn("inline-flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 transition-colors")}>
+                                                    <span className="material-symbols-outlined text-[18px]">
+                                                        {result.type === 'complex' ? 'domain' : result.type === 'unit' ? 'door_front' : 'person'}
+                                                    </span>
                                                 </span>
-                                                <div className="flex-1">
-                                                    <p className="text-sm font-medium text-slate-900 dark:text-white">{result.label}</p>
-                                                    <p className="text-xs text-slate-500 capitalize">{result.type === 'complex' ? 'Complejo' : result.type === 'unit' ? 'Unidad' : 'Residente'}</p>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{result.label}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{result.type === 'complex' ? 'Complejo' : result.type === 'unit' ? 'Unidad' : 'Residente'}</p>
                                                 </div>
                                             </Link>
                                         ))}
@@ -216,27 +263,43 @@ export function Header({ isUnassigned = false }: HeaderProps) {
             {/* Action Buttons */}
             <div className="flex items-center gap-1 md:gap-2">
                 {!isUnassigned && (
-                    <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 md:hidden">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowMobileSearch(true)}
+                        className="text-slate-400 hover:text-slate-600 md:hidden"
+                    >
                         <span className="material-symbols-outlined">search</span>
                     </Button>
                 )}
+
+                {/* Theme Toggle */}
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="text-slate-500 hover:text-primary transition-colors"
+                    title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                    <span className="material-symbols-outlined text-[20px]">
+                        {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                    </span>
+                </Button>
 
                 {/* Language Switcher */}
                 <Button
                     variant="ghost"
                     size="sm"
                     onClick={toggleLanguage}
-                    className="flex items-center gap-2 px-2 text-slate-500 hover:text-primary transition-colors font-medium border border-slate-200 dark:border-slate-700 rounded-lg hover:border-primary/30"
+                    className="flex items-center gap-2 px-2 text-slate-500 hover:text-primary transition-colors font-medium border border-card-border rounded-lg hover:border-primary/30"
                 >
                     <span className="material-symbols-outlined text-[18px]">language</span>
                     <span className="uppercase text-xs">{locale === 'es' ? 'EN' : 'ES'}</span>
                 </Button>
 
-
                 <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600 hidden sm:flex">
                     <span className="material-symbols-outlined">help</span>
                 </Button>
-
             </div>
         </header>
     );

@@ -141,12 +141,12 @@ const AnnouncementsClient = () => {
                         onClick={() => setFilters(prev => ({ ...prev, status: tab.status as any }))}
                         className={`p-6 rounded-2xl border transition-all text-left flex items-center gap-4 ${filters.status === tab.status
                             ? 'bg-primary/5 border-primary shadow-sm ring-1 ring-primary/20'
-                            : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
+                            : 'bg-white dark:bg-background-dark border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700'
                             }`}
                     >
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${filters.status === tab.status
                             ? 'bg-primary text-white'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            : 'bg-slate-100 dark:bg-background-dark text-slate-500'
                             }`}>
                             <span className="material-symbols-outlined text-2xl">{tab.icon}</span>
                         </div>
@@ -187,7 +187,7 @@ const AnnouncementsClient = () => {
                                     placeholder="Buscar por título..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-12 pr-4 h-11 bg-slate-50 dark:bg-slate-800/50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm outline-none transition-all shadow-inner"
+                                    className="w-full pl-12 pr-4 h-11 bg-slate-50 dark:bg-background-dark/50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm outline-none transition-all shadow-inner"
                                 />
                             </div>
 

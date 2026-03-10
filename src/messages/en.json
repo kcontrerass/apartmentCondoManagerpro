@@ -43,7 +43,6 @@
         "totalComplexes": "Total Complexes",
         "totalUnits": "Total Units",
         "activeResidents": "Active Residents",
-        "occupancy": "Occupancy",
         "managedCurrently": "Currently managed",
         "allComplexes": "In all complexes",
         "registeredSystem": "Registered in the system",
@@ -76,7 +75,24 @@
         "pendingReservations": "Pending Reservations",
         "inComplex": "In the complex",
         "unitsOccupied": "Units occupied",
-        "toReview": "To review"
+        "toReview": "To review",
+        "activity": {
+            "title": "Recent Activity",
+            "viewAll": "View All",
+            "reference": "Reference",
+            "type": "Type",
+            "status": "Status",
+            "datetime": "Date/Time",
+            "details": "Details"
+        },
+        "occupancy": {
+            "title": "Occupancy Status",
+            "residents": "Residents",
+            "vacant": "Vacant",
+            "label": "Occupied",
+            "units": "Units",
+            "viewReport": "View Detailed Report"
+        }
     },
     "Units": {
         "title": "Units",
@@ -429,6 +445,7 @@
         "title": "Reports & Analytics",
         "subtitle": "Complex performance and statistics overview",
         "noData": "No data available for the selected complexes",
+        "exportToExcel": "Export to Excel (.xlsx)",
         "filterByComplex": "Filter by Complex",
         "allComplexes": "All Complexes",
         "stats": {

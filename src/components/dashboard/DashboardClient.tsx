@@ -5,6 +5,17 @@ import { OccupancyChart } from "@/components/dashboard/OccupancyChart";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { useTranslations } from 'next-intl';
 import { formatPrice } from "@/lib/utils";
+import { motion } from "framer-motion";
+
+const container = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
 
 interface DashboardStats {
     totalComplexes: number;
@@ -32,9 +43,14 @@ export function DashboardClient({ stats }: DashboardClientProps) {
     };
 
     return (
-        <div className="space-y-8">
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-8"
+        >
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div variants={container} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     icon="domain"
                     label={t('totalComplexes')}
@@ -68,17 +84,17 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                     iconColor="text-red-500"
                     badge={stats.pendingIncidents > 0 ? { text: "Acción requerida", variant: "error" } : undefined}
                 />
-            </div>
+            </motion.div>
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+            <motion.div variants={container} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <motion.div variants={{ hidden: { opacity: 0, scale: 0.95 }, show: { opacity: 1, scale: 1 } }} className="lg:col-span-2">
                     <ActivityTable activities={activities} />
-                </div>
-                <div className="lg:col-span-1 h-full">
+                </motion.div>
+                <motion.div variants={{ hidden: { opacity: 0, x: 20 }, show: { opacity: 1, x: 0 } }} className="lg:col-span-1 h-full">
                     <OccupancyChart data={occupancyData} totalUnits={stats.totalUnits || 100} />
-                </div>
-            </div>
-        </div>
+                </motion.div>
+            </motion.div>
+        </motion.div>
     );
 }

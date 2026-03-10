@@ -41,7 +41,7 @@ export function ComplexesClient({ userRole }: ComplexesClientProps) {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-4 items-end bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex flex-col md:flex-row gap-4 items-end bg-white dark:bg-background-dark p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex-1 w-full">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                         Buscar

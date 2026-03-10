@@ -1,6 +1,6 @@
 export function Footer() {
     return (
-        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 px-6">
+        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark py-4 px-6">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                 <p>© {new Date().getFullYear()} ADESSO. All rights reserved.</p>
                 <div className="flex gap-6">

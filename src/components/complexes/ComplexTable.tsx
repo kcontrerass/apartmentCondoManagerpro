@@ -36,9 +36,9 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
     };
 
     return (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-background-dark">
             <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 font-medium uppercase text-xs uppercase tracking-wider">
+                <thead className="bg-slate-50 dark:bg-background-dark/50 text-slate-500 dark:text-slate-400 font-medium uppercase text-xs uppercase tracking-wider">
                     <tr>
                         <th className="px-6 py-4">Nombre</th>
                         <th className="px-6 py-4">Tipo</th>
@@ -63,7 +63,7 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                                         {complex.logoUrl ? (
                                             <img src={complex.logoUrl} alt={complex.name} className="w-8 h-8 rounded object-cover" />
                                         ) : (
-                                            <div className="w-8 h-8 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                            <div className="w-8 h-8 rounded bg-slate-100 dark:bg-background-dark flex items-center justify-center text-slate-400">
                                                 <span className="material-symbols-outlined text-lg">apartment</span>
                                             </div>
                                         )}

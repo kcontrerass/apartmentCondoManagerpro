@@ -54,7 +54,7 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                             Usuario
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("userId")}
                         >
                             <option value="">Seleccione un usuario</option>
@@ -71,7 +71,7 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                             Unidad
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("unitId")}
                         >
                             <option value="">Seleccione una unidad</option>
@@ -88,7 +88,7 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                             Tipo de Residente
                         </label>
                         <select
-                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("type")}
                         >
                             <option value="TENANT">Inquilino</option>

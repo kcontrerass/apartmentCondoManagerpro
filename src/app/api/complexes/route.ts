@@ -104,6 +104,8 @@ export async function POST(request: Request) {
                     address: validatedData.address,
                     type: validatedData.type,
                     logoUrl: validatedData.logoUrl,
+                    bankAccount: validatedData.bankAccount,
+                    phone: validatedData.phone,
                     settings: validatedData.settings || {},
                     adminId: adminIdToAssign,
                 },

@@ -22,7 +22,7 @@ export function Button({
 }: ButtonProps) {
     const variants = {
         primary: 'bg-primary text-white hover:bg-primary-dark shadow-sm hover:shadow',
-        secondary: 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700',
+        secondary: 'bg-secondary text-white hover:opacity-90 shadow-sm hover:shadow transition-opacity',
         ghost: 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800',
         danger: 'bg-red-500 text-white hover:bg-red-600 shadow-sm',
         outline: 'border border-slate-200 bg-transparent hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800'
@@ -39,7 +39,7 @@ export function Button({
         <button
             disabled={disabled || isLoading}
             className={cn(
-                'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/20 active:scale-95',
+                'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary/20 active:scale-95 border border-white/10',
                 variants[variant],
                 sizes[size],
                 className

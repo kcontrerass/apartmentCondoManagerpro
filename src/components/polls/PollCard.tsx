@@ -31,7 +31,7 @@ export const PollCard: React.FC<PollCardProps> = ({ poll, onVote, userRole, onDe
     const isAdmin = ['ADMIN', 'SUPER_ADMIN', 'BOARD_OF_DIRECTORS'].includes(userRole);
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all hover:shadow-2xl hover:shadow-primary/5 group">
+        <div className="bg-white dark:bg-background-dark rounded-[2rem] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-all hover:shadow-2xl hover:shadow-primary/5 group">
             <div className="flex justify-between items-start mb-4">
                 <Badge variant={isClosed ? 'neutral' : 'success'}>
                     {isClosed ? 'Cerrada' : 'Activa'}
@@ -72,7 +72,7 @@ export const PollCard: React.FC<PollCardProps> = ({ poll, onVote, userRole, onDe
                                         </span>
                                         <span className="text-slate-400">{percentage}% ({votes})</span>
                                     </div>
-                                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                    <div className="h-2 w-full bg-slate-100 dark:bg-background-dark rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full transition-all duration-1000 ${isSelected ? 'bg-primary' : 'bg-slate-300 dark:bg-slate-600'}`}
                                             style={{ width: `${percentage}%` }}

@@ -114,13 +114,34 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Cuenta Bancaria (Opcional)
+                    </label>
+                    <Input
+                        {...register("bankAccount")}
+                        error={errors.bankAccount?.message}
+                        placeholder="Ej: BANRURAL 3000..."
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                        Teléfono (Opcional)
+                    </label>
+                    <Input
+                        {...register("phone")}
+                        error={errors.phone?.message}
+                        placeholder="Ej: +502 1234 5678"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                         Tipo de Complejo
                     </label>
                     <Select
                         {...register("type")}
                         options={[
                             { label: "Edificio", value: ComplexType.BUILDING },
-                            { label: "Residencial", value: ComplexType.RESIDENTIAL },
                             { label: "Condominio", value: ComplexType.CONDO },
                             { label: "Centro Comercial", value: ComplexType.SHOPPING_CENTER },
                         ]}

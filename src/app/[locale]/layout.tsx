@@ -8,10 +8,21 @@ import "../globals.css";
 export const metadata: Metadata = {
   title: "ADESSO",
   description: "Sistema Integral de Gestión de Condominios",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ADESSO"
+  }
+};
+
+export const viewport = {
+  themeColor: "#262B28",
 };
 
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ComplexProvider } from "@/components/providers/ComplexProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 export default async function LocaleLayout({
   children,
@@ -31,21 +42,56 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <html lang={locale} className="dark" style={{ colorScheme: 'dark' }}>
+    <html lang={locale} suppressHydrationWarning>
       <head>
+        {/* Pre-hydration theme script — prevents flash of wrong theme */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var theme = localStorage.getItem('theme');
+                if (!theme) { theme = 'dark'; }
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              })()
+            `
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.cdnfonts.com/css/malik-trial" rel="stylesheet" />
+        <link href="https://fonts.cdnfonts.com/css/akrobat" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body className="antialiased">
-        <AuthProvider>
-          <NextIntlClientProvider messages={messages} locale={locale}>
-            <ComplexProvider>
-              {children}
-            </ComplexProvider>
-          </NextIntlClientProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <NextIntlClientProvider messages={messages} locale={locale}>
+              <ComplexProvider>
+                {children}
+              </ComplexProvider>
+            </NextIntlClientProvider>
+          </AuthProvider>
+        </ThemeProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                  }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

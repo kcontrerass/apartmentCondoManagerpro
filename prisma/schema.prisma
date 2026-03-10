@@ -44,6 +44,8 @@ model Complex {
   address       String         @db.Text
   type          ComplexType    @default(BUILDING)
   logoUrl       String?        @map("logo_url")
+  bankAccount   String?        @map("bank_account")
+  phone         String?
   settings      Json?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt

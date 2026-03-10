@@ -246,7 +246,7 @@ export default async function ReportsPage({
                 </div>
 
                 {!data ? (
-                    <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                    <div className="text-center py-20 bg-white dark:bg-background-dark rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
                         <p className="text-slate-500">{tReports('noData')}</p>
                     </div>
                 ) : (

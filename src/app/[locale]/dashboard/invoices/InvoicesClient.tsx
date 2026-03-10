@@ -236,7 +236,7 @@ export function InvoicesClient() {
                         <select
                             value={monthFilter}
                             onChange={(e) => setMonthFilter(e.target.value)}
-                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
                         >
                             <option value="ALL">Todos los meses</option>
                             {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
@@ -258,7 +258,7 @@ export function InvoicesClient() {
                         <select
                             value={serviceFilter}
                             onChange={(e) => setServiceFilter(e.target.value)}
-                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
                         >
                             <option value="ALL">Todos los servicios</option>
                             {availableServices.map((serviceName: any, idx) => (
@@ -278,7 +278,7 @@ export function InvoicesClient() {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="w-full h-10 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
+                            className="w-full h-10 px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
                         >
                             <option value="ALL">{t('filterAll', { defaultValue: 'Todos los estados' })}</option>
                             <option value="PENDING">{t('status.PENDING', { defaultValue: 'Pendiente' })}</option>
@@ -350,15 +350,15 @@ export function InvoicesClient() {
                             </div>
 
                             {selectedMethod === 'TRANSFER' && (
-                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg text-left space-y-3">
+                                <div className="bg-slate-50 dark:bg-background-dark p-4 rounded-lg text-left space-y-3">
                                     <h4 className="font-medium text-slate-900 dark:text-white border-b pb-2">
                                         {tReservations('paymentInstructions.transfer.title')}
                                     </h4>
                                     <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                                         <p><span className="font-semibold">{tReservations('paymentInstructions.transfer.bankName')}</span></p>
-                                        <p>{tReservations('paymentInstructions.transfer.accountName')}</p>
-                                        <p className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded inline-block">
-                                            {tReservations('paymentInstructions.transfer.accountNumber')}
+                                        <p>{paymentInvoice?.complex?.name || tReservations('paymentInstructions.transfer.accountName')}</p>
+                                        <p className="font-mono bg-white dark:bg-background-dark px-2 py-1 rounded inline-block">
+                                            {paymentInvoice?.complex?.bankAccount || tReservations('paymentInstructions.transfer.accountNumber')}
                                         </p>
                                     </div>
                                     <p className="text-sm italic text-slate-500">
@@ -368,9 +368,9 @@ export function InvoicesClient() {
                                         variant="secondary"
                                         className="w-full mt-2"
                                         onClick={() => {
-                                            const waNumber = tReservations('paymentInstructions.transfer.whatsappNumber');
-                                            const message = `Hola, envío comprobante de pago para factura (ID: ${paymentInvoice?.id})`;
-                                            window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`, '_blank');
+                                            const waNumber = paymentInvoice?.complex?.phone || tReservations('paymentInstructions.transfer.whatsappNumber');
+                                            const message = `Hola, envío el comprobante de mi transferencia para la factura #${paymentInvoice?.number || paymentInvoice?.id}.`;
+                                            window.open(`https://wa.me/${waNumber.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
                                         }}
                                     >
                                         <span className="material-symbols-outlined mr-2 text-lg">chat</span>
@@ -380,7 +380,7 @@ export function InvoicesClient() {
                             )}
 
                             {selectedMethod === 'CASH' && (
-                                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg text-left space-y-3">
+                                <div className="bg-slate-50 dark:bg-background-dark p-4 rounded-lg text-left space-y-3">
                                     <h4 className="font-medium text-slate-900 dark:text-white border-b pb-2">
                                         {tReservations('paymentInstructions.cash.title')}
                                     </h4>
@@ -408,7 +408,7 @@ export function InvoicesClient() {
                         <>
                             <div
                                 onClick={() => setSelectedMethod('CARD')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
                                 <div>
@@ -419,7 +419,7 @@ export function InvoicesClient() {
 
                             <div
                                 onClick={() => setSelectedMethod('CASH')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
                                 <div>
@@ -430,7 +430,7 @@ export function InvoicesClient() {
 
                             <div
                                 onClick={() => setSelectedMethod('TRANSFER')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-900 shadow-sm'}`}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
                                 <div>

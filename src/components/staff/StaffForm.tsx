@@ -51,7 +51,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                     </label>
                     <input
                         {...register("name")}
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="Ej. Juan Pérez"
                     />
                     {errors.name && (
@@ -67,7 +67,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                         <input
                             {...register("email")}
                             type="email"
-                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                             placeholder="juan@ejemplo.com"
                         />
                         {errors.email && (
@@ -83,7 +83,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                     <input
                         {...register("phone")}
                         type="tel"
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                         placeholder="+502 1234 5678"
                     />
                     {errors.phone && (
@@ -97,7 +97,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                     </label>
                     <select
                         {...register("role")}
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
                         <option value={Role.GUARD}>Guardia de Seguridad</option>
                         <option value={Role.BOARD_OF_DIRECTORS}>Junta Directiva</option>
@@ -120,7 +120,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                         </label>
                         <select
                             {...register("complexId")}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                         >
                             <option value="">Seleccionar Complejo</option>
                             {complexes?.map((complex) => (
@@ -143,7 +143,7 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                         <input
                             {...register("password")}
                             type="password"
-                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                             placeholder="******"
                         />
                         {errors.password && (

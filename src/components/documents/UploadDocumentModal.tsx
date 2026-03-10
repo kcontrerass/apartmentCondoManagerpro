@@ -180,7 +180,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, use
                     <label className="block text-sm font-medium mb-1">Descripción</label>
                     <textarea
                         {...register("description")}
-                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all min-h-[80px]"
+                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all min-h-[80px]"
                         placeholder="Breve descripción del documento..."
                     />
                 </div>

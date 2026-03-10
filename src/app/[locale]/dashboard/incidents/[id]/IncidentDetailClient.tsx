@@ -150,7 +150,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-background-dark rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
                         <div className="flex justify-between items-start mb-6">
                             <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight">
                                 {incident.title}
@@ -223,7 +223,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                     )}
 
                     {/* Seguimiento del Caso (Timeline / Mensajes) */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-background-dark rounded-[2.5rem] p-8 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
                         <div className="flex items-center gap-3 mb-8">
                             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
                                 <span className="material-symbols-outlined">forum</span>
@@ -247,13 +247,13 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                                                     className="w-10 h-10 rounded-2xl object-cover ring-2 ring-slate-100 dark:ring-slate-800"
                                                 />
                                             ) : (
-                                                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                                                <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-background-dark flex items-center justify-center text-slate-400">
                                                     <span className="material-symbols-outlined text-xl">person</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="flex-1">
-                                            <div className="bg-slate-50 dark:bg-slate-800/40 rounded-[1.5rem] p-4 border border-slate-100 dark:border-slate-800/60">
+                                            <div className="bg-slate-50 dark:bg-background-dark/40 rounded-[1.5rem] p-4 border border-slate-100 dark:border-slate-800/60">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm font-bold text-slate-900 dark:text-white">
@@ -275,8 +275,8 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                                     </div>
                                 ))
                             ) : (
-                                <div className="text-center py-12 bg-slate-50/50 dark:bg-slate-800/20 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
-                                    <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                <div className="text-center py-12 bg-slate-50/50 dark:bg-background-dark/20 rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-800">
+                                    <div className="w-16 h-16 bg-white dark:bg-background-dark rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
                                         <span className="material-symbols-outlined text-slate-300 text-3xl">chat_bubble_outline</span>
                                     </div>
                                     <p className="text-sm text-slate-500 font-medium">No hay mensajes de seguimiento aún.</p>
@@ -291,7 +291,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                                 value={commentContent}
                                 onChange={(e) => setCommentContent(e.target.value)}
                                 placeholder="Escribe una actualización o mensaje sobre el caso..."
-                                className="w-full h-32 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-[2rem] p-5 text-sm outline-none focus:ring-2 focus:ring-primary transition-all resize-none pr-16"
+                                className="w-full h-32 bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700/50 rounded-[2rem] p-5 text-sm outline-none focus:ring-2 focus:ring-primary transition-all resize-none pr-16"
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && e.ctrlKey) {
                                         handlePostComment();
@@ -318,7 +318,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
 
                 {/* Sidebar Info */}
                 <div className="space-y-6">
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
+                    <div className="bg-white dark:bg-background-dark rounded-[2.5rem] p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800">
                         <h4 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-widest mb-6 border-b border-slate-50 dark:border-slate-800/50 pb-4">
                             Información del Reporte
                         </h4>
@@ -362,7 +362,7 @@ export default function IncidentDetailClient({ incidentId, userRole }: IncidentD
                             </div>
 
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-background-dark flex items-center justify-center text-slate-500">
                                     <span className="material-symbols-outlined">calendar_today</span>
                                 </div>
                                 <div>

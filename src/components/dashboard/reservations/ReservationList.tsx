@@ -96,7 +96,7 @@ export default function ReservationList({ reservations, onCancel }: ReservationL
                                 </div>
                             )}
                             {r.notes && (
-                                <div className="mt-2 p-2 bg-slate-50 dark:bg-slate-800/50 rounded italic text-xs">
+                                <div className="mt-2 p-2 bg-slate-50 dark:bg-background-dark/50 rounded italic text-xs">
                                     "{r.notes}"
                                 </div>
                             )}

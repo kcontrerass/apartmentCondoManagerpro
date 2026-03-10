@@ -109,7 +109,7 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
+                                <div className="text-center py-8 bg-slate-50 dark:bg-background-dark/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
                                     <p className="text-slate-500">No hay unidades registradas</p>
                                 </div>
                             )}
@@ -126,7 +126,7 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                             {complex.amenities.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {complex.amenities.map((amenity) => (
-                                        <div key={amenity.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg flex items-center gap-3">
+                                        <div key={amenity.id} className="p-3 bg-slate-50 dark:bg-background-dark rounded-lg flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                                 <span className="material-symbols-outlined text-[20px]">
                                                     {amenity.type === 'POOL' ? 'pool' : amenity.type === 'GYM' ? 'fitness_center' : 'meeting_room'}
@@ -140,7 +140,7 @@ export default async function ComplexDetailPage({ params }: RouteParams) {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
+                                <div className="text-center py-8 bg-slate-50 dark:bg-background-dark/50 rounded-lg border border-dashed border-slate-300 dark:border-slate-700">
                                     <p className="text-slate-500">No hay amenidades registradas</p>
                                 </div>
                             )}

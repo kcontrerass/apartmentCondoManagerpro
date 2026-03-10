@@ -25,11 +25,16 @@ export const authConfig = {
             }
             return true;
         },
-        jwt({ token, user }) {
+        jwt({ token, user, trigger, session: sessionData }) {
             if (user) { // User is available during sign-in
                 token.role = (user.role as string) || 'RESIDENT';
                 token.id = user.id as string;
                 token.complexId = (user as any).complexId;
+                token.name = user.name;
+            }
+            // Handle client-side session.update() calls (e.g. after profile update)
+            if (trigger === 'update' && sessionData?.name) {
+                token.name = sessionData.name;
             }
             return token;
         },

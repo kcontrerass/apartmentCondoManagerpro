@@ -41,9 +41,9 @@ export default async function CommunicationsPage() {
                         <Link
                             key={mod.href}
                             href={mod.href}
-                            className="group bg-white dark:bg-slate-900 p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden"
+                            className="group bg-white dark:bg-background-dark p-10 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative overflow-hidden"
                         >
-                            <div className="absolute -right-4 -top-4 w-32 h-32 bg-slate-50 dark:bg-slate-800/50 rounded-full blur-3xl group-hover:bg-primary/5 transition-colors"></div>
+                            <div className="absolute -right-4 -top-4 w-32 h-32 bg-slate-50 dark:bg-background-dark/50 rounded-full blur-3xl group-hover:bg-primary/5 transition-colors"></div>
 
                             <div className={`${mod.color} w-20 h-20 rounded-3xl flex items-center justify-center text-white mb-8 shadow-2xl shadow-current/30 group-hover:scale-110 transition-transform duration-500`}>
                                 <span className="material-symbols-outlined text-4xl">{mod.icon}</span>
@@ -63,7 +63,7 @@ export default async function CommunicationsPage() {
                                     <span className="material-symbols-outlined text-xl group-hover:translate-x-2 transition-transform">arrow_forward</span>
                                 </div>
 
-                                <div className={`w-12 h-12 rounded-2xl ${mod.lightColor} dark:bg-slate-800 flex items-center justify-center`}>
+                                <div className={`w-12 h-12 rounded-2xl ${mod.lightColor} dark:bg-background-dark flex items-center justify-center`}>
                                     <span className={`material-symbols-outlined ${mod.textColor}`}>{mod.icon}</span>
                                 </div>
                             </div>

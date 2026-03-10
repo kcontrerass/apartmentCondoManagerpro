@@ -172,14 +172,14 @@ export default function ReservationForm({
                 </h3>
 
                 {successType === 'TRANSFER' && (
-                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg text-left space-y-3">
+                    <div className="bg-slate-50 dark:bg-background-dark p-4 rounded-lg text-left space-y-3">
                         <h4 className="font-medium text-slate-900 dark:text-white border-b pb-2">
                             {t('paymentInstructions.transfer.title')}
                         </h4>
                         <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
                             <p><span className="font-semibold">{t('paymentInstructions.transfer.bankName')}</span></p>
                             <p>{t('paymentInstructions.transfer.accountName')}</p>
-                            <p className="font-mono bg-white dark:bg-slate-900 px-2 py-1 rounded inline-block">
+                            <p className="font-mono bg-white dark:bg-background-dark px-2 py-1 rounded inline-block">
                                 {t('paymentInstructions.transfer.accountNumber')}
                             </p>
                         </div>
@@ -202,7 +202,7 @@ export default function ReservationForm({
                 )}
 
                 {successType === 'CASH' && (
-                    <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-lg text-left space-y-3">
+                    <div className="bg-slate-50 dark:bg-background-dark p-4 rounded-lg text-left space-y-3">
                         <h4 className="font-medium text-slate-900 dark:text-white border-b pb-2">
                             {t('paymentInstructions.cash.title')}
                         </h4>
@@ -250,7 +250,7 @@ export default function ReservationForm({
                             value={amenityId}
                             onChange={(e) => setAmenityId(e.target.value)}
                             required
-                            className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                            className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                         >
                             <option value="">Seleccionar amenidad...</option>
                             {amenities.map((a) => (
@@ -271,7 +271,7 @@ export default function ReservationForm({
                         value={startTime}
                         onChange={(e) => setStartTime(e.target.value)}
                         required
-                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                 </div>
 
@@ -284,7 +284,7 @@ export default function ReservationForm({
                         value={endTime}
                         onChange={(e) => setEndTime(e.target.value)}
                         required
-                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                 </div>
                 <div className="space-y-1.5">
@@ -295,7 +295,7 @@ export default function ReservationForm({
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         rows={3}
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
                     />
                 </div>
 
@@ -313,7 +313,7 @@ export default function ReservationForm({
                             <select
                                 value={paymentMethod}
                                 onChange={(e) => setPaymentMethod(e.target.value as any)}
-                                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                                className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                             >
                                 <option value="CARD">Tarjeta de Crédito/Débito</option>
                                 <option value="CASH">Efectivo</option>

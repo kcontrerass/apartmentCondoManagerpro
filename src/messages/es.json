@@ -43,7 +43,6 @@
         "totalComplexes": "Total Complejos",
         "totalUnits": "Total Unidades",
         "activeResidents": "Residentes Activos",
-        "occupancy": "Ocupación",
         "managedCurrently": "Gestionados actualmente",
         "allComplexes": "En todos los complejos",
         "registeredSystem": "Registrados en el sistema",
@@ -76,7 +75,24 @@
         "pendingReservations": "Reservas Pendientes",
         "inComplex": "En el complejo",
         "unitsOccupied": "Unidades ocupadas",
-        "toReview": "Por revisar"
+        "toReview": "Por revisar",
+        "activity": {
+            "title": "Actividad Reciente",
+            "viewAll": "Ver Todo",
+            "reference": "Referencia",
+            "type": "Tipo",
+            "status": "Estado",
+            "datetime": "Fecha/Hora",
+            "details": "Detalles"
+        },
+        "occupancy": {
+            "title": "Estado de Ocupación",
+            "residents": "Residentes",
+            "vacant": "Vacantes",
+            "label": "Ocupado",
+            "units": "Unidades",
+            "viewReport": "Ver Reporte Detallado"
+        }
     },
     "Units": {
         "title": "Unidades",
@@ -429,6 +445,7 @@
         "title": "Reportes y Analíticas",
         "subtitle": "Resumen del rendimiento y estadísticas del complejo",
         "noData": "No hay datos disponibles para los complejos seleccionados",
+        "exportToExcel": "Exportar a Excel (.xlsx)",
         "filterByComplex": "Filtrar por Complejo",
         "allComplexes": "Todos los Complejos",
         "stats": {

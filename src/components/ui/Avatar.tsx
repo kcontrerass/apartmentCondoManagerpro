@@ -27,7 +27,7 @@ export function Avatar({
     return (
         <div
             className={cn(
-                "relative rounded-full overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-semibold uppercase ring-2 ring-transparent transition-all",
+                "relative rounded-full overflow-hidden flex items-center justify-center bg-slate-100 dark:bg-background-dark text-slate-500 dark:text-slate-400 font-semibold uppercase ring-2 ring-transparent transition-all",
                 sizeClasses[size],
                 className
             )}

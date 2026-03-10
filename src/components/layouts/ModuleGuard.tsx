@@ -57,7 +57,7 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
         if (isBlocked) {
             return (
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in duration-300">
-                    <Card className="p-8 max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Card className="p-8 max-w-md bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 shadow-sm">
                         <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
                             <span className="material-symbols-outlined text-3xl">lock</span>
                         </div>

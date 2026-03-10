@@ -59,7 +59,7 @@ export const PollForm: React.FC<PollFormProps> = ({ complexId, onSubmit, isLoadi
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="Ej: ¿Qué color pintamos la fachada?"
-                        className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                     />
                 </div>
 
@@ -69,7 +69,7 @@ export const PollForm: React.FC<PollFormProps> = ({ complexId, onSubmit, isLoadi
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Detalles adicionales sobre la consulta..."
-                        className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all h-24 resize-none"
+                        className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all h-24 resize-none"
                     />
                 </div>
 
@@ -98,7 +98,7 @@ export const PollForm: React.FC<PollFormProps> = ({ complexId, onSubmit, isLoadi
                                         value={option}
                                         onChange={(e) => handleOptionChange(index, e.target.value)}
                                         placeholder={`Opción ${index + 1}`}
-                                        className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                                        className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-100 dark:border-slate-800 rounded-2xl py-3 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
                                     />
                                 </div>
                                 {options.length > 2 && (
@@ -121,7 +121,7 @@ export const PollForm: React.FC<PollFormProps> = ({ complexId, onSubmit, isLoadi
                         type="date"
                         value={expiresAt}
                         onChange={(e) => setExpiresAt(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                        className="w-full bg-slate-50 dark:bg-background-dark/50 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
                     />
                 </div>
             </div>

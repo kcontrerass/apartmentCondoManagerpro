@@ -8,6 +8,7 @@ import {
     Tooltip,
     Legend,
 } from 'chart.js';
+import { useTranslations } from 'next-intl';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -22,15 +23,20 @@ interface OccupancyChartProps {
 }
 
 export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
+    const t = useTranslations('Dashboard');
     const total = totalUnits || 1;
     const occupancyRate = Math.round((data.residents / total) * 100);
 
     const chartData = {
-        labels: ['Residentes', 'Vacantes'],
+        labels: [t('occupancy.residents'), t('occupancy.vacant')],
         datasets: [
             {
                 data: [data.residents, data.vacant],
-                backgroundColor: ['#135bec', '#e2e8f0'],
+                backgroundColor: [
+                    '#005780', // Residentes
+                    '#262B28', // Vacíos
+                    '#1a1e1c', // Mantenimiento
+                ],
                 borderWidth: 0,
                 hoverOffset: 4,
             },
@@ -54,9 +60,9 @@ export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
+        <div className="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 flex flex-col h-full">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">
-                Estado de Ocupación
+                {t('occupancy.title')}
             </h3>
 
             {/* Chart */}
@@ -67,7 +73,7 @@ export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
                         <span className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
                             {occupancyRate}%
                         </span>
-                        <span className="text-sm text-slate-500 font-medium mt-1">Ocupado</span>
+                        <span className="text-sm text-slate-500 font-medium mt-1">{t('occupancy.label')}</span>
                     </div>
                 </div>
             </div>
@@ -78,11 +84,11 @@ export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/20"></div>
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Residentes ({Math.round((data.residents / totalUnits) * 100)}%)
+                            {t('occupancy.residents')} ({Math.round((data.residents / totalUnits) * 100)}%)
                         </span>
                     </div>
                     <span className="text-sm font-bold text-slate-900 dark:text-white">
-                        {data.residents} Unidades
+                        {data.residents} {t('occupancy.units')}
                     </span>
                 </div>
                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
@@ -100,7 +106,7 @@ export function OccupancyChart({ data, totalUnits }: OccupancyChartProps) {
 
             <Link href="/dashboard/reports" className="w-full mt-6 block">
                 <button className="w-full py-2.5 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                    Ver Reporte Detallado
+                    {t('occupancy.viewReport')}
                 </button>
             </Link>
         </div>

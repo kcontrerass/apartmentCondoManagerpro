@@ -17,9 +17,11 @@ const badgeStyles = {
     success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
     warning: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    neutral: 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300',
+    neutral: 'bg-slate-100 text-slate-800 dark:bg-background-dark dark:text-slate-300',
     error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
+
+import { motion } from "framer-motion";
 
 export function StatCard({
     icon,
@@ -31,7 +33,12 @@ export function StatCard({
     badge,
 }: StatCardProps) {
     return (
-        <div className="p-6 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="p-6 bg-card rounded-xl border border-card-border shadow-sm hover:shadow-md transition-all duration-300"
+        >
             {/* Header */}
             <div className="flex justify-between items-start mb-4">
                 <div className={cn("p-2 rounded-lg", iconBgColor)}>
@@ -47,15 +54,15 @@ export function StatCard({
             </div>
 
             {/* Content */}
-            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-medium text-slate-500">
                 {label}
             </p>
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+            <h3 className="text-2xl font-bold text-foreground mt-1">
                 {value}
             </h3>
             {subtitle && (
                 <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
             )}
-        </div>
+        </motion.div>
     );
 }

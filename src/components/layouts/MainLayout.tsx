@@ -6,8 +6,10 @@ import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { Toaster } from "sonner";
 import { ModuleGuard } from "./ModuleGuard";
+import { MobileSidebarProvider } from "./MobileSidebarContext";
 
 import { UnassignedResidentView } from "@/components/dashboard/UnassignedResidentView";
+import { AnimatedPage } from "@/components/animations/AnimatedPage";
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -71,7 +73,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
 
     if (isUnassignedResident) {
         return (
-            <div className="flex min-h-screen bg-background-dark font-sans text-white">
+            <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
                 <Toaster position="top-right" richColors />
                 <div className="flex-1 flex flex-col">
                     <Header isUnassigned={isUnassignedResident} />
@@ -84,21 +86,25 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
         );
     }
     return (
-        <div className="flex min-h-screen bg-background-dark font-sans text-white">
+        <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
             <Toaster position="top-right" richColors />
-            {/* @ts-ignore */}
-            <Sidebar user={user} complexName={complexName} complexSettings={complexSettings} />
-            <div className="flex-1 flex flex-col ml-0 md:ml-64 transition-all duration-300">
-                <Header isUnassigned={isUnassignedResident} />
-                <main className="flex-1 p-6 md:p-8">
-                    <div className="max-w-[1400px] mx-auto animate-in fade-in duration-500">
-                        <ModuleGuard userRole={user?.role} complexSettings={complexSettings}>
-                            {children}
-                        </ModuleGuard>
-                    </div>
-                </main>
-                <Footer />
-            </div>
+            <MobileSidebarProvider>
+                {/* @ts-ignore */}
+                <Sidebar user={user} complexName={complexName} complexSettings={complexSettings} />
+                <div className="flex-1 flex flex-col min-w-0 md:pl-64 transition-all duration-300">
+                    <Header isUnassigned={isUnassignedResident} />
+                    <main className="flex-1 p-6 md:p-8">
+                        <div className="max-w-[1400px] mx-auto">
+                            <ModuleGuard userRole={user?.role} complexSettings={complexSettings}>
+                                <AnimatedPage>
+                                    {children}
+                                </AnimatedPage>
+                            </ModuleGuard>
+                        </div>
+                    </main>
+                    <Footer />
+                </div>
+            </MobileSidebarProvider>
         </div>
     );
 }

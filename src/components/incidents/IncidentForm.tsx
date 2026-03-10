@@ -69,7 +69,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                     </label>
                     <textarea
                         {...register('description')}
-                        className={`w-full px-5 py-3.5 rounded-2xl border ${errors.description ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 dark:border-slate-800 dark:bg-slate-900 focus:border-primary focus:ring-4 focus:ring-primary/10'
+                        className={`w-full px-5 py-3.5 rounded-2xl border ${errors.description ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 dark:border-slate-800 dark:bg-background-dark focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none resize-none font-medium text-sm`}
                         rows={4}
                         placeholder="Describe lo que sucedió con el mayor detalle posible..."
@@ -84,7 +84,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                         Tipo de Incidente
                     </label>
                     <select
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register('type')}
                     >
                         <option value="MAINTENANCE">Mantenimiento</option>
@@ -100,7 +100,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                         Prioridad
                     </label>
                     <select
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
+                        className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register('priority')}
                     >
                         <option value="LOW">Baja - Puede esperar</option>

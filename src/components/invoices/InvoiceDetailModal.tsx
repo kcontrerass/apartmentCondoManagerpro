@@ -39,7 +39,7 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">
                     {t('client')}
                 </h4>
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3">
+                <div className="bg-slate-50 dark:bg-background-dark/50 rounded-lg p-3">
                     <p className="text-sm text-slate-700 dark:text-slate-300">
                         Unidad: <span className="font-medium">{invoice.unit?.number}</span>
                     </p>
@@ -55,7 +55,7 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                 </h4>
                 <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-slate-50 dark:bg-slate-800">
+                        <thead className="bg-slate-50 dark:bg-background-dark">
                             <tr>
                                 <th className="py-2 px-3 font-medium text-slate-700 dark:text-slate-300">{t('description')}</th>
                                 <th className="py-2 px-3 text-right font-medium text-slate-700 dark:text-slate-300">{t('amount')}</th>
@@ -69,7 +69,7 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                                 </tr>
                             ))}
                         </tbody>
-                        <tfoot className="bg-slate-50/50 dark:bg-slate-800/30 font-bold">
+                        <tfoot className="bg-slate-50/50 dark:bg-background-dark/30 font-bold">
                             <tr>
                                 <td className="py-2 px-3 text-slate-900 dark:text-white">{t('total')}</td>
                                 <td className="py-2 px-3 text-right text-slate-primary">{formatPrice(invoice.totalAmount)}</td>

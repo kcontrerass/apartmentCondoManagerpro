@@ -4,8 +4,9 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface ProfileFormProps {
     user: {
@@ -18,8 +19,9 @@ interface ProfileFormProps {
 export function ProfileForm({ user }: ProfileFormProps) {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { update: updateSession } = useSession();
 
-    const { register, handleSubmit, formState: { errors, isDirty } } = useForm({
+    const { register, handleSubmit, formState: { errors, isDirty }, reset } = useForm({
         defaultValues: {
             name: user.name,
             phone: user.phone || "",
@@ -36,13 +38,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
             });
 
             if (response.ok) {
-                toast.success("Perfil actualizado");
+                // Update the NextAuth session so the sidebar name refreshes immediately
+                await updateSession({ name: data.name });
+                toast.success("Perfil actualizado correctamente");
+                reset(data); // Reset dirty state so button disables again
                 router.refresh();
             } else {
-                toast.error("Error al actualizar");
+                const errorData = await response.json().catch(() => ({}));
+                toast.error(errorData.error || "Error al actualizar el perfil");
             }
         } catch (error) {
-            toast.error("Error al actualizar");
+            toast.error("Error de conexión. Intenta de nuevo.");
         } finally {
             setLoading(false);
         }
@@ -63,7 +69,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     <Input
                         value={user.email}
                         disabled
-                        className="bg-slate-50 dark:bg-slate-800 text-slate-500 cursor-not-allowed"
+                        className="bg-slate-50 dark:bg-background-dark text-slate-500 cursor-not-allowed"
                     />
                 </div>
                 <div className="space-y-2">
@@ -76,7 +82,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             </div>
 
             <div className="flex justify-start">
-                <Button type="submit" disabled={loading || !isDirty}>
+                <Button type="submit" isLoading={loading} disabled={loading || !isDirty}>
                     {loading ? "Guardando..." : "Guardar Cambios"}
                 </Button>
             </div>

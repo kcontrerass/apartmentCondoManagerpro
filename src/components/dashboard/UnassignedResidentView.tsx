@@ -27,7 +27,7 @@ export function UnassignedResidentView() {
                 </p>
             </div>
 
-            <div className="w-full max-w-lg bg-slate-50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
+            <div className="w-full max-w-lg bg-slate-50 dark:bg-background-dark/50 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl">
                 <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
                     <span className="material-symbols-outlined text-primary">info</span>
                     {t('subtitle')}

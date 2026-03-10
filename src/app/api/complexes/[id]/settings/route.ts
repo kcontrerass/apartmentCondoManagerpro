@@ -70,6 +70,8 @@ export async function PUT(
         const updatedComplex = await prisma.complex.update({
             where: { id },
             data: {
+                bankAccount: body.bankAccount !== undefined ? body.bankAccount : undefined,
+                phone: body.phone !== undefined ? body.phone : undefined,
                 settings: {
                     ...existingSettings,
                     permissions: sanitizedPermissions,

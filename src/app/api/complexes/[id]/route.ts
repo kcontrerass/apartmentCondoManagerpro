@@ -122,6 +122,8 @@ export async function PUT(
                     address: validatedData.address,
                     type: validatedData.type,
                     logoUrl: validatedData.logoUrl,
+                    bankAccount: validatedData.bankAccount === null ? null : (validatedData.bankAccount || undefined),
+                    phone: validatedData.phone === null ? null : (validatedData.phone || undefined),
                     settings: validatedData.settings || undefined,
                     adminId: validatedData.adminId || undefined,
                 },

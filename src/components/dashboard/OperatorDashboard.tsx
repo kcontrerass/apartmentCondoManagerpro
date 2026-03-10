@@ -7,6 +7,17 @@ import { Badge } from "@/components/ui/Badge";
 import { Link } from '@/i18n/routing';
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { Role } from '@/types/roles';
+import { motion } from "framer-motion";
+
+const container = {
+    hidden: { opacity: 0 },
+    show: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
 
 interface OperatorDashboardProps {
     data: {
@@ -31,8 +42,13 @@ export function OperatorDashboard({ data }: OperatorDashboardProps) {
     };
 
     return (
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-8"
+        >
+            <motion.div variants={container} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                     icon="door_front"
                     label={t("totalUnits")}
@@ -67,24 +83,24 @@ export function OperatorDashboard({ data }: OperatorDashboardProps) {
                         iconColor="text-amber-500"
                     />
                 )}
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+            <motion.div variants={container} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <motion.div variants={{ hidden: { opacity: 0, x: -20 }, show: { opacity: 1, x: 0 } }} className="lg:col-span-2">
                     <ActivityTable activities={data.activities || []} />
-                </div>
+                </motion.div>
                 {hasPermission('accessControl') && (
-                    <div className="lg:col-span-1 border-slate-200 dark:border-slate-800">
+                    <motion.div variants={{ hidden: { opacity: 0, x: 20 }, show: { opacity: 1, x: 0 } }} className="lg:col-span-1 border-slate-200 dark:border-slate-800">
                         <Card className="p-6 h-full">
                             <h3 className="font-bold mb-4">{t("operatorDashboard.todayVisitors")}</h3>
-                            <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                            <div className="text-center py-12 bg-slate-50 dark:bg-background-dark/50 rounded-lg">
                                 <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">no_accounts</span>
                                 <p className="text-sm text-slate-500">{t("operatorDashboard.noVisitorsToday")}</p>
                             </div>
                         </Card>
-                    </div>
+                    </motion.div>
                 )}
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }

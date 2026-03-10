@@ -22,6 +22,8 @@ export default function SettingsClient({ user }: { user: any }) {
     const [isLoading, setIsLoading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [complexId, setLocalComplexId] = useState<string | null>(selectedComplexId);
+    const [bankAccount, setBankAccount] = useState("");
+    const [phone, setPhone] = useState("");
     const [permissions, setPermissions] = useState<PermissionSettings>({
         [Role.ADMIN]: {},
         [Role.RESIDENT]: {},
@@ -121,6 +123,8 @@ export default function SettingsClient({ user }: { user: any }) {
                 });
 
                 setPermissions(mergedPermissions);
+                setBankAccount(complexData.bankAccount || "");
+                setPhone(complexData.phone || "");
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -195,7 +199,11 @@ export default function SettingsClient({ user }: { user: any }) {
             const response = await fetch(`/api/complexes/${complexId}/settings`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ settings: { permissions } })
+                body: JSON.stringify({
+                    settings: { permissions },
+                    bankAccount,
+                    phone
+                })
             });
 
             if (!response.ok) throw new Error("Failed to save settings");
@@ -223,14 +231,14 @@ export default function SettingsClient({ user }: { user: any }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <PageHeader
                     title="Configuración del Complejo"
                     subtitle="Administra los permisos y visibilidad de los módulos para cada rol de usuario en este complejo."
                 />
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto mt-4 sm:mt-0">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
                     {(user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN) && (
-                        <div className="min-w-[250px]">
+                        <div className="min-w-0 sm:min-w-[200px] flex-1">
                             <ComplexSelector
                                 value={complexId}
                                 onChange={(id) => setComplexId(id)}
@@ -241,12 +249,12 @@ export default function SettingsClient({ user }: { user: any }) {
                     <Button
                         onClick={handleSave}
                         disabled={isSaving || isLoading || !complexId}
-                        className="shrink-0 h-[42px] mt-0 sm:mt-6"
+                        className="shrink-0 h-[42px]"
                     >
                         {isSaving ? (
                             <><span className="material-symbols-outlined animate-spin mr-2">progress_activity</span> Guardando...</>
                         ) : (
-                            <><span className="material-symbols-outlined mr-2">save</span> Guardar Cambios</>
+                            <><span className="material-symbols-outlined mr-2">save</span> Guardar</>
                         )}
                     </Button>
                 </div>
@@ -257,49 +265,93 @@ export default function SettingsClient({ user }: { user: any }) {
                     <span className="material-symbols-outlined animate-spin text-4xl text-primary">progress_activity</span>
                 </div>
             ) : !complexId ? (
-                <div className="text-center p-12 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                <div className="text-center p-12 bg-slate-50 dark:bg-background-dark/50 rounded-lg">
                     <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">domain</span>
                     <p className="text-sm text-slate-500">Por favor, selecciona un complejo para configurar sus permisos.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    {configurableRoles.map((role) => (
-                        <Card key={role.id} className="p-6">
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
-                                {role.label}
-                            </h3>
-                            <div className="space-y-4">
-                                {availableModules
-                                    .filter(module => role.allowedModules.includes(module.id))
-                                    .map((module) => {
-                                        const isReservationsAndAmenitiesOff = module.id === 'reservations' && permissions[role.id]?.['amenities'] === false;
-
-                                        return (
-                                            <div key={`${role.id}-${module.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-                                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                                    {module.label}
-                                                    {isReservationsAndAmenitiesOff && (
-                                                        <span className="block text-xs text-slate-400 mt-1">Requiere habilitar Amenidades</span>
-                                                    )}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    disabled={isReservationsAndAmenitiesOff}
-                                                    onClick={() => !isReservationsAndAmenitiesOff && handleToggle(role.id, module.id)}
-                                                    className={`relative inline-flex h-6 w-11 shrink-0 ${isReservationsAndAmenitiesOff ? "cursor-not-allowed opacity-50" : "cursor-pointer"} items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${permissions[role.id]?.[module.id] ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}
-                                                >
-                                                    <span className="sr-only">Habilitar {module.label}</span>
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${permissions[role.id]?.[module.id] ? "translate-x-5" : "translate-x-0"}`}
-                                                    />
-                                                </button>
-                                            </div>
-                                        );
-                                    })}
+                <div className="space-y-6">
+                    {/* Payment Information Section - Visible to Admin & Board */}
+                    <Card className="p-6">
+                        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-800 pb-2 flex items-center gap-2">
+                            <span className="material-symbols-outlined text-primary">payments</span>
+                            Información de Pagos
+                        </h3>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    Cuenta Bancaria para Transferencias
+                                </label>
+                                <input
+                                    type="text"
+                                    value={bankAccount}
+                                    onChange={(e) => setBankAccount(e.target.value)}
+                                    placeholder="Ej: Banco Industrial, Cuenta Monetaria 123-456789-0"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Esta información se mostrará a los residentes al seleccionar el método de Transferencia.
+                                </p>
                             </div>
-                        </Card>
-                    ))}
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    Número de WhatsApp para Comprobantes
+                                </label>
+                                <input
+                                    type="text"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="Ej: 50212345678"
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    Número donde los residentes enviarán sus comprobantes de pago. (Incluir código de país sin el signo +)
+                                </p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {configurableRoles.map((role) => (
+                            <Card key={role.id} className="p-6">
+                                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+                                    {role.label}
+                                </h3>
+                                <div className="space-y-4">
+                                    {availableModules
+                                        .filter(module => role.allowedModules.includes(module.id))
+                                        .map((module) => {
+                                            const isReservationsAndAmenitiesOff = module.id === 'reservations' && permissions[role.id]?.['amenities'] === false;
+
+                                            return (
+                                                <div key={`${role.id}-${module.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 min-w-0 gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 block truncate">
+                                                            {module.label}
+                                                        </span>
+                                                        {isReservationsAndAmenitiesOff && (
+                                                            <span className="block text-[10px] text-slate-400 mt-0.5 truncate uppercase tracking-tight">Requiere habilitar Amenidades</span>
+                                                        )}
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        disabled={isReservationsAndAmenitiesOff}
+                                                        onClick={() => !isReservationsAndAmenitiesOff && handleToggle(role.id, module.id)}
+                                                        className={`relative inline-flex h-6 w-11 shrink-0 ${isReservationsAndAmenitiesOff ? "cursor-not-allowed opacity-50" : "cursor-pointer"} items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${permissions[role.id]?.[module.id] ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}
+                                                    >
+                                                        <span className="sr-only">Habilitar {module.label}</span>
+                                                        <span
+                                                            aria-hidden="true"
+                                                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${permissions[role.id]?.[module.id] ? "translate-x-5" : "translate-x-0"}`}
+                                                        />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>

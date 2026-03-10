@@ -90,10 +90,10 @@ export function AccessControlClient({ userRole, initialComplexes, residentUnit }
                 ) : visitors.length === 0 ? (
                     <Card className="p-8 text-center text-slate-500">{t("noVisitors")}</Card>
                 ) : (
-                    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                         <table className="w-full text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                                <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-background-dark/50">
                                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("visitorName")}</th>
                                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("unit")}</th>
                                     <th className="p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">{t("scheduledDate")}</th>

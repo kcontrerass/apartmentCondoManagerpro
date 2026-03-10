@@ -141,7 +141,7 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                <div className="text-center py-8 bg-slate-50 dark:bg-background-dark/50 rounded-lg">
                     <p className="text-sm text-slate-500">No hay servicios asignados.</p>
                 </div>
             )}

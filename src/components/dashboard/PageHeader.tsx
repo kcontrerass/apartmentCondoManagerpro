@@ -10,11 +10,11 @@ export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
     return (
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 w-full">
             <div className="min-w-0">
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight truncate font-malik">
                     {title}
                 </h1>
                 {subtitle && (
-                    <p className="text-slate-500 dark:text-slate-400 mt-1 truncate">
+                    <p className="text-slate-500 mt-1 truncate font-akrobat">
                         {subtitle}
                     </p>
                 )}
