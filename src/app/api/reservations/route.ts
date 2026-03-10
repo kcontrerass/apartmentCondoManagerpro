@@ -9,6 +9,7 @@ const Role = {
     SUPER_ADMIN: 'SUPER_ADMIN',
     ADMIN: 'ADMIN',
     BOARD_OF_DIRECTORS: 'BOARD_OF_DIRECTORS',
+    GUARD: 'GUARD',
     RESIDENT: 'RESIDENT'
 } as const;
 
@@ -305,25 +306,22 @@ export async function POST(request: Request) {
             }
         }
 
-    }
-        }
+        // Notify administrative staff
+        await sendComplexNotification(amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
+            title: 'Nueva Reservación',
+            body: `Se ha solicitado la amenidad: ${amenity.name}.`,
+            url: `/dashboard/reservations/${reservation.id}`
+        });
 
-// Notify administrative staff
-await sendComplexNotification(amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
-    title: 'Nueva Reservación',
-    body: `Se ha solicitado la amenidad: ${amenity.name}.`,
-    url: `/dashboard/reservations/${reservation.id}`
-});
-
-return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
+        return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
     } catch (error: any) {
-    if (error.name === "ZodError") {
-        return NextResponse.json({ error: error.errors }, { status: 400 });
+        if (error.name === "ZodError") {
+            return NextResponse.json({ error: error.errors }, { status: 400 });
+        }
+        console.error("Error creating reservation:", error);
+        return NextResponse.json(
+            { error: "Error al crear la reservación" },
+            { status: 500 }
+        );
     }
-    console.error("Error creating reservation:", error);
-    return NextResponse.json(
-        { error: "Error al crear la reservación" },
-        { status: 500 }
-    );
-}
 }
