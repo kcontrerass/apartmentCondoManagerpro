@@ -15,10 +15,14 @@ import { CreateAmenityInput } from "@/lib/validations/amenity";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "sonner";
 
-export function AmenitiesClient() {
+interface AmenitiesClientProps {
+    user: any;
+}
+
+export function AmenitiesClient({ user }: AmenitiesClientProps) {
     const t = useTranslations('Amenities');
     const tRes = useTranslations('Reservations');
-    const { data: session } = useSession();
+
     const [amenities, setAmenities] = useState([]);
     const [complexes, setComplexes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -31,7 +35,12 @@ export function AmenitiesClient() {
     const [amenityToDelete, setAmenityToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const isResident = session?.user?.role === Role.RESIDENT;
+    const userRole = user?.role as Role;
+    const isResident = userRole === Role.RESIDENT;
+    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN || userRole === Role.BOARD_OF_DIRECTORS;
+
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const fetchAmenities = async () => {
         setIsLoading(true);
@@ -60,6 +69,33 @@ export function AmenitiesClient() {
         fetchAmenities();
         fetchComplexes();
     }, []);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && user?.id) {
+                console.log(`[Amenities] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Amenities] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Amenities] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, user?.id]);
 
     const handleSubmit = async (data: CreateAmenityInput) => {
         setIsSubmitting(true);
@@ -127,8 +163,6 @@ export function AmenitiesClient() {
         setAmenityIdToBook(id);
         setIsBookingModalOpen(true);
     };
-
-    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN || session?.user?.role === Role.BOARD_OF_DIRECTORS;
 
     return (
         <div className="space-y-6">

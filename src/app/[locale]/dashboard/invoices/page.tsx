@@ -11,7 +11,7 @@ export default async function InvoicesPage() {
 
     return (
         <MainLayout user={session.user}>
-            <InvoicesClient />
+            <InvoicesClient user={session.user} />
         </MainLayout>
     );
 }

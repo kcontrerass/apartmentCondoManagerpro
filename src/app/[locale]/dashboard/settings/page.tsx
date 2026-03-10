@@ -12,11 +12,9 @@ export default async function SettingsPage() {
         redirect("/login");
     }
 
-    if (
-        session.user.role !== Role.SUPER_ADMIN &&
-        session.user.role !== Role.ADMIN &&
-        session.user.role !== Role.BOARD_OF_DIRECTORS
-    ) {
+    const isAuthorized = [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(session.user.role as Role);
+
+    if (!isAuthorized) {
         redirect("/dashboard");
     }
 

@@ -54,7 +54,7 @@ export default async function AccessControlPage({
     return (
         <MainLayout user={session.user}>
             <AccessControlClient
-                userRole={session.user.role as Role}
+                user={session.user}
                 initialComplexes={complexes}
                 residentUnit={residentUnit}
             />

@@ -74,7 +74,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                                    {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                                         <>
                                             <Button
                                                 variant="secondary"

@@ -165,6 +165,8 @@
     "Invoices": {
         "title": "Billing",
         "subtitle": "Invoice management",
+        "subtitleResident": "View and pay your monthly invoices",
+        "subtitleAdmin": "Management of complex billing and invoices",
         "searchPlaceholder": "Search by unit or number...",
         "filterAll": "All statuses",
         "generate": "Generate Invoices",
@@ -234,8 +236,11 @@
         },
         "methods": {
             "CARD": "Credit/Debit Card",
+            "CARD_desc": "Secure instant payment via Recurrente",
             "CASH": "Cash",
+            "CASH_desc": "Pay at the complex administration",
             "TRANSFER": "Bank Transfer",
+            "TRANSFER_desc": "Send the receipt to administration",
             "select": "Select Payment Method"
         }
     },

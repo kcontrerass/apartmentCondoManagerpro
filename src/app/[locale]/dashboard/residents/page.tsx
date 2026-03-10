@@ -10,7 +10,7 @@ export default async function ResidentsPage({ params }: { params: Promise<{ loca
 
     return (
         <MainLayout user={session.user}>
-            <ResidentsClient userRole={session.user.role as Role} />
+            <ResidentsClient user={session.user} />
         </MainLayout>
     );
 }

@@ -166,6 +166,8 @@
     "Invoices": {
         "title": "Facturación",
         "subtitle": "Gestión de cobros y facturas",
+        "subtitleResident": "Consulta y paga tus facturas mensuales",
+        "subtitleAdmin": "Gestión de cobros y facturas del complejo",
         "searchPlaceholder": "Buscar por unidad o número...",
         "filterAll": "Todos los estados",
         "generate": "Generar Facturas",
@@ -234,8 +236,11 @@
         },
         "methods": {
             "CARD": "Tarjeta de Crédito/Débito",
+            "CARD_desc": "Pago instantáneo seguro vía Recurrente",
             "CASH": "Efectivo",
+            "CASH_desc": "Paga en la administración del complejo",
             "TRANSFER": "Transferencia Bancaria",
+            "TRANSFER_desc": "Envía el comprobante a administración",
             "select": "Seleccionar Método de Pago"
         }
     },

@@ -75,7 +75,7 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                                             <span className="material-symbols-outlined text-[18px]">visibility</span>
                                         </Button>
 
-                                        {userRole !== Role.GUARD && (
+                                        {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                                             <>
                                                 <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)}>
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>

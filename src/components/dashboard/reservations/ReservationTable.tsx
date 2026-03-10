@@ -14,13 +14,7 @@ const ReservationStatus = {
 } as const;
 type ReservationStatus = typeof ReservationStatus[keyof typeof ReservationStatus];
 
-const Role = {
-    SUPER_ADMIN: 'SUPER_ADMIN',
-    ADMIN: 'ADMIN',
-    BOARD_OF_DIRECTORS: 'BOARD_OF_DIRECTORS',
-    RESIDENT: 'RESIDENT'
-} as const;
-import { useSession } from 'next-auth/react';
+import { Role } from "@/types/roles";
 import { format } from 'date-fns';
 import { es, enUS } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
@@ -29,10 +23,9 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
-export default function ReservationTable() {
+export default function ReservationTable({ userRole }: { userRole?: Role }) {
     const t = useTranslations('Reservations');
     const tCommon = useTranslations('Common');
-    const { data: session } = useSession();
     const locale = useLocale();
     const [reservations, setReservations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -204,7 +197,7 @@ export default function ReservationTable() {
                                 )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                {session?.user?.role !== Role.RESIDENT && (
+                                {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN || userRole === Role.BOARD_OF_DIRECTORS) && (
                                     <div className="flex justify-end gap-2">
                                         {(r.status === ReservationStatus.PENDING || r.status === ReservationStatus.PROCESSING) && (
                                             <>

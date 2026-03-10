@@ -10,7 +10,7 @@ export default async function UnitsPage({ params }: { params: Promise<{ locale: 
 
     return (
         <MainLayout user={session.user}>
-            <UnitsClient userRole={session.user.role as Role} />
+            <UnitsClient user={session.user} />
         </MainLayout>
     );
 }

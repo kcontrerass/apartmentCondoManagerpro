@@ -13,16 +13,22 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 interface AccessControlClientProps {
-    userRole: Role;
+    user: any;
     initialComplexes: any[];
     residentUnit?: any;
 }
 
-export function AccessControlClient({ userRole, initialComplexes, residentUnit }: AccessControlClientProps) {
+export function AccessControlClient({ user, initialComplexes, residentUnit }: AccessControlClientProps) {
     const t = useTranslations("AccessControl");
     const [visitors, setVisitors] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const userRole = user?.role as Role;
+    const userId = user?.id;
+
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const isGuard = userRole === Role.GUARD || userRole === Role.BOARD_OF_DIRECTORS || userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
     const isResident = userRole === Role.RESIDENT;
@@ -30,6 +36,33 @@ export function AccessControlClient({ userRole, initialComplexes, residentUnit }
     useEffect(() => {
         fetchVisitors();
     }, []);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && userId) {
+                console.log(`[AccessControl] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[AccessControl] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[AccessControl] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, userId]);
 
     const fetchVisitors = async () => {
         setIsLoading(true);
@@ -148,7 +181,10 @@ export function AccessControlClient({ userRole, initialComplexes, residentUnit }
                 <VisitorForm
                     unitId={residentUnit?.id}
                     complexId={residentUnit?.complexId}
-                    onSuccess={() => setIsModalOpen(false)}
+                    onSuccess={() => {
+                        setIsModalOpen(false);
+                        fetchVisitors();
+                    }}
                 />
             </Modal>
         </div>

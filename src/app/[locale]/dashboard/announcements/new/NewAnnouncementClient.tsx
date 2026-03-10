@@ -10,17 +10,19 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ComplexSelector } from '@/components/dashboard/ComplexSelector';
+import { Spinner } from '@/components/ui/Spinner';
 import { Role } from "@/types/roles";
 
 const NewAnnouncementClient = () => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const isSessionLoading = status === "loading";
     const router = useRouter();
     const t = useTranslations('announcements');
     const { createAnnouncement, loading } = useAnnouncements();
     const sessionComplexId = session?.user?.complexId;
 
 
-    const isSuperAdmin = session?.user?.role === Role.SUPER_ADMIN;
+    const isSuperAdmin = status === "authenticated" && session?.user?.role === Role.SUPER_ADMIN;
     const [complexId, setComplexId] = React.useState<string | null>(sessionComplexId || null);
 
     // Proactive complexId recovery for users with stale sessions
@@ -57,6 +59,14 @@ const NewAnnouncementClient = () => {
             console.error('Error in page:', error);
         }
     };
+
+    if (isSessionLoading) {
+        return (
+            <div className="flex justify-center py-20">
+                <Spinner />
+            </div>
+        );
+    }
 
     if (!complexId && !isSuperAdmin) {
         return (

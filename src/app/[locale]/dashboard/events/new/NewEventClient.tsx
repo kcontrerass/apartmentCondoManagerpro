@@ -14,14 +14,15 @@ import { ComplexSelector } from '@/components/dashboard/ComplexSelector';
 import { Role } from "@/types/roles";
 
 const NewEventClient = () => {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const isSessionLoading = status === "loading";
     const router = useRouter();
     const t = useTranslations('events');
     const { createEvent, loading: createLoading } = useEvents();
     const sessionComplexId = session?.user?.complexId;
     const [selectedComplexId, setSelectedComplexId] = React.useState<string | null>(sessionComplexId || null);
 
-    const isSuperAdmin = session?.user?.role === Role.SUPER_ADMIN;
+    const isSuperAdmin = status === "authenticated" && session?.user?.role === Role.SUPER_ADMIN;
     const complexId = sessionComplexId || selectedComplexId;
 
     const [residentCount, setResidentCount] = React.useState<number | undefined>(undefined);
@@ -55,6 +56,14 @@ const NewEventClient = () => {
             console.error('Error in page:', error);
         }
     };
+
+    if (isSessionLoading) {
+        return (
+            <div className="flex justify-center py-20">
+                <Spinner />
+            </div>
+        );
+    }
 
     if (!complexId && !isSuperAdmin) return null;
 

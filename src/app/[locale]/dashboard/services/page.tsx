@@ -9,7 +9,7 @@ export default async function ServicesPage() {
 
     return (
         <MainLayout user={session.user}>
-            <ServicesClient userRole={session.user.role as Role} userId={session.user.id!} />
+            <ServicesClient user={session.user} />
         </MainLayout>
     );
 }

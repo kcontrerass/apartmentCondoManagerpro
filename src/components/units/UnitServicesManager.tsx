@@ -102,7 +102,7 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
         <Card className="p-6">
             <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold">{t("unitServices")}</h3>
-                {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                     <Button variant="secondary" size="sm" icon="add" onClick={() => setIsModalOpen(true)}>
                         {t("assignService")}
                     </Button>
@@ -128,7 +128,7 @@ export function UnitServicesManager({ unitId, complexId, userRole }: UnitService
                                 <Badge variant={us.status === "ACTIVE" ? "success" : "neutral"}>
                                     {us.status}
                                 </Badge>
-                                {userRole !== Role.GUARD && userRole !== Role.BOARD_OF_DIRECTORS && (
+                                {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                                     <button
                                         onClick={() => setConfirmDeleteId(us.id)}
                                         className="p-1 text-slate-400 hover:text-red-600 transition-colors"

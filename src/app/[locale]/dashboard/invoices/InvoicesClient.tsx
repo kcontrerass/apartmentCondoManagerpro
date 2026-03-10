@@ -16,7 +16,11 @@ import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
 import { Input } from "@/components/ui/Input";
 
-export function InvoicesClient() {
+interface InvoicesClientProps {
+    user: any;
+}
+
+export function InvoicesClient({ user }: InvoicesClientProps) {
     const t = useTranslations('Invoices');
     const tReservations = useTranslations('Reservations');
     const tCommon = useTranslations('Common');
@@ -40,17 +44,12 @@ export function InvoicesClient() {
     const [monthFilter, setMonthFilter] = useState("ALL");
     const [serviceFilter, setServiceFilter] = useState("ALL");
 
-    const { data: session } = useSession();
+    const userRole = user?.role as Role;
+    const isResident = userRole === Role.RESIDENT;
+    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
 
-    const isResident = session?.user?.role === Role.RESIDENT;
-    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN;
-
-    console.log('InvoicesClient Debug:', {
-        role: session?.user?.role,
-        isResident,
-        isAdmin,
-        expectedResident: Role.RESIDENT
-    });
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     useEffect(() => {
         const fetchComplexes = async () => {
@@ -83,6 +82,33 @@ export function InvoicesClient() {
     useEffect(() => {
         fetchInvoices();
     }, []);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && user?.id) {
+                console.log(`[Invoices] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Invoices] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Invoices] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, user?.id]);
 
     const handleGenerate = async (data: GenerateInvoicesSchema) => {
         setIsSubmitting(true);
@@ -204,7 +230,7 @@ export function InvoicesClient() {
         <div className="space-y-8">
             <PageHeader
                 title={t('title')}
-                subtitle={t('subtitle')}
+                subtitle={isResident ? t('subtitleResident') : t('subtitleAdmin')}
                 actions={
                     isAdmin && (
                         <Button
@@ -305,6 +331,8 @@ export function InvoicesClient() {
                         onViewDetail={handleViewDetail}
                         onUpdateStatus={handleUpdateStatus}
                         onPay={isResident ? handlePay : undefined}
+                        userRole={userRole}
+                        isLoading={isLoading}
                     />
                 )}
             </Card>
@@ -412,8 +440,8 @@ export function InvoicesClient() {
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
                                 <div>
-                                    <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Tarjeta de Crédito/Débito</p>
-                                    <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>Pago instantáneo seguro vía Recurrente</p>
+                                    <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CARD')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CARD_desc' as any) || 'Pago instantáneo seguro'}</p>
                                 </div>
                             </div>
 
@@ -423,8 +451,8 @@ export function InvoicesClient() {
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
                                 <div>
-                                    <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Efectivo</p>
-                                    <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>Paga en la administración del complejo</p>
+                                    <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CASH')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CASH_desc' as any) || 'Paga en la administración'}</p>
                                 </div>
                             </div>
 
@@ -434,8 +462,8 @@ export function InvoicesClient() {
                             >
                                 <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
                                 <div>
-                                    <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>Transferencia Bancaria</p>
-                                    <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>Envía el comprobante a administración</p>
+                                    <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('TRANSFER')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
                                 </div>
                             </div>
 

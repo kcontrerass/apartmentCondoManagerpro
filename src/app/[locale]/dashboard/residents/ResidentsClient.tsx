@@ -29,12 +29,22 @@ interface ResidentWithExtras extends Resident {
     };
 }
 
-export function ResidentsClient({ userRole }: { userRole?: Role }) {
+interface ResidentsClientProps {
+    user: any;
+}
+
+export function ResidentsClient({ user }: ResidentsClientProps) {
     const t = useTranslations('Residents');
     const router = useRouter();
     const searchParams = useSearchParams();
     const unitIdFromQuery = searchParams.get("unitId");
     const complexIdFromQuery = searchParams.get("complexId");
+
+    const userRole = user?.role as Role;
+    const userId = user?.id;
+
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const [residents, setResidents] = useState<ResidentWithExtras[]>([]);
     const [users, setUsers] = useState<{ id: string, name: string, email: string }[]>([]);
@@ -46,6 +56,33 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [residentToDelete, setResidentToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && userId) {
+                console.log(`[Residents] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Residents] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Residents] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, userId]);
 
     const fetchData = async () => {
         setIsLoading(true);
@@ -142,7 +179,7 @@ export function ResidentsClient({ userRole }: { userRole?: Role }) {
                 title={t('title')}
                 subtitle={t('subtitle')}
                 actions={
-                    userRole !== Role.GUARD && (
+                    (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                         <Button
                             variant="primary"
                             icon="add"

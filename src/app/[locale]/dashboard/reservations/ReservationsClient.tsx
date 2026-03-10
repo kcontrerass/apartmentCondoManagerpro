@@ -15,10 +15,14 @@ import { getReservations, updateReservation } from "@/lib/api/reservations";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "sonner";
 
-export function ReservationsClient() {
+interface ReservationsClientProps {
+    user: any;
+}
+
+export function ReservationsClient({ user }: ReservationsClientProps) {
     const t = useTranslations('Reservations');
     const tCommon = useTranslations('Common');
-    const { data: session } = useSession();
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [reservations, setReservations] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -26,8 +30,12 @@ export function ReservationsClient() {
     const [reservationToCancel, setReservationToCancel] = useState<string | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
 
-    const isResident = session?.user?.role === Role.RESIDENT;
-    const isAdmin = session?.user?.role === Role.ADMIN || session?.user?.role === Role.SUPER_ADMIN || session?.user?.role === Role.BOARD_OF_DIRECTORS;
+    const userRole = user?.role as Role;
+    const isResident = userRole === Role.RESIDENT;
+    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN || userRole === Role.BOARD_OF_DIRECTORS;
+
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const fetchReservations = async () => {
         setIsLoading(true);
@@ -44,6 +52,33 @@ export function ReservationsClient() {
     useEffect(() => {
         fetchReservations();
     }, []);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && user?.id) {
+                console.log(`[Reservations] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Reservations] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Reservations] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, user?.id]);
 
     const handleCancel = async () => {
         if (!reservationToCancel) return;
@@ -97,7 +132,7 @@ export function ReservationsClient() {
                                     }}
                                 />
                             ) : (
-                                <ReservationTable />
+                                <ReservationTable userRole={userRole} />
                             )}
                         </>
                     )}

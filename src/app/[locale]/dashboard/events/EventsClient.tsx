@@ -14,36 +14,31 @@ import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Role } from "@/types/roles";
 
-const EventsClient = () => {
-    const { data: session } = useSession();
+interface EventsClientProps {
+    user: any;
+}
+
+const EventsClient = ({ user }: EventsClientProps) => {
     const t = useTranslations('events');
     const router = useRouter();
 
-    const [userRole, setUserRole] = useState<string | null>(session?.user?.role || null);
-    const [complexId, setComplexId] = useState<string | null>(session?.user?.complexId || null);
+    const userRole = user?.role as Role;
+    const userId = user?.id;
+
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
     const [isRecovering, setIsRecovering] = useState(false);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-    // Sync state with session when it loads
-    useEffect(() => {
-        if (session?.user) {
-            setUserRole(session.user.role);
-            if (session.user.complexId) {
-                setComplexId(session.user.complexId);
-            }
-        }
-    }, [session]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
         const recoverComplexId = async () => {
-            if (session?.user?.id && !complexId && userRole !== Role.SUPER_ADMIN) {
-                console.log(`[Events] 🔍 Attempting complexId recovery for user ${session.user.id} (${userRole})...`);
+            if (userId && !complexId && userRole !== Role.SUPER_ADMIN) {
+                console.log(`[Events] 🔍 Attempting complexId recovery for user ${userId} (${userRole})...`);
                 setIsRecovering(true);
                 try {
                     // Try getting from resident API first if it's a resident
                     if (userRole === Role.RESIDENT) {
-                        const response = await fetch(`/api/residents?userId=${session.user.id}`);
+                        const response = await fetch(`/api/residents?userId=${userId}`);
                         const data = await response.json();
                         if (Array.isArray(data) && data.length > 0 && data[0].unit) {
                             const recoveredId = data[0].unit.complexId;
@@ -79,7 +74,7 @@ const EventsClient = () => {
         };
 
         recoverComplexId();
-    }, [session?.user?.id, complexId, userRole]);
+    }, [userId, complexId, userRole]);
 
     const { events, loading: hookLoading, fetchEvents, deleteEvent } = useEvents(complexId || undefined);
     const loading = hookLoading || isRecovering;

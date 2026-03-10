@@ -8,7 +8,7 @@ export default async function EventsPage() {
 
     return (
         <MainLayout user={session.user}>
-            <EventsClient />
+            <EventsClient user={session.user} />
         </MainLayout>
     );
 }

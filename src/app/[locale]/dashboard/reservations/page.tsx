@@ -11,7 +11,7 @@ export default async function ReservationsPage() {
 
     return (
         <MainLayout user={session.user}>
-            <ReservationsClient />
+            <ReservationsClient user={session.user} />
         </MainLayout>
     );
 }

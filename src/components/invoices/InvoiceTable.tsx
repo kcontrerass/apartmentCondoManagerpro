@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useTranslations } from "next-intl";
+import { Role } from "@/types/roles";
 import { formatPrice } from "@/lib/utils";
 
 interface InvoiceTableProps {
@@ -12,9 +13,11 @@ interface InvoiceTableProps {
     onViewDetail: (invoice: any) => void;
     onUpdateStatus: (id: string, status: string) => void;
     onPay?: (invoice: any) => void;
+    userRole?: Role;
+    isLoading?: boolean;
 }
 
-export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: InvoiceTableProps) {
+export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, userRole, isLoading }: InvoiceTableProps) {
     const t = useTranslations('Invoices');
 
     const getStatusVariant = (status: string) => {
@@ -27,6 +30,8 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
             default: return "neutral";
         }
     };
+
+    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
 
     return (
         <div className="overflow-x-auto">
@@ -149,7 +154,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay }: 
                                         </Button>
                                     )}
 
-                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && !onPay && (
+                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && isAdmin && (
                                         <>
                                             <Button
                                                 variant="primary"

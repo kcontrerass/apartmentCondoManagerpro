@@ -17,7 +17,8 @@ import { Modal } from "@/components/ui/Modal";
 const AnnouncementDetailClient = () => {
     const { id } = useParams();
     const router = useRouter();
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
+    const isSessionLoading = status === "loading";
     const { getAnnouncement, updateAnnouncement, deleteAnnouncement, loading } = useAnnouncements();
 
     const [announcement, setAnnouncement] = useState<any>(null);
@@ -69,7 +70,7 @@ const AnnouncementDetailClient = () => {
         }
     };
 
-    if (loading && !announcement) {
+    if ((loading && !announcement) || isSessionLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <Spinner />
@@ -94,10 +95,10 @@ const AnnouncementDetailClient = () => {
         );
     }
 
-    const userRole = session?.user?.role;
-    const canManage = [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(userRole as any);
-    const isAuthor = announcement.authorId === session?.user?.id;
-    const isAdminInSameComplex = userRole === Role.ADMIN && announcement.complexId === session?.user?.complexId;
+    const userRole = status === "authenticated" ? session?.user?.role : undefined;
+    const canManage = status === "authenticated" && [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS].includes(userRole as any);
+    const isAuthor = status === "authenticated" && announcement.authorId === session?.user?.id;
+    const isAdminInSameComplex = status === "authenticated" && userRole === Role.ADMIN && announcement.complexId === session?.user?.complexId;
     const canEdit = isAuthor || isAdminInSameComplex || userRole === Role.SUPER_ADMIN;
 
     return (

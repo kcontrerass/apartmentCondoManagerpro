@@ -171,22 +171,6 @@ export function ServiceTable({
                                                         </Badge>
                                                         {!service.isRequired && (
                                                             <div className="flex gap-1">
-                                                                {service.hasQuantity && userRole !== Role.RESIDENT && (
-                                                                    <Button
-                                                                        variant="secondary"
-                                                                        size="sm"
-                                                                        onClick={() => {
-                                                                            const input = document.getElementById(`qty-edit-${unitService.id}`) as HTMLInputElement;
-                                                                            const qty = input ? parseInt(input.value) : unitService.quantity;
-                                                                            onUpdateQuantity?.(unitService.id, qty);
-                                                                        }}
-                                                                        title="Actualizar Cantidad"
-                                                                        isLoading={isSubmitting === unitService.id}
-                                                                        disabled={!!isSubmitting}
-                                                                    >
-                                                                        <span className="material-symbols-outlined text-[18px]">save</span>
-                                                                    </Button>
-                                                                )}
                                                                 <Button
                                                                     variant="danger"
                                                                     size="sm"
@@ -230,7 +214,7 @@ export function ServiceTable({
                                             );
                                         })()
                                     ) : (
-                                        userRole !== Role.GUARD && (
+                                        (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                                             <>
                                                 <Button
                                                     variant="secondary"

@@ -11,7 +11,7 @@ export default async function AmenitiesPage() {
 
     return (
         <MainLayout user={session.user}>
-            <AmenitiesClient />
+            <AmenitiesClient user={session.user} />
         </MainLayout>
     );
 }

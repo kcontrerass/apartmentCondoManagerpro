@@ -14,10 +14,20 @@ import { useTranslations } from 'next-intl';
 import { Role } from "@/types/roles";
 import { toast } from "sonner";
 
-export function ServicesClient({ userRole, userId }: { userRole: Role, userId: string }) {
+interface ServicesClientProps {
+    user: any;
+}
+
+export function ServicesClient({ user }: ServicesClientProps) {
     const t = useTranslations('Services');
     const searchParams = useSearchParams();
     const complexIdFromQuery = searchParams.get("complexId");
+
+    const userRole = user?.role as Role;
+    const userId = user?.id;
+
+    // Safety check for complexId if not Super Admin
+    const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const [services, setServices] = useState<any[]>([]);
     const [complexes, setComplexes] = useState<{ id: string, name: string }[]>([]);
@@ -69,6 +79,33 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
             fetchResidentData();
         }
     }, [userRole, userId]);
+
+    // Proactive complexId recovery for users with stale sessions
+    useEffect(() => {
+        const recoverComplexId = async () => {
+            if (!complexId && userRole !== Role.SUPER_ADMIN && userId) {
+                console.log(`[Services] 🔍 Attempting complexId recovery...`);
+                try {
+                    const response = await fetch('/api/users/profile');
+                    if (response.ok) {
+                        const profileData = await response.json();
+                        const recoveredId = profileData.complexId ||
+                            (profileData.managedComplexes?.[0]?.id) ||
+                            (profileData.residentProfile?.unit?.complexId);
+
+                        if (recoveredId) {
+                            console.log(`[Services] ✅ Recovered complexId: ${recoveredId}`);
+                            setComplexId(recoveredId);
+                        }
+                    }
+                } catch (error) {
+                    console.error('[Services] ❌ Failed to recover complexId:', error);
+                }
+            }
+        };
+
+        recoverComplexId();
+    }, [complexId, userRole, userId]);
 
     const fetchServices = async () => {
         setIsLoading(true);
@@ -261,7 +298,7 @@ export function ServicesClient({ userRole, userId }: { userRole: Role, userId: s
                 title={t('title')}
                 subtitle={complexIdFromQuery ? t('subtitle') : t('allServices')}
                 actions={
-                    userRole !== Role.GUARD && userRole !== Role.RESIDENT && (
+                    (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN || userRole === Role.BOARD_OF_DIRECTORS) && (
                         <Button
                             variant="primary"
                             icon="add"

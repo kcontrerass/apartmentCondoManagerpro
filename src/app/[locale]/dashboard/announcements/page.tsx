@@ -8,7 +8,7 @@ export default async function AnnouncementsPage() {
 
     return (
         <MainLayout user={session.user}>
-            <AnnouncementsClient />
+            <AnnouncementsClient user={session.user} />
         </MainLayout>
     );
 }
