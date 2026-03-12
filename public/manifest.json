@@ -1,6 +1,6 @@
 {
-    "name": "ADESSO",
-    "short_name": "ADESSO",
+    "name": "ADESSO-365",
+    "short_name": "ADESSO-365",
     "description": "Sistema Integral de Gestión de Condominios",
     "start_url": "/es/dashboard/",
     "display": "standalone",

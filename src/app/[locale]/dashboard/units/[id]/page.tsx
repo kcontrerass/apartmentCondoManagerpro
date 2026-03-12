@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Role } from "@/types/roles";
 import { UnitServicesManager } from "@/components/units/UnitServicesManager";
 import { DeleteResidentButton } from "@/components/units/DeleteResidentButton";
+import { UnitEditButton } from "@/components/units/UnitEditButton";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -44,15 +45,19 @@ export default async function UnitDetailPage({ params }: RouteParams) {
         <MainLayout user={session.user}>
             <div className="space-y-8">
                 <PageHeader
-                    title={`Unidad ${unit.number}`}
-                    subtitle={`${unit.complex.name} - ${unit.type || "Residencial"}`}
+                    title={
+                        <>
+                            Unidad <span style={{ fontFamily: 'Inter, system-ui, sans-serif', letterSpacing: 'normal' }}>{unit.number}</span>
+                        </>
+                    }
+                    subtitle={<>{unit.complex.name} - {unit.type || "Residencial"}</>}
                     actions={
                         <div className="flex gap-3">
                             <Link href={`/dashboard/units?complexId=${unit.complexId}`}>
                                 <Button variant="secondary" icon="arrow_back">Volver a lista</Button>
                             </Link>
                             {(session.user.role === Role.SUPER_ADMIN || session.user.role === Role.ADMIN) && (
-                                <Button variant="primary" icon="edit">Editar Unidad</Button>
+                                <UnitEditButton unit={unit as any} />
                             )}
                         </div>
                     }

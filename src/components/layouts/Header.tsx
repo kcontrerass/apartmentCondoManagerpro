@@ -23,6 +23,11 @@ export function Header({ isUnassigned = false }: HeaderProps) {
     const t = useTranslations('Common');
     const { isOpen, setIsOpen } = useMobileSidebar();
     const { theme, toggleTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const toggleLanguage = () => {
         const nextLocale = locale === 'es' ? 'en' : 'es';
@@ -389,17 +394,27 @@ export function Header({ isUnassigned = false }: HeaderProps) {
                 )}
 
                 {/* Theme Toggle */}
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleTheme}
-                    className="text-slate-500 hover:text-primary transition-colors"
-                    title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                >
-                    <span className="material-symbols-outlined text-[20px]">
-                        {theme === 'dark' ? 'light_mode' : 'dark_mode'}
-                    </span>
-                </Button>
+                {mounted ? (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={toggleTheme}
+                        className="text-slate-500 hover:text-primary transition-colors"
+                        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                    >
+                        <span className="material-symbols-outlined text-[20px]">
+                            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                        </span>
+                    </Button>
+                ) : (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-500 hover:text-primary transition-colors opacity-0 pointer-events-none"
+                    >
+                        <span className="material-symbols-outlined text-[20px]">light_mode</span>
+                    </Button>
+                )}
 
                 {/* Language Switcher */}
                 <Button

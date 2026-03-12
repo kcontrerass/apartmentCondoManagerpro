@@ -137,7 +137,11 @@ export function UnitsClient({ user }: UnitsClientProps) {
                 fetchUnits();
             } else {
                 const errorData = await response.json();
-                toast.error(errorData.error || t('errorSaving'));
+                if (Array.isArray(errorData.error)) {
+                    toast.error(errorData.error.map((e: any) => e.message || "Error de validación").join(", "));
+                } else {
+                    toast.error(errorData.error || t('errorSaving'));
+                }
             }
         } catch (error) {
             console.error("Error saving unit:", error);
@@ -226,6 +230,7 @@ export function UnitsClient({ user }: UnitsClientProps) {
                     isLoading={isSubmitting}
                     complexes={complexes}
                     showComplexSelector={!complexIdFromQuery && !editingUnit}
+                    complexId={complexIdFromQuery}
                 />
             </Modal>
 

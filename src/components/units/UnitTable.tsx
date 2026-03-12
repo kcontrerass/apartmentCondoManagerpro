@@ -38,7 +38,12 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                     {units.map((unit) => (
                         <tr key={unit.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td className="py-4 px-4">
-                                <span className="font-medium text-slate-900 dark:text-white">{unit.number}</span>
+                                <span
+                                    className="font-medium text-slate-900 dark:text-white"
+                                    style={{ fontFamily: 'Inter, system-ui, sans-serif', letterSpacing: 'normal' }}
+                                >
+                                    {unit.number}
+                                </span>
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
                                 {unit.complex?.name || "N/A"}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'adesso-v1';
+const CACHE_NAME = 'adesso365-v1';
 const ASSETS_TO_CACHE = [
     '/',
     '/icon.svg',

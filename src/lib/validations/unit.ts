@@ -8,7 +8,7 @@ export const unitSchema = z.object({
     parkingSpots: z.number().int().min(0).default(0),
     area: z.number().min(0).optional(),
     status: z.enum(["OCCUPIED", "VACANT", "MAINTENANCE"]).default("VACANT"),
-    complexId: z.string().min(1, "El complejo es requerido").optional(),
+    complexId: z.string().optional(),
     serviceIds: z.array(z.string()).optional(),
     services: z.array(z.object({
         id: z.string(),

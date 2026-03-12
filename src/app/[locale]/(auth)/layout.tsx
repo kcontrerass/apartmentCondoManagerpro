@@ -24,14 +24,14 @@ export default function AuthLayout({
                         </p>
                     </div>
                     <div className="z-20">
-                        <p className="text-white/50 text-sm font-medium">© {new Date().getFullYear()} ADESSO</p>
+                        <p className="text-white/50 text-sm font-medium">© {new Date().getFullYear()} ADESSO-365</p>
                     </div>
                 </div>
 
                 {/* Background generic architecture image */}
                 <Image
                     src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
-                    alt="ADESSO Architecture"
+                    alt="ADESSO-365 Architecture"
                     fill
                     className="object-cover opacity-60 z-0 grayscale-[0.2]"
                     priority
@@ -45,13 +45,13 @@ export default function AuthLayout({
                     <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
                         <span className="material-symbols-outlined text-[18px]">apartment</span>
                     </div>
-                    <span className="text-slate-900 dark:text-white font-bold tracking-wide">ADESSO</span>
+                    <span className="text-slate-900 dark:text-white font-bold tracking-wide">ADESSO-365</span>
                 </div>
 
                 <div className="w-full max-w-sm pt-12 pb-12 mt-8 lg:mt-0">
                     <div className="mb-8 hidden lg:block text-center sm:text-left">
                         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                            Bienvenido a <span className="text-primary dark:text-primary">ADESSO</span>
+                            Bienvenido a <span className="text-primary dark:text-primary">ADESSO-365</span>
                         </h2>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                             Ingresa tus credenciales para acceder a tu panel.
@@ -59,7 +59,7 @@ export default function AuthLayout({
                     </div>
                     <div className="mb-8 lg:hidden text-center">
                         <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                            Bienvenido a <br />ADESSO
+                            Bienvenido a <br />ADESSO-365
                         </h2>
                         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                             Ingresa tus credenciales para acceder a tu panel.

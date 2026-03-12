@@ -102,7 +102,7 @@ export default function LoginPage() {
             </div>
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-                    ¿Nuevo en ADESSO?{' '}
+                    ¿Nuevo en ADESSO-365?{' '}
                     <a
                         href="/register"
                         className="font-bold text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80 transition-colors"

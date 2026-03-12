@@ -91,7 +91,7 @@ export async function GET(request: Request) {
                     select: { number: true }
                 },
                 complex: {
-                    select: { name: true }
+                    select: { name: true, phone: true, bankAccount: true }
                 },
                 reservation: {
                     select: { id: true, paymentMethod: true }

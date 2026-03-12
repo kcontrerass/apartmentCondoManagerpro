@@ -63,9 +63,30 @@ export async function POST(
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
-        // Role check: Only SUPER_ADMIN and ADMIN can create units
-        if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.ADMIN) {
+        // Role check: SUPER_ADMIN, ADMIN, and BOARD_OF_DIRECTORS can create units
+        if (
+            session.user.role !== Role.SUPER_ADMIN &&
+            session.user.role !== Role.ADMIN &&
+            session.user.role !== Role.BOARD_OF_DIRECTORS
+        ) {
             return NextResponse.json({ error: "Permisos insuficientes" }, { status: 403 });
+        }
+
+        if (session.user.role === Role.ADMIN) {
+            const complex = await prisma.complex.findFirst({
+                where: { id, adminId: session.user.id }
+            });
+            if (!complex) {
+                return NextResponse.json({ error: "No tienes permisos en este complejo" }, { status: 403 });
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const user = await (prisma as any).user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true }
+            });
+            if (user?.complexId !== id) {
+                return NextResponse.json({ error: "No tienes permisos en este complejo" }, { status: 403 });
+            }
         }
 
         const body = await request.json();
@@ -88,7 +109,7 @@ export async function POST(
             );
         }
 
-        const { services, ...unitData } = validatedData;
+        const { services, serviceIds, ...unitData } = validatedData;
 
         const unit = await prisma.unit.create({
             data: {

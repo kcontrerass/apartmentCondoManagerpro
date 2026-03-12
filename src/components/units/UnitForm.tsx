@@ -12,9 +12,10 @@ interface UnitFormProps {
     isLoading?: boolean;
     complexes?: { id: string, name: string }[];
     showComplexSelector?: boolean;
+    complexId?: string | null;
 }
 
-export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComplexSelector }: UnitFormProps) {
+export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComplexSelector, complexId }: UnitFormProps) {
     const [availableServices, setAvailableServices] = useState<any[]>([]);
     const [isLoadingServices, setIsLoadingServices] = useState(false);
 
@@ -45,7 +46,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
     });
 
     useEffect(() => {
-        const idToUse = watchedComplexId || (initialData as any)?.complexId;
+        const idToUse = complexId || watchedComplexId || (initialData as any)?.complexId;
 
         if (idToUse) {
             const fetchServices = async () => {
@@ -80,7 +81,10 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
 
         const finalData = {
             ...data,
-            parkingSpots: isNaN(data.parkingSpots) ? 0 : Number(data.parkingSpots),
+            bedrooms: isNaN(data.bedrooms) || data.bedrooms === "" ? 1 : Number(data.bedrooms),
+            bathrooms: isNaN(data.bathrooms) || data.bathrooms === "" ? 1 : Number(data.bathrooms),
+            parkingSpots: isNaN(data.parkingSpots) || data.parkingSpots === "" ? 0 : Number(data.parkingSpots),
+            area: isNaN(data.area) || data.area === "" ? undefined : Number(data.area),
             services
         };
 

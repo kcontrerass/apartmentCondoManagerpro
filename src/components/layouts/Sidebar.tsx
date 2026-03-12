@@ -134,7 +134,7 @@ export function Sidebar({
                         </div>
                         <div className="flex flex-col">
                             <h1 className="text-foreground text-base font-bold leading-none tracking-tight">
-                                {user?.role === Role.ADMIN && complexName ? complexName : "ADESSO"}
+                                {user?.role === Role.ADMIN && complexName ? complexName : "ADESSO-365"}
                             </h1>
                             <p className="text-slate-500 text-xs font-medium mt-1">
                                 {user?.role === Role.RESIDENT ? "Resident Portal" : "Admin Console"}

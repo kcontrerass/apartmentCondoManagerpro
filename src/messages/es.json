@@ -439,7 +439,7 @@
     },
     "Unassigned": {
         "title": "Asignación Pendiente",
-        "message": "Bienvenido a ADESSO. Tu usuario ha sido creado, pero aún no tienes un complejo residencial asignado.",
+        "message": "Bienvenido a ADESSO-365. Tu usuario ha sido creado, pero aún no tienes un complejo residencial asignado.",
         "subtitle": "¿Qué debo hacer?",
         "instruction1": "Contacta con la administración de tu edificio para que te registren.",
         "instruction2": "Asegúrate de haber proporcionado el correo electrónico correcto asociado a tu unidad.",

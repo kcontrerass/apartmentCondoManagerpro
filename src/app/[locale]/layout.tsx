@@ -6,13 +6,13 @@ import { routing } from '@/i18n/routing';
 import "../globals.css";
 
 export const metadata: Metadata = {
-  title: "ADESSO",
+  title: "ADESSO-365",
   description: "Sistema Integral de Gestión de Condominios",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "ADESSO"
+    title: "ADESSO-365"
   }
 };
 
