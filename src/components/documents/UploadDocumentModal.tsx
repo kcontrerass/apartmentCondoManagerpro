@@ -22,6 +22,13 @@ interface UploadDocumentModalProps {
     userRole?: Role;
 }
 
+interface UploadDocumentFormData {
+    title: string;
+    description: string;
+    category: string;
+    targetComplexId: string;
+}
+
 export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, userRole }: UploadDocumentModalProps) {
     const [loading, setLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -31,13 +38,15 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, use
 
     const isSuperAdmin = userRole === Role.SUPER_ADMIN;
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm({
-        defaultValues: {
-            title: "",
-            description: "",
-            category: "Reglamento",
-            targetComplexId: complexId || "",
-        }
+    const getDefaultValues = () => ({
+        title: "",
+        description: "",
+        category: "Reglamento",
+        targetComplexId: complexId || "",
+    });
+
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<UploadDocumentFormData>({
+        defaultValues: getDefaultValues(),
     });
 
     useEffect(() => {
@@ -83,7 +92,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, use
         handleFileChange(file);
     };
 
-    const onSubmit = async (data: any) => {
+    const onSubmit = async (data: UploadDocumentFormData) => {
         if (!selectedFile) {
             toast.error("Por favor selecciona un archivo.");
             return;
@@ -142,7 +151,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, use
 
     const handleClose = () => {
         if (loading) return;
-        reset({ ...useForm().getValues(), targetComplexId: complexId || "" });
+        reset(getDefaultValues());
         setSelectedFile(null);
         onClose();
     };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Role } from "@/types/roles";
@@ -25,13 +25,19 @@ interface DocumentListProps {
     complexId: string;
 }
 
+function normalizeDocumentUrl(fileUrl: string): string {
+    if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
+    if (fileUrl.startsWith("/")) return fileUrl;
+    return `/${fileUrl}`;
+}
+
 export function DocumentList({ userRole, complexId }: DocumentListProps) {
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
 
-    const fetchDocuments = async () => {
+    const fetchDocuments = useCallback(async () => {
         try {
             const response = await fetch(`/api/documents?complexId=${complexId}`);
             if (response.ok) {
@@ -43,11 +49,11 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [complexId]);
 
     useEffect(() => {
         fetchDocuments();
-    }, [complexId]);
+    }, [fetchDocuments]);
 
     const canManage = userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN || userRole === Role.BOARD_OF_DIRECTORS;
 
@@ -63,7 +69,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
             } else {
                 toast.error("Error al eliminar");
             }
-        } catch (error) {
+        } catch {
             toast.error("Error al eliminar");
         }
     };
@@ -137,7 +143,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                     <p>{new Date(doc.createdAt).toLocaleDateString()}</p>
                                 </div>
                                 <a
-                                    href={doc.fileUrl.startsWith('/') ? doc.fileUrl : `/${doc.fileUrl}`}
+                                    href={normalizeDocumentUrl(doc.fileUrl)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"

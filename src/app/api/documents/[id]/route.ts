@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
+import { deleteCloudinaryAssetByUrl } from "@/lib/cloudinary";
 
 export async function PATCH(
     req: Request,
@@ -93,6 +94,15 @@ export async function DELETE(
 
         if (!isAuthor && !isSuperAdmin && !isStaffInComplex) {
             return new NextResponse("Forbidden", { status: 403 });
+        }
+
+        // Best-effort cleanup in Cloudinary if the file is hosted there.
+        if (document.fileUrl?.includes("res.cloudinary.com")) {
+            try {
+                await deleteCloudinaryAssetByUrl(document.fileUrl);
+            } catch (cloudinaryError) {
+                console.error("[DOCUMENT_DELETE_CLOUDINARY]", cloudinaryError);
+            }
         }
 
         await prisma.document.delete({
