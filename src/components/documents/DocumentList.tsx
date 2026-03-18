@@ -25,10 +25,16 @@ interface DocumentListProps {
     complexId: string;
 }
 
-function normalizeDocumentUrl(fileUrl: string): string {
-    if (/^https?:\/\//i.test(fileUrl)) return fileUrl;
-    if (fileUrl.startsWith("/")) return fileUrl;
-    return `/${fileUrl}`;
+function getViewFileNotation(fileType: string | null): string {
+    if (!fileType) return "ARCHIVO";
+
+    const normalized = fileType.split(";")[0].trim().toLowerCase();
+    if (normalized.includes("pdf")) return "PDF";
+
+    const subtype = normalized.split("/")[1];
+    if (!subtype) return "ARCHIVO";
+
+    return subtype.toUpperCase();
 }
 
 export function DocumentList({ userRole, complexId }: DocumentListProps) {
@@ -142,14 +148,23 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                     <p>{formatFileSize(doc.fileSize)}</p>
                                     <p>{new Date(doc.createdAt).toLocaleDateString()}</p>
                                 </div>
-                                <a
-                                    href={normalizeDocumentUrl(doc.fileUrl)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"
-                                >
-                                    Ver <span className="material-symbols-outlined text-[16px]">open_in_new</span>
-                                </a>
+                                <div className="flex items-center gap-3">
+                                    <a
+                                        href={`/api/documents/${doc.id}/download?disposition=inline`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"
+                                    >
+                                        Ver ({getViewFileNotation(doc.fileType)}){" "}
+                                        <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+                                    </a>
+                                    <a
+                                        href={`/api/documents/${doc.id}/download`}
+                                        className="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary font-semibold text-sm flex items-center gap-1"
+                                    >
+                                        Descargar <span className="material-symbols-outlined text-[16px]">download</span>
+                                    </a>
+                                </div>
                             </div>
                         </Card>
                     ))}
