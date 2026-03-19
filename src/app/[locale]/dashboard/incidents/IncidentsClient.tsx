@@ -198,6 +198,7 @@ export default function IncidentsClient({
                     unitId={residentUnitId}
                     onSubmit={handleReport}
                     isLoading={submitting}
+                    allowComplexSelect={userRole === Role.SUPER_ADMIN}
                 />
             </Modal>
 

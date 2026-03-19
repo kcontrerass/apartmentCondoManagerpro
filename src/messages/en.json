@@ -753,6 +753,8 @@
             "URGENT": "Urgent"
         },
         "form": {
+            "selectComplex": "Complex",
+            "selectComplexPlaceholder": "Select the complex for this incident",
             "title": "Incident title",
             "titlePlaceholder": "e.g. Water leak in hallway, burned-out lights...",
             "description": "Detailed description",

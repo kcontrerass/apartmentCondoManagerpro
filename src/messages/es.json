@@ -753,6 +753,8 @@
             "URGENT": "Urgente"
         },
         "form": {
+            "selectComplex": "Complejo",
+            "selectComplexPlaceholder": "Selecciona el complejo al que corresponde el incidente",
             "title": "Título del Incidente",
             "titlePlaceholder": "Ej: Fuga de agua en el pasillo, Luces fundidas...",
             "description": "Descripción Detallada",

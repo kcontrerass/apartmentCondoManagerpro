@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { incidentSchema } from '@/lib/validations/incident';
@@ -10,19 +10,55 @@ import { Button } from '@/components/ui/Button';
 import { useTranslations } from 'next-intl';
 
 interface IncidentFormProps {
+    /** Complejo fijo (roles que no son súper admin) */
     complexId: string;
     unitId?: string;
     onSubmit: (data: any) => Promise<void>;
     isLoading?: boolean;
+    /** Súper admin: elegir complejo desde la lista */
+    allowComplexSelect?: boolean;
+    complexes?: { id: string; name: string }[];
 }
 
 const IncidentForm: React.FC<IncidentFormProps> = ({
     complexId,
     unitId,
     onSubmit,
-    isLoading
+    isLoading,
+    allowComplexSelect = false,
+    complexes = [],
 }) => {
     const t = useTranslations("Incidents");
+    const [complexOptions, setComplexOptions] = useState<{ id: string; name: string }[]>(complexes);
+    const [complexesLoading, setComplexesLoading] = useState(allowComplexSelect);
+
+    useEffect(() => {
+        if (!allowComplexSelect) return;
+        if (complexes.length > 0) {
+            setComplexOptions(complexes);
+            setComplexesLoading(false);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const res = await fetch("/api/complexes");
+                if (!res.ok) throw new Error("fetch complexes");
+                const data = await res.json();
+                if (!cancelled && Array.isArray(data)) {
+                    setComplexOptions(data.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+                }
+            } catch {
+                if (!cancelled) setComplexOptions([]);
+            } finally {
+                if (!cancelled) setComplexesLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [allowComplexSelect, complexes]);
+
     const {
         register,
         handleSubmit,
@@ -42,19 +78,44 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
         }
     });
 
-    // React to complexId changes (Crucial for Guard/Operator recovery)
+    // React to complexId changes (staff/resident con complejo fijo)
     React.useEffect(() => {
-        if (complexId) {
+        if (!allowComplexSelect && complexId) {
             reset((prev) => ({
                 ...prev,
-                complexId
+                complexId,
             }));
         }
-    }, [complexId, reset]);
+    }, [complexId, reset, allowComplexSelect]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {allowComplexSelect && (
+                    <div className="md:col-span-2 space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {t("form.selectComplex")} <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            className="w-full px-3 py-2.5 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm disabled:opacity-60"
+                            {...register("complexId")}
+                            disabled={complexesLoading}
+                        >
+                            <option value="">
+                                {complexesLoading ? "…" : t("form.selectComplexPlaceholder")}
+                            </option>
+                            {complexOptions.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.complexId && (
+                            <p className="text-xs text-red-500 font-medium">{errors.complexId.message as string}</p>
+                        )}
+                    </div>
+                )}
+
                 <div className="md:col-span-2">
                     <Input
                         label={t('form.title')}
@@ -120,9 +181,9 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
                 />
 
 
-                {/* Hidden fields */}
-                <input type="hidden" {...register('complexId')} />
-                <input type="hidden" {...register('unitId')} />
+                {/* Hidden: complejo fijo o unidad residente */}
+                {!allowComplexSelect && <input type="hidden" {...register("complexId")} />}
+                <input type="hidden" {...register("unitId")} />
             </div>
 
             <div className="flex justify-end pt-4 gap-4">

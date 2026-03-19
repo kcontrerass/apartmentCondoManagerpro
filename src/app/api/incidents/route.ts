@@ -133,6 +133,22 @@ export async function POST(request: NextRequest) {
 
         const data = validation.data;
 
+        if (session.user.role === 'SUPER_ADMIN') {
+            const complexExists = await prisma.complex.findUnique({
+                where: { id: data.complexId },
+                select: { id: true },
+            });
+            if (!complexExists) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        error: { code: 'VALIDATION_ERROR', message: 'El complejo seleccionado no existe' },
+                    },
+                    { status: 400 }
+                );
+            }
+        }
+
         // Verify complex access for residents and staff
         if (session.user.role === 'RESIDENT') {
             const resident = await prisma.resident.findUnique({
