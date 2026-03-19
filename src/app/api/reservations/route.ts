@@ -61,23 +61,25 @@ export async function GET(request: Request) {
             }
         }
 
+        // MySQL: Prisma does not support mode: "insensitive" (PostgreSQL/MongoDB only).
+        // Default utf8mb4_unicode_ci collation is case-insensitive for LIKE/contains.
         if (searchQ) {
             clauses.push({
                 OR: [
-                    { amenity: { name: { contains: searchQ, mode: "insensitive" } } },
-                    { user: { name: { contains: searchQ, mode: "insensitive" } } },
-                    { user: { email: { contains: searchQ, mode: "insensitive" } } },
-                    { notes: { contains: searchQ, mode: "insensitive" } },
+                    { amenity: { name: { contains: searchQ } } },
+                    { user: { name: { contains: searchQ } } },
+                    { user: { email: { contains: searchQ } } },
+                    { notes: { contains: searchQ } },
                     {
                         user: {
                             residentProfile: {
-                                unit: { number: { contains: searchQ, mode: "insensitive" } },
+                                unit: { number: { contains: searchQ } },
                             },
                         },
                     },
                     {
                         amenity: {
-                            complex: { name: { contains: searchQ, mode: "insensitive" } },
+                            complex: { name: { contains: searchQ } },
                         },
                     },
                 ],

@@ -6,9 +6,20 @@ export async function getReservations(params?: Record<string, string>) {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
     const res = await fetch(`${API_BASE}${query}`);
     if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.error(`Fetch failed with status ${res.status}:`, errorData);
-        throw new Error(errorData.error || 'Failed to fetch reservations');
+        const raw = await res.text();
+        let errorData: { error?: string; details?: string } = {};
+        try {
+            errorData = raw ? JSON.parse(raw) : {};
+        } catch {
+            /* non-JSON error body */
+        }
+        console.error(`Fetch failed with status ${res.status}:`, errorData, raw?.slice(0, 500));
+        const msg =
+            (typeof errorData.error === 'string' && errorData.error) ||
+            (typeof errorData.details === 'string' && errorData.details) ||
+            (raw && raw.length < 400 ? raw : null) ||
+            'Failed to fetch reservations';
+        throw new Error(msg);
     }
     return res.json();
 }

@@ -58,9 +58,9 @@ export async function GET(request: Request) {
                           ...(Object.keys(baseWhere).length > 0 ? [baseWhere] : []),
                           {
                               OR: [
-                                  { name: { contains: searchQ, mode: "insensitive" } },
-                                  { description: { contains: searchQ, mode: "insensitive" } },
-                                  { complex: { name: { contains: searchQ, mode: "insensitive" } } },
+                                  { name: { contains: searchQ } },
+                                  { description: { contains: searchQ } },
+                                  { complex: { name: { contains: searchQ } } },
                               ],
                           },
                       ],

@@ -48,13 +48,14 @@ export async function GET(request: Request) {
         if (userIdFilter) andFilters.push({ userId: userIdFilter });
         if (complexId) andFilters.push({ unit: { complexId } } as any);
         if (searchQ) {
+            // MySQL: no mode: "insensitive" (not supported); default collation is usually CI.
             andFilters.push({
                 OR: [
-                    { user: { name: { contains: searchQ, mode: "insensitive" } } },
-                    { user: { email: { contains: searchQ, mode: "insensitive" } } },
-                    { user: { phone: { contains: searchQ, mode: "insensitive" } } },
-                    { unit: { number: { contains: searchQ, mode: "insensitive" } } },
-                    { unit: { complex: { name: { contains: searchQ, mode: "insensitive" } } } },
+                    { user: { name: { contains: searchQ } } },
+                    { user: { email: { contains: searchQ } } },
+                    { user: { phone: { contains: searchQ } } },
+                    { unit: { number: { contains: searchQ } } },
+                    { unit: { complex: { name: { contains: searchQ } } } },
                 ],
             });
         }
