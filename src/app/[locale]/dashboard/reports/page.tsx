@@ -182,14 +182,13 @@ export default async function ReportsPage({
     params: Promise<{ locale: string }>;
     searchParams: Promise<{ complexId?: string }>;
 }) {
+    const { locale } = await params;
     const session = await auth();
-    if (!session?.user) redirect('/auth/login');
+    if (!session?.user) redirect(`/${locale}/login`);
 
     if (session.user.role === Role.RESIDENT || session.user.role === Role.GUARD) {
-        redirect('/dashboard');
+        redirect(`/${locale}/dashboard`);
     }
-
-    const { locale } = await params;
     const { complexId } = await searchParams;
     const tReports = await getTranslations({ locale, namespace: 'Reports' });
 
@@ -231,7 +230,7 @@ export default async function ReportsPage({
 
         const permissions = (complexWithSettings?.settings as any)?.permissions?.[session.user.role];
         if (permissions && permissions.reports === false) {
-            redirect('/dashboard');
+            redirect(`/${locale}/dashboard`);
         }
     }
 

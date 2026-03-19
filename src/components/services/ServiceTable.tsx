@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatPrice } from "@/lib/utils";
 import { Role } from "@/types/roles";
+import { useTranslations } from "next-intl";
 
 interface ServiceWithCount {
     id: string;
@@ -32,12 +33,12 @@ interface ServiceTableProps {
     isSubmitting?: string | null;
 }
 
-const frequencyMap: Record<string, string> = {
-    ONCE: "Una vez",
-    DAILY: "Diario",
-    WEEKLY: "Semanal",
-    MONTHLY: "Mensual",
-    YEARLY: "Anual",
+const FREQUENCY_KEYS: Record<string, "frequencyOnce" | "frequencyDaily" | "frequencyWeekly" | "frequencyMonthly" | "frequencyYearly"> = {
+    ONCE: "frequencyOnce",
+    DAILY: "frequencyDaily",
+    WEEKLY: "frequencyWeekly",
+    MONTHLY: "frequencyMonthly",
+    YEARLY: "frequencyYearly",
 };
 
 export function ServiceTable({
@@ -50,33 +51,46 @@ export function ServiceTable({
     onUnsubscribe,
     isSubmitting
 }: ServiceTableProps) {
+    const t = useTranslations("Services");
+    const tCommon = useTranslations("Common");
+
+    const frequencyLabel = (freq: string) => {
+        const key = FREQUENCY_KEYS[freq];
+        return key ? t(key) : freq;
+    };
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800">
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                            Nombre
+                            {t("name")}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                            Complejo
+                            {t("complex")}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                            Precio Base
+                            {t("basePrice")}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                            Frecuencia
+                            {t("frequency")}
                         </th>
                         <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                            Unidades Asignadas
+                            {t("assignedUnits")}
                         </th>
                         {userRole === Role.RESIDENT && (
                             <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
-                                Cantidad
+                                {t("quantity")}
+                            </th>
+                        )}
+                        {userRole === Role.RESIDENT && (
+                            <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">
+                                {t("startDateColumn")}
                             </th>
                         )}
                         <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">
-                            Acciones
+                            {tCommon("actions")}
                         </th>
                     </tr>
                 </thead>
@@ -93,7 +107,7 @@ export function ServiceTable({
                                             {service.name}
                                         </span>
                                         <Badge variant={service.isRequired ? "info" : "neutral"} className="text-[10px] px-1.5 py-0">
-                                            {service.isRequired ? "Obligatorio" : "Opcional"}
+                                            {service.isRequired ? t("required") : t("optional")}
                                         </Badge>
                                     </div>
                                     {service.description && (
@@ -104,14 +118,14 @@ export function ServiceTable({
                                 </div>
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {service.complex?.name || "N/A"}
+                                {service.complex?.name || "—"}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-medium">
                                 {formatPrice(service.basePrice)}
                             </td>
                             <td className="py-4 px-4">
                                 <Badge variant="neutral">
-                                    {frequencyMap[service.frequency] || service.frequency}
+                                    {frequencyLabel(service.frequency)}
                                 </Badge>
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400 text-center">
@@ -166,7 +180,7 @@ export function ServiceTable({
                                                         <Badge variant="success">
                                                             <div className="flex items-center gap-1">
                                                                 <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                                                                Contratado
+                                                                {t("subscribed")}
                                                             </div>
                                                         </Badge>
                                                         {!service.isRequired && (
@@ -175,7 +189,7 @@ export function ServiceTable({
                                                                     variant="danger"
                                                                     size="sm"
                                                                     onClick={() => onUnsubscribe?.(unitService.id)}
-                                                                    title="Dar de baja"
+                                                                    title={t("unsubscribe")}
                                                                     disabled={!!isSubmitting}
                                                                 >
                                                                     <span className="material-symbols-outlined text-[18px]">delete</span>
@@ -190,7 +204,7 @@ export function ServiceTable({
                                                     <Badge variant="info">
                                                         <div className="flex items-center gap-1">
                                                             <span className="material-symbols-outlined text-[14px]">info</span>
-                                                            Obligatorio
+                                                            {t("required")}
                                                         </div>
                                                     </Badge>
                                                 );
@@ -208,7 +222,7 @@ export function ServiceTable({
                                                         isLoading={isSubmitting === service.id}
                                                         disabled={!!isSubmitting}
                                                     >
-                                                        Contratar
+                                                        {t("book")}
                                                     </Button>
                                                 </div>
                                             );
@@ -220,7 +234,7 @@ export function ServiceTable({
                                                     variant="secondary"
                                                     size="sm"
                                                     onClick={() => onEdit?.(service)}
-                                                    title="Editar"
+                                                    title={tCommon("edit")}
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">
                                                         edit
@@ -230,7 +244,7 @@ export function ServiceTable({
                                                     variant="danger"
                                                     size="sm"
                                                     onClick={() => onDelete?.(service.id)}
-                                                    title="Eliminar"
+                                                    title={tCommon("delete")}
                                                 >
                                                     <span className="material-symbols-outlined text-[18px]">
                                                         delete
@@ -247,7 +261,7 @@ export function ServiceTable({
             </table>
             {services.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-slate-500">No se encontraron servicios.</p>
+                    <p className="text-slate-500">{t("noServicesFound")}</p>
                 </div>
             )}
         </div>

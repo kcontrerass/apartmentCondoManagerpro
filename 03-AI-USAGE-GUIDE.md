@@ -348,8 +348,8 @@ Genera ambas partes.
 Necesito enviar notificaciones cuando [evento].
 
 ## Email Service disponible
-- Provider: [Resend/SendGrid]
-- API key configurada
+- Provider: SMTP (nodemailer) — ej. SendGrid, Mailgun, tu servidor
+- Variables: SMTP_HOST, SMTP_USER, SMTP_PASSWORD, opcional EMAIL_FROM
 
 ## Necesito:
 

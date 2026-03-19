@@ -146,25 +146,23 @@ export function NotificationManager() {
         return outputArray;
     };
 
-    if (!isStandalone) return null;
-
-    if (!isSupported) {
+    if (!isSupported || !isSecure) {
         return (
             <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-800/50 mt-4 border-dashed">
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     <span className="material-symbols-outlined text-amber-500 text-sm">warning</span>
-                    Notificaciones No Soportadas
+                    Notificaciones no disponibles
                 </h3>
                 <div className="text-xs text-slate-500 space-y-2">
                     {!isSecure && (
                         <p className="text-red-500 font-medium">
-                            ⚠️ Estás accediendo por una conexión no segura (HTTP). Las notificaciones requieren HTTPS o localhost.
+                            ⚠️ Las notificaciones push requieren HTTPS o localhost.
                         </p>
                     )}
                     <p>
                         {isiOS
-                            ? 'En iOS, para activar las notificaciones debes "Añadir a la pantalla de inicio" esta aplicación (PWA) y abrirla desde el icono generado.'
-                            : 'Tu navegador no soporta notificaciones Push o estás en modo incógnito/HTTP.'}
+                            ? 'En iPhone/iPad, las push funcionan mejor si añades la app a la pantalla de inicio (PWA) y la abres desde el icono. En Safari sin instalar, el soporte es limitado.'
+                            : 'Tu navegador no soporta notificaciones push o estás en modo incógnito.'}
                     </p>
                 </div>
             </div>
@@ -175,8 +173,15 @@ export function NotificationManager() {
         <div className="p-4 border rounded-lg bg-card mt-4">
             <h3 className="text-lg font-semibold mb-2">Notificaciones Push</h3>
             <p className="text-sm text-slate-500 mb-4">
-                Activa las notificaciones para recibir avisos e incidentes importantes directamente en tu dispositivo.
+                Activa las notificaciones para recibir avisos del complejo (facturas, reservas, visitas, incidencias,
+                eventos y más) en este dispositivo. Disponible para todos los roles.
             </p>
+            {isiOS && !isStandalone && (
+                <p className="text-xs text-amber-700 dark:text-amber-400 mb-3 rounded-md bg-amber-50 dark:bg-amber-950/40 p-2">
+                    En iOS: para recibir push de forma fiable, usa <strong>Compartir → Añadir a pantalla de inicio</strong> y
+                    abre la app desde el icono.
+                </p>
+            )}
 
             {isSubscribed ? (
                 <div className="space-y-4">

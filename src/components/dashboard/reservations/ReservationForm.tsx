@@ -18,8 +18,9 @@ export default function ReservationForm({
     const t = useTranslations('Reservations');
     const [amenityId, setAmenityId] = useState(initialAmenityId || '');
     const [amenities, setAmenities] = useState<any[]>([]);
-    const [startTime, setStartTime] = useState('');
-    const [endTime, setEndTime] = useState('');
+    const [reservationDate, setReservationDate] = useState('');
+    const [startHour, setStartHour] = useState('');
+    const [endHour, setEndHour] = useState('');
     const [notes, setNotes] = useState('');
     const [paymentMethod, setPaymentMethod] = useState<'CARD' | 'CASH' | 'TRANSFER'>('CARD');
     const [currentAmenity, setCurrentAmenity] = useState<any>(null);
@@ -52,9 +53,9 @@ export default function ReservationForm({
     }, [amenityId, amenities]);
 
     useEffect(() => {
-        if (currentAmenity && startTime && endTime) {
-            const start = new Date(startTime);
-            const end = new Date(endTime);
+        if (currentAmenity && reservationDate && startHour && endHour) {
+            const start = new Date(`${reservationDate}T${startHour}`);
+            const end = new Date(`${reservationDate}T${endHour}`);
             if (end > start) {
                 const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
                 const days = Math.ceil(hours / 24);
@@ -72,7 +73,7 @@ export default function ReservationForm({
         } else {
             setTotalCost(0);
         }
-    }, [currentAmenity, startTime, endTime]);
+    }, [currentAmenity, reservationDate, startHour, endHour]);
 
     const [successType, setSuccessType] = useState<'TRANSFER' | 'CASH' | null>(null);
     const [invoiceIdForSuccess, setInvoiceIdForSuccess] = useState<string | null>(null);
@@ -88,6 +89,18 @@ export default function ReservationForm({
             if (!amenityId) {
                 throw new Error(t('form.errorAmenityRequired') || 'Debe seleccionar una amenidad');
             }
+            if (!reservationDate || !startHour || !endHour) {
+                throw new Error(t('form.errorDateTimeRequired'));
+            }
+
+            const startDateTime = new Date(`${reservationDate}T${startHour}`);
+            const endDateTime = new Date(`${reservationDate}T${endHour}`);
+            if (Number.isNaN(startDateTime.getTime()) || Number.isNaN(endDateTime.getTime())) {
+                throw new Error(t('form.errorInvalidDateTime'));
+            }
+            if (endDateTime <= startDateTime) {
+                throw new Error(t('form.errorEndAfterStart'));
+            }
 
             // --- NEW FLOW FOR CARD PAYMENTS ---
             if (paymentMethod === 'CARD' && isPaymentRequired) {
@@ -97,8 +110,8 @@ export default function ReservationForm({
                     body: JSON.stringify({
                         method: 'CARD',
                         reservationData: {
-                            startTime: new Date(startTime).toISOString(),
-                            endTime: new Date(endTime).toISOString(),
+                            startTime: startDateTime.toISOString(),
+                            endTime: endDateTime.toISOString(),
                             notes: notes || undefined,
                             amenityId,
                             totalCost
@@ -108,19 +121,20 @@ export default function ReservationForm({
 
                 const checkoutData = await checkoutRes.json();
                 if (!checkoutRes.ok) {
-                    throw new Error(checkoutData.error || 'Error al iniciar el pago');
+                    throw new Error(checkoutData?.error?.message || checkoutData?.error || t('form.errorPaymentStart'));
                 }
 
-                if (checkoutData.url) {
-                    window.location.href = checkoutData.url;
+                const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
+                if (checkoutUrl) {
+                    window.location.href = checkoutUrl;
                     return;
                 }
             }
 
             // --- LEGACY FLOW FOR CASH/TRANSFER OR NO PAYMENT ---
             const res = await createReservation({
-                startTime: new Date(startTime).toISOString(),
-                endTime: new Date(endTime).toISOString(),
+                startTime: startDateTime.toISOString(),
+                endTime: endDateTime.toISOString(),
                 notes: notes || undefined,
                 amenityId,
                 paymentMethod: isPaymentRequired ? paymentMethod : undefined,
@@ -146,8 +160,9 @@ export default function ReservationForm({
 
             // Clear form
             if (!successType) {
-                setStartTime('');
-                setEndTime('');
+                setReservationDate('');
+                setStartHour('');
+                setEndHour('');
                 setNotes('');
             }
 
@@ -252,7 +267,7 @@ export default function ReservationForm({
                             required
                             className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                         >
-                            <option value="">Seleccionar amenidad...</option>
+                            <option value="">{t('form.selectAmenity')}</option>
                             {amenities.map((a) => (
                                 <option key={a.id} value={a.id}>
                                     {a.name} ({a.complex?.name})
@@ -264,28 +279,42 @@ export default function ReservationForm({
 
                 <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {t('form.startTime')}
+                        {t('form.date')}
                     </label>
                     <input
-                        type="datetime-local"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
+                        type="date"
+                        value={reservationDate}
+                        onChange={(e) => setReservationDate(e.target.value)}
                         required
                         className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                     />
                 </div>
 
-                <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {t('form.endTime')}
-                    </label>
-                    <input
-                        type="datetime-local"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        required
-                        className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-                    />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {t('form.startTime')}
+                        </label>
+                        <input
+                            type="time"
+                            value={startHour}
+                            onChange={(e) => setStartHour(e.target.value)}
+                            required
+                            className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {t('form.endTime')}
+                        </label>
+                        <input
+                            type="time"
+                            value={endHour}
+                            onChange={(e) => setEndHour(e.target.value)}
+                            required
+                            className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                        />
+                    </div>
                 </div>
                 <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -302,22 +331,22 @@ export default function ReservationForm({
                 {isPaymentRequired && (
                     <div className="space-y-4 p-4 rounded-xl bg-primary/5 border border-primary/10">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Total a pagar:</span>
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('form.totalToPay')}</span>
                             <span className="text-lg font-bold text-primary">Q{totalCost.toFixed(2)}</span>
                         </div>
 
                         <div className="space-y-1.5">
                             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                Método de Pago
+                                {t('form.paymentMethod')}
                             </label>
                             <select
                                 value={paymentMethod}
                                 onChange={(e) => setPaymentMethod(e.target.value as any)}
                                 className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                             >
-                                <option value="CARD">Tarjeta de Crédito/Débito</option>
-                                <option value="CASH">Efectivo</option>
-                                <option value="TRANSFER">Transferencia Bancaria</option>
+                                <option value="CARD">{t('paymentMethod.CARD')}</option>
+                                <option value="CASH">{t('paymentMethod.CASH')}</option>
+                                <option value="TRANSFER">{t('paymentMethod.TRANSFER')}</option>
                             </select>
                         </div>
                     </div>

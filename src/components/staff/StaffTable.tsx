@@ -25,7 +25,7 @@ interface StaffTableProps {
 }
 
 export const StaffTable = ({ staff, onEdit, onDelete, currentUserRole }: StaffTableProps) => {
-    const t = useTranslations("common"); // Or 'Staff' if namespace exists
+    const t = useTranslations("Staff");
 
     const getRoleBadgeVariant = (role: Role) => {
         switch (role) {
@@ -42,15 +42,15 @@ export const StaffTable = ({ staff, onEdit, onDelete, currentUserRole }: StaffTa
             <table className="w-full">
                 <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-left">
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Nombre</th>
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Email</th>
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Teléfono</th>
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Rol</th>
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Estado</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("fullName")}</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("email")}</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("phone")}</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("role")}</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("status")}</th>
                         {currentUserRole === Role.SUPER_ADMIN && (
-                            <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">Complejo</th>
+                            <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white">{t("complex")}</th>
                         )}
-                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white text-right">Acciones</th>
+                        <th className="py-4 px-4 font-semibold text-slate-900 dark:text-white text-right">{t("actions")}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -85,14 +85,14 @@ export const StaffTable = ({ staff, onEdit, onDelete, currentUserRole }: StaffTa
                                     <button
                                         onClick={() => onEdit(user)}
                                         className="p-2 text-slate-500 hover:text-primary transition-colors"
-                                        title="Editar"
+                                        title={t("edit")}
                                     >
                                         <span className="material-symbols-outlined">edit</span>
                                     </button>
                                     <button
                                         onClick={() => onDelete(user)}
                                         className="p-2 text-slate-500 hover:text-red-600 transition-colors"
-                                        title="Eliminar / Desactivar"
+                                        title={t("delete")}
                                     >
                                         <span className="material-symbols-outlined">delete</span>
                                     </button>
@@ -103,7 +103,7 @@ export const StaffTable = ({ staff, onEdit, onDelete, currentUserRole }: StaffTa
                     {staff.length === 0 && (
                         <tr>
                             <td colSpan={6} className="py-8 text-center text-slate-500">
-                                No hay personal registrado.
+                                {t("noStaff")}
                             </td>
                         </tr>
                     )}

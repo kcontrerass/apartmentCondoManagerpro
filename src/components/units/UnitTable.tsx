@@ -2,9 +2,9 @@
 
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Unit, Resident, User } from "@prisma/client";
+import { Unit, Resident } from "@prisma/client";
 import { Role } from "@/types/roles";
-import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface UnitWithResidents extends Unit {
     residents: (Resident & { user: { name: string; email: string } })[];
@@ -20,18 +20,21 @@ interface UnitTableProps {
 }
 
 export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTableProps) {
+    const t = useTranslations("Units");
+    const tCommon = useTranslations("Common");
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800">
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Número</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Complejo</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Tipo</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Capacidad</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Estado</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Residente Principal</th>
-                        <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">Acciones</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("number")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("complex")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("type")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("capacity")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("status")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("mainResident")}</th>
+                        <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">{tCommon("actions")}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -46,13 +49,13 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                 </span>
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {unit.complex?.name || "N/A"}
+                                {unit.complex?.name || t("notAvailable")}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {unit.type || "N/A"}
+                                {unit.type || t("notAvailable")}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {unit.bedrooms} hab / {unit.bathrooms} baños
+                                {t("capacityFormat", { bedrooms: unit.bedrooms, bathrooms: unit.bathrooms })}
                             </td>
                             <td className="py-4 px-4">
                                 <Badge
@@ -61,12 +64,12 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                             unit.status === 'MAINTENANCE' ? 'warning' : 'neutral'
                                     }
                                 >
-                                    {unit.status === 'OCCUPIED' ? 'Ocupada' :
-                                        unit.status === 'MAINTENANCE' ? 'Mantenimiento' : 'Vacante'}
+                                    {unit.status === 'OCCUPIED' ? t('occupied') :
+                                        unit.status === 'MAINTENANCE' ? t('maintenance') : t('vacant')}
                                 </Badge>
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {unit.residents[0]?.user.name || "Sin residente"}
+                                {unit.residents[0]?.user.name || t("noResident")}
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex justify-end gap-2">
@@ -74,7 +77,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                         variant="secondary"
                                         size="sm"
                                         onClick={() => onView?.(unit.id)}
-                                        title="Ver detalle"
+                                        title={tCommon("view")}
                                     >
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
@@ -85,7 +88,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                                 variant="secondary"
                                                 size="sm"
                                                 onClick={() => onEdit?.(unit)}
-                                                title="Editar"
+                                                title={tCommon("edit")}
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">edit</span>
                                             </Button>
@@ -93,7 +96,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
                                                 variant="danger"
                                                 size="sm"
                                                 onClick={() => onDelete?.(unit.id)}
-                                                title="Eliminar"
+                                                title={tCommon("delete")}
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">delete</span>
                                             </Button>
@@ -107,7 +110,7 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
             </table>
             {units.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-slate-500">No se encontraron unidades.</p>
+                    <p className="text-slate-500">{t("noUnitsFound")}</p>
                 </div>
             )}
         </div>

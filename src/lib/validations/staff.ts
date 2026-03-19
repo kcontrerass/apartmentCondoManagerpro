@@ -17,7 +17,10 @@ export const staffUpdateSchema = z.object({
     role: z.nativeEnum(Role).optional(),
     status: z.nativeEnum(UserStatus).optional(),
     complexId: z.string().cuid("Complejo inválido").optional().nullable(),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
+    password: z.preprocess(
+        (value) => (value === "" ? undefined : value),
+        z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional()
+    ),
 });
 
 export type StaffCreateData = z.infer<typeof staffCreateSchema>;

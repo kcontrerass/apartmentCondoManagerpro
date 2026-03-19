@@ -40,27 +40,27 @@ Desarrollar una aplicación web completa para la gestión integral de condominio
 - **Connection**: Prisma Client con connection pooling
 
 ### Storage
-- **Service**: AWS S3
+- **Service**: Cloudinary
 - **Usage**: 
   - Documentos (PDF, Word, Excel)
   - Imágenes (fotos de perfil, evidencias)
   - Multimedia (videos, audio)
-- **CDN**: CloudFront (opcional)
+- **CDN**: `res.cloudinary.com`
 
 ### Deployment
 - **Frontend/API**: Vercel
 - **Database**: Instancia externa
-- **Storage**: AWS S3
+- **Storage**: Cloudinary
 - **Domain**: Por definir
 
 ### Payment Gateway
-- **Provider**: Stripe
+- **Provider**: Recurrente
 - **Methods**: Tarjetas de crédito/débito
 - **Features**: Pagos únicos, webhooks, recibos
 
 ### Email Service
-- **Provider**: Resend / SendGrid
-- **Usage**: Notificaciones, facturas, confirmaciones
+- **Provider**: SMTP (nodemailer), p. ej. SendGrid/Mailgun/Gmail relay según tu proveedor
+- **Usage**: Recuperación de contraseña por correo (cuando SMTP está configurado)
 
 ---
 
@@ -129,7 +129,7 @@ Desarrollar una aplicación web completa para la gestión integral de condominio
 
 ### Business Modules (Semana 2)
 6. ✅ Sistema de Facturación
-7. ✅ Integración de Pagos (Stripe)
+7. ✅ Integración de Pagos (Recurrente)
 8. ✅ Gestión de Amenidades
 9. ✅ Sistema de Reservas
 10. ✅ Control de Acceso y Visitantes
@@ -231,7 +231,7 @@ condo-manager/
 ## 🔐 Seguridad
 
 ### Implementaciones Requeridas
-- ✅ JWT tokens con NextAuth.js
+- ✅ NextAuth session cookies (httpOnly)
 - ✅ Hash de passwords con bcrypt (rounds: 12)
 - ✅ RBAC (Role-Based Access Control)
 - ✅ CSRF protection
@@ -241,7 +241,7 @@ condo-manager/
 - ✅ Rate limiting en APIs
 - ✅ Secure file uploads (validación de tipo y tamaño)
 - ✅ HTTPS only
-- ✅ Signed URLs para S3
+- ✅ URLs firmadas/seguras para Cloudinary cuando aplique
 - ✅ Environment variables protection
 
 ---
@@ -269,7 +269,7 @@ condo-manager/
 - Descarga de facturas en PDF
 
 ### Pagos en Línea
-- Integración con Stripe
+- Integración con Recurrente
 - Tarjetas de crédito/débito
 - Recibos digitales automáticos
 - Historial de transacciones
@@ -373,19 +373,25 @@ Merge to main → GitHub Actions → Tests → Build → Deploy to Production
 # Database
 DATABASE_URL=
 
-# AWS S3
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=
-AWS_S3_BUCKET=
+# Cloudinary
+CLOUDINARY_URL=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 
-# Stripe
-STRIPE_SECRET_KEY=
-STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
+# Recurrente
+RECURRENTE_PUBLIC_KEY=
+RECURRENTE_SECRET_KEY=
+RECURRENTE_WEBHOOK_SECRET=
 
-# Email
-RESEND_API_KEY=
+# Email (SMTP — recuperación de contraseña)
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASSWORD=
+EMAIL_FROM=
+EMAIL_APP_NAME=Condo Manager
 
 # Auth
 NEXTAUTH_SECRET=

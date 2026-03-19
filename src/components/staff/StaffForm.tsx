@@ -3,27 +3,41 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { staffCreateSchema, staffUpdateSchema } from "@/lib/validations/staff";
+import { staffCreateSchema, staffUpdateSchema, StaffCreateData, StaffUpdateData } from "@/lib/validations/staff";
 import { Button } from "@/components/ui/Button"; // Check path, usually components/ui
 import { Role } from "@/types/roles";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 
 interface StaffFormProps {
-    initialData?: any; // StaffUser
-    onSubmit: (data: any) => Promise<void>;
+    initialData?: Partial<StaffCreateData & StaffUpdateData>; // StaffUser
+    onSubmit: (data: StaffCreateData | StaffUpdateData) => Promise<void>;
+    onCancel?: () => void;
     isLoading?: boolean;
     isEditing?: boolean;
     complexes: { id: string; name: string }[];
     currentUserRole: Role;
 }
 
-export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complexes, currentUserRole }: StaffFormProps) => {
+export const StaffForm = ({ initialData, onSubmit, onCancel, isLoading, isEditing, complexes, currentUserRole }: StaffFormProps) => {
+    const t = useTranslations("Staff");
     // Determine which schema to use based on isEditing
     // Actually, create schema has required password, update has optional
     // Let's use a dynamic schema or logic
 
     // For simplicity, we can pass correct schema to resolver
-    const schema = isEditing ? staffUpdateSchema : staffCreateSchema;
+    const editingSchema = staffUpdateSchema.extend({
+        confirmPassword: z.string().optional(),
+    }).refine((data) => {
+        if (!data.password) return true;
+        return data.password === data.confirmPassword;
+    }, {
+        message: "Las contraseñas no coinciden",
+        path: ["confirmPassword"],
+    });
+
+    const schema = isEditing ? editingSchema : staffCreateSchema;
+    const [changePassword, setChangePassword] = useState(false);
 
     const {
         register,
@@ -42,17 +56,40 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
         },
     });
 
+    const handleFormSubmit = async (data: StaffUpdateData & { confirmPassword?: string }) => {
+        const payload = { ...data };
+
+        if (!isEditing) {
+            await onSubmit(payload as StaffCreateData);
+            return;
+        }
+
+        if (!changePassword) {
+            delete payload.password;
+            delete payload.confirmPassword;
+            await onSubmit(payload as StaffUpdateData);
+            return;
+        }
+
+        if (!payload.password) {
+            return;
+        }
+
+        delete payload.confirmPassword;
+        await onSubmit(payload as StaffUpdateData);
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="space-y-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Nombre Completo
+                        {t("fullName")}
                     </label>
                     <input
                         {...register("name")}
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        placeholder="Ej. Juan Pérez"
+                        placeholder={t("fullNamePlaceholder")}
                     />
                     {errors.name && (
                         <p className="text-sm text-red-500 mt-1">{errors.name.message as string}</p>
@@ -62,13 +99,13 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                 {!isEditing && (
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Correo Electrónico
+                            {t("email")}
                         </label>
                         <input
                             {...register("email")}
                             type="email"
                             className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="juan@ejemplo.com"
+                            placeholder={t("emailPlaceholder")}
                         />
                         {errors.email && (
                             <p className="text-sm text-red-500 mt-1">{errors.email.message as string}</p>
@@ -78,13 +115,13 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Teléfono
+                        {t("phone")}
                     </label>
                     <input
                         {...register("phone")}
                         type="tel"
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
-                        placeholder="+502 1234 5678"
+                        placeholder={t("phonePlaceholder")}
                     />
                     {errors.phone && (
                         <p className="text-sm text-red-500 mt-1">{errors.phone.message as string}</p>
@@ -93,18 +130,18 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Rol
+                        {t("role")}
                     </label>
                     <select
                         {...register("role")}
                         className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                        <option value={Role.GUARD}>Guardia de Seguridad</option>
-                        <option value={Role.BOARD_OF_DIRECTORS}>Junta Directiva</option>
+                        <option value={Role.GUARD}>{t("roleGuard")}</option>
+                        <option value={Role.BOARD_OF_DIRECTORS}>{t("roleBoard")}</option>
                         {currentUserRole === Role.SUPER_ADMIN && (
                             <>
-                                <option value={Role.ADMIN}>Administrador</option>
-                                <option value={Role.SUPER_ADMIN}>Súper Administrador</option>
+                                <option value={Role.ADMIN}>{t("roleAdmin")}</option>
+                                <option value={Role.SUPER_ADMIN}>{t("roleSuperAdmin")}</option>
                             </>
                         )}
                     </select>
@@ -116,13 +153,13 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                 {currentUserRole === Role.SUPER_ADMIN && (
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            {watch("role") === Role.ADMIN || watch("role") === Role.SUPER_ADMIN ? "Complejo (Opcional)" : "Complejo (Requerido para Staff)"}
+                            {watch("role") === Role.ADMIN || watch("role") === Role.SUPER_ADMIN ? t("complexOptional") : t("complexRequired")}
                         </label>
                         <select
                             {...register("complexId")}
                             className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
                         >
-                            <option value="">Seleccionar Complejo</option>
+                            <option value="">{t("selectComplex")}</option>
                             {complexes?.map((complex) => (
                                 <option key={complex.id} value={complex.id}>
                                     {complex.name}
@@ -138,27 +175,80 @@ export const StaffForm = ({ initialData, onSubmit, isLoading, isEditing, complex
                 {!isEditing && (
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            Contraseña
+                            {t("password")}
                         </label>
                         <input
                             {...register("password")}
                             type="password"
                             className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="******"
+                            placeholder={t("passwordPlaceholder")}
                         />
                         {errors.password && (
                             <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>
                         )}
                     </div>
                 )}
+
+                {isEditing && (
+                    <div className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Contraseña del empleado</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{t("passwordSectionHelp")}</p>
+                            </div>
+                            <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <input
+                                    type="checkbox"
+                                    checked={changePassword}
+                                    onChange={(e) => setChangePassword(e.target.checked)}
+                                    className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+                                />
+                                {t("changePassword")}
+                            </label>
+                        </div>
+
+                        {changePassword && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {t("newPassword")}
+                                    </label>
+                                    <input
+                                        {...register("password")}
+                                        type="password"
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder={t("newPasswordPlaceholder")}
+                                    />
+                                    {errors.password && (
+                                        <p className="text-sm text-red-500 mt-1">{errors.password.message as string}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                                        {t("confirmPassword")}
+                                    </label>
+                                    <input
+                                        {...register("confirmPassword")}
+                                        type="password"
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        placeholder={t("confirmPasswordPlaceholder")}
+                                    />
+                                    {errors.confirmPassword && (
+                                        <p className="text-sm text-red-500 mt-1">{errors.confirmPassword.message as string}</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                <Button type="button" variant="secondary" onClick={() => { /* Handle cancel via parent? Or just type submit */ }}>
-                    Cancelar
+                <Button type="button" variant="secondary" onClick={onCancel}>
+                    {t("cancel")}
                 </Button>
                 <Button type="submit" isLoading={isLoading}>
-                    {isEditing ? "Guardar Cambios" : "Crear Usuario"}
+                    {isEditing ? t("saveChanges") : t("createUser")}
                 </Button>
             </div>
         </form>

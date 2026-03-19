@@ -250,6 +250,24 @@ export async function PATCH(
             }
         }
 
+        // If reservation is approved, mark linked invoice as paid automatically.
+        if (reservation.status === ReservationStatus.APPROVED && reservation.invoiceId) {
+            const invoice = await (prisma as any).invoice.findUnique({
+                where: { id: reservation.invoiceId }
+            });
+
+            if (invoice && (invoice.status === 'PENDING' || invoice.status === 'PROCESSING' || invoice.status === 'OVERDUE')) {
+                await (prisma as any).invoice.update({
+                    where: { id: invoice.id },
+                    data: {
+                        status: 'PAID',
+                        updatedAt: new Date()
+                    }
+                });
+                console.log(`Associated invoice ${invoice.id} marked as PAID due to reservation ${id} approval.`);
+            }
+        }
+
         return NextResponse.json(reservation);
     } catch (error: any) {
         if (error.name === "ZodError") {

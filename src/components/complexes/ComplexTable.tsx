@@ -4,6 +4,7 @@ import { Complex, ComplexType } from "@prisma/client";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface ComplexWithCount extends Complex {
     _count?: {
@@ -19,7 +20,9 @@ interface ComplexTableProps {
 }
 
 export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProps) {
+    const t = useTranslations("Complexes");
     const isSuperAdmin = userRole === "SUPER_ADMIN";
+
     const getTypeBadgeVariant = (type: ComplexType) => {
         switch (type) {
             case ComplexType.BUILDING:
@@ -40,19 +43,19 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
             <table className="w-full text-left text-sm border-collapse">
                 <thead className="bg-slate-50 dark:bg-background-dark/50 text-slate-500 dark:text-slate-400 font-medium uppercase text-xs uppercase tracking-wider">
                     <tr>
-                        <th className="px-6 py-4">Nombre</th>
-                        <th className="px-6 py-4">Tipo</th>
-                        <th className="px-6 py-4">Dirección</th>
-                        <th className="px-6 py-4 text-center">Unidades</th>
-                        <th className="px-6 py-4 text-center">Amenidades</th>
-                        <th className="px-6 py-4 text-right">Acciones</th>
+                        <th className="px-6 py-4">{t("name")}</th>
+                        <th className="px-6 py-4">{t("type")}</th>
+                        <th className="px-6 py-4">{t("address")}</th>
+                        <th className="px-6 py-4 text-center">{t("units")}</th>
+                        <th className="px-6 py-4 text-center">{t("amenities")}</th>
+                        <th className="px-6 py-4 text-right">{t("actions")}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {complexes.length === 0 ? (
                         <tr>
                             <td colSpan={6} className="px-6 py-10 text-center text-slate-500">
-                                No se encontraron complejos.
+                                {t("noComplexesFound")}
                             </td>
                         </tr>
                     ) : (
@@ -72,7 +75,7 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                                 </td>
                                 <td className="px-6 py-4">
                                     <Badge variant={getTypeBadgeVariant(complex.type)}>
-                                        {complex.type}
+                                        {t(`types.${complex.type}` as never)}
                                     </Badge>
                                 </td>
                                 <td className="px-6 py-4 text-slate-500 dark:text-slate-400 max-w-xs truncate">
@@ -86,12 +89,12 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                                 </td>
                                 <td className="px-6 py-4 text-right space-x-2">
                                     <Link href={`/dashboard/complexes/${complex.id}`}>
-                                        <Button variant="secondary" size="sm">Ver</Button>
+                                        <Button variant="secondary" size="sm">{t("view")}</Button>
                                     </Link>
                                     {isSuperAdmin && (
                                         <>
                                             <Link href={`/dashboard/complexes/${complex.id}/edit`}>
-                                                <Button variant="secondary" size="sm">Editar</Button>
+                                                <Button variant="secondary" size="sm">{t("edit")}</Button>
                                             </Link>
                                             {onDelete && (
                                                 <Button
@@ -99,7 +102,7 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                                                     size="sm"
                                                     onClick={() => onDelete(complex.id)}
                                                 >
-                                                    Eliminar
+                                                    {t("delete")}
                                                 </Button>
                                             )}
                                         </>

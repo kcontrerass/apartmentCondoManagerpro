@@ -25,6 +25,7 @@ export function VisitorForm({ unitId, complexId, onSuccess }: VisitorFormProps) 
         register,
         handleSubmit,
         reset,
+        watch,
         formState: { errors },
     } = useForm<VisitorLogInput>({
         resolver: zodResolver(visitorLogSchema),
@@ -32,9 +33,13 @@ export function VisitorForm({ unitId, complexId, onSuccess }: VisitorFormProps) 
             unitId,
             complexId,
             status: "SCHEDULED",
+            arrivesInVehicle: false,
             scheduledDate: new Date().toISOString().split("T")[0],
         },
     });
+    const arrivesInVehicle = watch("arrivesInVehicle");
+    const normalizePlateForInput = (value: string): string =>
+        value.toUpperCase().replace(/\s+/g, "").replace(/[^A-Z0-9-]/g, "");
 
     const onSubmit = async (data: VisitorLogInput) => {
         setIsLoading(true);
@@ -44,8 +49,11 @@ export function VisitorForm({ unitId, complexId, onSuccess }: VisitorFormProps) 
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
             });
+            const payload = await response.json().catch(() => null);
 
-            if (!response.ok) throw new Error("Failed to save");
+            if (!response.ok) {
+                throw new Error(payload?.error?.message || t("errorSaving"));
+            }
 
             toast.success(t("successSave"));
             reset();
@@ -66,13 +74,13 @@ export function VisitorForm({ unitId, complexId, onSuccess }: VisitorFormProps) 
                     label={t("visitorName")}
                     {...register("visitorName")}
                     error={errors.visitorName?.message}
-                    placeholder="Ej. Juan Pérez"
+                    placeholder={t("visitorNamePlaceholder")}
                 />
                 <Input
                     label={t("visitorId")}
                     {...register("visitorId")}
                     error={errors.visitorId?.message}
-                    placeholder="DPI / Pasaporte"
+                    placeholder={t("visitorIdPlaceholder")}
                 />
             </div>
 
@@ -87,8 +95,32 @@ export function VisitorForm({ unitId, complexId, onSuccess }: VisitorFormProps) 
                 label={t("reason")}
                 {...register("reason")}
                 error={errors.reason?.message}
-                placeholder="Ej. Visita familiar, Entrega de paquete"
+                placeholder={t("reasonPlaceholder")}
             />
+
+            <div className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-700 p-4">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                    <input
+                        type="checkbox"
+                        {...register("arrivesInVehicle")}
+                        className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/30"
+                    />
+                    {t("arrivesInVehicle")}
+                </label>
+
+                {arrivesInVehicle && (
+                    <Input
+                        label={t("vehiclePlate")}
+                        {...register("vehiclePlate")}
+                        onInput={(event) => {
+                            const target = event.target as HTMLInputElement;
+                            target.value = normalizePlateForInput(target.value);
+                        }}
+                        error={errors.vehiclePlate?.message}
+                        placeholder={t("vehiclePlatePlaceholder")}
+                    />
+                )}
+            </div>
 
             <div className="flex justify-end gap-3 pt-4">
                 <Button type="submit" isLoading={isLoading} icon="save">

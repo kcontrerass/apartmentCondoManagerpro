@@ -6,6 +6,7 @@ import { residentSchema, ResidentInput } from "@/lib/validations/resident";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Resident } from "@prisma/client";
+import { useTranslations } from "next-intl";
 
 interface ResidentFormProps {
     initialData?: Partial<Resident>;
@@ -16,6 +17,7 @@ interface ResidentFormProps {
 }
 
 export function ResidentForm({ initialData, onSubmit, isLoading, users, units }: ResidentFormProps) {
+    const t = useTranslations("Residents");
     const emergency = (initialData?.emergencyContact as any) || {};
 
     const {
@@ -46,18 +48,18 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8">
             <div className="space-y-6">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                    Asignación
+                    {t("form.assignment")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Usuario
+                            {t("form.user")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("userId")}
                         >
-                            <option value="">Seleccione un usuario</option>
+                            <option value="">{t("form.selectUser")}</option>
                             {users?.map((u) => (
                                 <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
                             ))}
@@ -68,15 +70,15 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Unidad
+                            {t("form.unit")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("unitId")}
                         >
-                            <option value="">Seleccione una unidad</option>
+                            <option value="">{t("form.selectUnit")}</option>
                             {units?.map((u) => (
-                                <option key={u.id} value={u.id}>Unidad {u.number} ({u.complex.name})</option>
+                                <option key={u.id} value={u.id}>{t("form.unitOption", { number: u.number, complex: u.complex.name })}</option>
                             ))}
                         </select>
                         {errors.unitId && (
@@ -85,21 +87,21 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Tipo de Residente
+                            {t("form.residentType")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("type")}
                         >
-                            <option value="TENANT">Inquilino</option>
-                            <option value="OWNER">Propietario</option>
+                            <option value="TENANT">{t("form.typeTenant")}</option>
+                            <option value="OWNER">{t("form.typeOwner")}</option>
                         </select>
                         {errors.type && (
                             <p className="text-xs text-red-500 mt-1">{errors.type.message as string}</p>
                         )}
                     </div>
                     <Input
-                        label="Fecha de Inicio"
+                        label={t("form.startDate")}
                         type="date"
                         {...register("startDate")}
                         error={errors.startDate?.message as string}
@@ -109,24 +111,24 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
 
             <div className="space-y-6">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
-                    Contacto de Emergencia
+                    {t("form.emergencySection")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                        label="Nombre"
-                        placeholder="Nombre del contacto"
+                        label={t("form.name")}
+                        placeholder={t("form.contactNamePlaceholder")}
                         {...register("emergencyContact.name")}
                         error={(errors.emergencyContact as any)?.name?.message}
                     />
                     <Input
-                        label="Teléfono"
-                        placeholder="Teléfono del contacto"
+                        label={t("form.phone")}
+                        placeholder={t("form.contactPhonePlaceholder")}
                         {...register("emergencyContact.phone")}
                         error={(errors.emergencyContact as any)?.phone?.message}
                     />
                     <Input
-                        label="Parentesco"
-                        placeholder="Ej: Padre, Esposa, etc."
+                        label={t("form.relation")}
+                        placeholder={t("form.relationPlaceholder")}
                         {...register("emergencyContact.relation")}
                         error={(errors.emergencyContact as any)?.relation?.message}
                     />
@@ -135,7 +137,7 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
 
             <div className="flex justify-end pt-4">
                 <Button type="submit" isLoading={isLoading} className="w-full md:w-auto">
-                    {initialData?.id ? "Actualizar Residente" : "Asignar Residente"}
+                    {initialData?.id ? t("form.updateResident") : t("form.assignResident")}
                 </Button>
             </div>
         </form>

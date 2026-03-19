@@ -10,6 +10,7 @@ import { ComplexType } from "@prisma/client";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Alert } from "@/components/ui/Alert";
+import { useTranslations } from "next-intl";
 
 interface ComplexFormProps {
     initialData?: Partial<ComplexCreateInput>;
@@ -18,6 +19,8 @@ interface ComplexFormProps {
 }
 
 export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
+    const t = useTranslations("Complexes");
+    const tCommon = useTranslations("Common");
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,7 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error || "Error al guardar el complejo");
+                throw new Error(errorData.error || t("form.errorSave"));
             }
 
             router.push("/dashboard/complexes");
@@ -87,63 +90,64 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-            {error && <Alert variant="error" title="Error">{error}</Alert>}
+            {error && <Alert variant="error" title={tCommon("error")}>{error}</Alert>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Nombre del Complejo
+                        {t("form.complexName")}
                     </label>
                     <Input
                         {...register("name")}
                         error={errors.name?.message}
-                        placeholder="Ej: Torres del Sol"
+                        placeholder={t("form.namePlaceholder")}
                     />
                 </div>
 
                 <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Dirección
+                        {t("form.address")}
                     </label>
                     <Input
                         {...register("address")}
                         error={errors.address?.message}
-                        placeholder="Dirección completa"
+                        placeholder={t("form.addressPlaceholder")}
                     />
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Cuenta Bancaria (Opcional)
+                        {t("form.bankAccount")}
                     </label>
                     <Input
                         {...register("bankAccount")}
                         error={errors.bankAccount?.message}
-                        placeholder="Ej: BANRURAL 3000..."
+                        placeholder={t("form.bankPlaceholder")}
                     />
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Teléfono (Opcional)
+                        {t("form.phone")}
                     </label>
                     <Input
                         {...register("phone")}
                         error={errors.phone?.message}
-                        placeholder="Ej: +502 1234 5678"
+                        placeholder={t("form.phonePlaceholder")}
                     />
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Tipo de Complejo
+                        {t("form.complexType")}
                     </label>
                     <Select
                         {...register("type")}
                         options={[
-                            { label: "Edificio", value: ComplexType.BUILDING },
-                            { label: "Condominio", value: ComplexType.CONDO },
-                            { label: "Centro Comercial", value: ComplexType.SHOPPING_CENTER },
+                            { label: t("types.BUILDING" as never), value: ComplexType.BUILDING },
+                            { label: t("types.RESIDENTIAL" as never), value: ComplexType.RESIDENTIAL },
+                            { label: t("types.CONDO" as never), value: ComplexType.CONDO },
+                            { label: t("types.SHOPPING_CENTER" as never), value: ComplexType.SHOPPING_CENTER },
                         ]}
                         error={errors.type?.message}
                     />
@@ -151,12 +155,12 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        Administrador
+                        {t("form.administrator")}
                     </label>
                     <Select
                         {...register("adminId")}
                         options={[
-                            { label: "Seleccionar administrador", value: "" },
+                            { label: t("form.selectAdmin"), value: "" },
                             ...admins.map((admin) => ({
                                 label: admin.name,
                                 value: admin.id,
@@ -165,18 +169,18 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
                         error={errors.adminId?.message}
                     />
                     <p className="text-xs text-slate-500 mt-1">
-                        Solo se muestran administradores disponibles.
+                        {t("form.adminHelp")}
                     </p>
                 </div>
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        URL del Logo (Opcional)
+                        {t("form.logoUrl")}
                     </label>
                     <Input
                         {...register("logoUrl")}
                         error={errors.logoUrl?.message}
-                        placeholder="https://ejemplo.com/logo.png"
+                        placeholder={t("form.logoPlaceholder")}
                     />
                 </div>
             </div>
@@ -188,10 +192,10 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
                     onClick={() => router.back()}
                     disabled={loading}
                 >
-                    Cancelar
+                    {t("form.cancel")}
                 </Button>
                 <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? "Guardando..." : isEditing ? "Actualizar Complejo" : "Crear Complejo"}
+                    {loading ? t("form.saving") : isEditing ? t("form.updateComplex") : t("form.createComplex")}
                 </Button>
             </div>
         </form>

@@ -6,6 +6,7 @@ import { serviceSchema, ServiceSchema } from "@/lib/validations/service";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { useTranslations } from "next-intl";
 
 interface ServiceFormProps {
     initialData?: any;
@@ -47,13 +48,13 @@ export function ServiceForm({
                 {showComplexSelector && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Complejo
+                            {t("complex")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("complexId")}
                         >
-                            <option value="">Seleccione un complejo</option>
+                            <option value="">{t("form.selectComplex")}</option>
                             {complexes?.map((c) => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}
@@ -69,19 +70,19 @@ export function ServiceForm({
                 )}
 
                 <Input
-                    label="Nombre del Servicio"
-                    placeholder="Ej: Mantenimiento, Agua, Seguridad"
+                    label={t("form.serviceName")}
+                    placeholder={t("form.serviceNamePlaceholder")}
                     {...register("name")}
                     error={(errors.name as any)?.message}
                 />
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Descripción
+                        {t("form.description")}
                     </label>
                     <textarea
                         className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm min-h-[100px]"
-                        placeholder="Descripción del servicio..."
+                        placeholder={t("form.descriptionPlaceholder")}
                         {...register("description")}
                     />
                     {errors.description && (
@@ -93,7 +94,7 @@ export function ServiceForm({
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
-                        label="Precio Base"
+                        label={t("form.basePrice")}
                         type="number"
                         step="0.01"
                         placeholder="0.00"
@@ -103,17 +104,17 @@ export function ServiceForm({
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Frecuencia
+                            {t("form.frequency")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("frequency")}
                         >
-                            <option value="ONCE">Una vez</option>
-                            <option value="DAILY">Diario</option>
-                            <option value="WEEKLY">Semanal</option>
-                            <option value="MONTHLY">Mensual</option>
-                            <option value="YEARLY">Anual</option>
+                            <option value="ONCE">{t("frequencyOnce")}</option>
+                            <option value="DAILY">{t("frequencyDaily")}</option>
+                            <option value="WEEKLY">{t("frequencyWeekly")}</option>
+                            <option value="MONTHLY">{t("frequencyMonthly")}</option>
+                            <option value="YEARLY">{t("frequencyYearly")}</option>
                         </select>
                         {errors.frequency && (
                             <p className="text-xs text-red-500 mt-1">
@@ -124,16 +125,16 @@ export function ServiceForm({
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            Tipo de Servicio
+                            {t("form.serviceKind")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("isRequired", { setValueAs: (v) => v === "true" })}
                         >
-                            <option value="false">Opcional (Disponible para selección)</option>
-                            <option value="true">Obligatorio (Asignado a todos automáticamente)</option>
+                            <option value="false">{t("form.optionalChoice")}</option>
+                            <option value="true">{t("form.requiredAuto")}</option>
                         </select>
-                        <p className="text-[10px] text-slate-500">Los servicios obligatorios se asignan automáticamente a todas las unidades del complejo.</p>
+                        <p className="text-[10px] text-slate-500">{t("form.requiredHelp")}</p>
                         {errors.isRequired && (
                             <p className="text-xs text-red-500 mt-1">
                                 {(errors.isRequired as any).message}
@@ -143,16 +144,16 @@ export function ServiceForm({
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            ¿Requiere Cantidad?
+                            {t("form.requiresQuantity")}
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                             {...register("hasQuantity", { setValueAs: (v) => v === "true" })}
                         >
-                            <option value="false">No (Precio fijo por unidad)</option>
-                            <option value="true">Sí (Permite especificar cantidad, ej: 2 parqueos)</option>
+                            <option value="false">{t("form.quantityNo")}</option>
+                            <option value="true">{t("form.quantityYes")}</option>
                         </select>
-                        <p className="text-[10px] text-slate-500">Use esto para servicios como parqueos o bodegas donde una unidad puede tener varios.</p>
+                        <p className="text-[10px] text-slate-500">{t("form.quantityHelp")}</p>
                         {errors.hasQuantity && (
                             <p className="text-xs text-red-500 mt-1">
                                 {(errors.hasQuantity as any).message}
@@ -168,7 +169,7 @@ export function ServiceForm({
                     isLoading={isLoading}
                     className="w-full md:w-auto"
                 >
-                    {initialData ? "Actualizar Servicio" : "Crear Servicio"}
+                    {initialData ? t("form.updateService") : t("form.createService")}
                 </Button>
             </div>
         </form>

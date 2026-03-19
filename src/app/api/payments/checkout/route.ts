@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { recurrente } from "@/lib/recurrente";
 import { Role } from "@/types/roles";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export async function POST(request: Request) {
     try {
         const session = await auth();
         if (!session || !session.user) {
-            return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+            return apiError({ code: "UNAUTHORIZED", message: "No autorizado" }, 401);
         }
 
         const { invoiceId, method, reservationData } = await request.json();
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
             });
 
             if (!amenity) {
-                return NextResponse.json({ error: "Amenidad no encontrada" }, { status: 404 });
+                return apiError({ code: "NOT_FOUND", message: "Amenidad no encontrada" }, 404);
             }
 
             // RBAC Check for Residents
@@ -33,7 +33,10 @@ export async function POST(request: Request) {
                     include: { unit: true }
                 });
                 if (!resident || !resident.unit || resident.unit.complexId !== amenity.complexId) {
-                    return NextResponse.json({ error: "No puedes reservar amenidades fuera de tu complejo" }, { status: 403 });
+                    return apiError(
+                        { code: "FORBIDDEN", message: "No puedes reservar amenidades fuera de tu complejo" },
+                        403
+                    );
                 }
             }
 
@@ -63,7 +66,10 @@ export async function POST(request: Request) {
                     };
 
                     if (!isWithinHours(startAdjusted) || !isWithinHours(endAdjusted) || !isWithinDays(startAdjusted) || !isWithinDays(endAdjusted)) {
-                        return NextResponse.json({ error: "La amenidad no está disponible en este horario." }, { status: 400 });
+                        return apiError(
+                            { code: "INVALID_TIME_WINDOW", message: "La amenidad no está disponible en este horario." },
+                            400
+                        );
                     }
                 }
             }
@@ -82,7 +88,10 @@ export async function POST(request: Request) {
             });
 
             if (conflict) {
-                return NextResponse.json({ error: "La amenidad ya está reservada en este horario." }, { status: 409 });
+                return apiError(
+                    { code: "RESERVATION_CONFLICT", message: "La amenidad ya está reservada en este horario." },
+                    409
+                );
             }
 
             // Calculate Cost again in Backend
@@ -120,12 +129,16 @@ export async function POST(request: Request) {
                 }
             });
 
-            return NextResponse.json({ url: checkoutSession.checkout_url || checkoutSession.url });
+            const url = checkoutSession.checkout_url || checkoutSession.url;
+            return apiOk({ url });
         }
 
         // 2. Handle Existing Invoice Payment
         if (!invoiceId) {
-            return NextResponse.json({ error: "ID de factura o datos de reserva requeridos" }, { status: 400 });
+            return apiError(
+                { code: "MISSING_FIELDS", message: "ID de factura o datos de reserva requeridos" },
+                400
+            );
         }
 
         const invoice = await (prisma as any).invoice.findUnique({
@@ -134,11 +147,14 @@ export async function POST(request: Request) {
         });
 
         if (!invoice) {
-            return NextResponse.json({ error: "Factura no encontrada" }, { status: 404 });
+            return apiError({ code: "NOT_FOUND", message: "Factura no encontrada" }, 404);
         }
 
         if (invoice.status !== "PENDING" && invoice.status !== "PROCESSING" && invoice.status !== "OVERDUE") {
-            return NextResponse.json({ error: "Esta factura ya no está pendiente de pago" }, { status: 400 });
+            return apiError(
+                { code: "INVALID_INVOICE_STATUS", message: "Esta factura ya no está pendiente de pago" },
+                400
+            );
         }
 
         // RBAC: Only the resident of the unit or an admin can pay
@@ -147,10 +163,13 @@ export async function POST(request: Request) {
                 where: { userId: session.user.id }
             });
             if (!resident || resident.unitId !== invoice.unitId) {
-                return NextResponse.json({ error: "No tienes permiso para pagar esta factura" }, { status: 403 });
+                return apiError(
+                    { code: "FORBIDDEN", message: "No tienes permiso para pagar esta factura" },
+                    403
+                );
             }
         } else if (session.user.role !== Role.ADMIN && session.user.role !== Role.SUPER_ADMIN) {
-            return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+            return apiError({ code: "FORBIDDEN", message: "No autorizado" }, 403);
         }
 
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -165,7 +184,7 @@ export async function POST(request: Request) {
                     amount_in_cents: Math.round(Number(invoice.totalAmount) * 100),
                     quantity: 1,
                 }],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={checkout_session_id}&invoice_id=${invoice.id}`,
+                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={checkout_session_id}`,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 return_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
@@ -182,7 +201,8 @@ export async function POST(request: Request) {
                 data: { paymentMethod: 'CARD' }
             });
 
-            return NextResponse.json({ url: checkoutSession.checkout_url || checkoutSession.url });
+            const url = checkoutSession.checkout_url || checkoutSession.url;
+            return apiOk({ url });
         } else {
             // CASH or TRANSFER
             await (prisma as any).invoice.update({
@@ -193,14 +213,11 @@ export async function POST(request: Request) {
                 }
             });
 
-            return NextResponse.json({ success: true });
+            return apiOk({ status: "PROCESSING" });
         }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Error creating Recurrente checkout session:", error);
-        return NextResponse.json(
-            { error: "Error al procesar el pago" },
-            { status: 500 }
-        );
+        return apiError({ code: "INTERNAL_ERROR", message: "Error al procesar el pago" }, 500);
     }
 }

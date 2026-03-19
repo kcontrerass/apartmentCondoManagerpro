@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { residentSchema } from "@/lib/validations/resident";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
+import { sendUserNotification } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -177,6 +178,12 @@ export async function POST(request: Request) {
             return newResident;
         }, {
             timeout: 15000 // 15 seconds should be enough for a single unit
+        });
+
+        await sendUserNotification(validatedData.userId, {
+            title: "Asignación de residente",
+            body: `Te asignaron a la unidad ${unitExists.number} en ${unitExists.complex.name}.`,
+            url: "/dashboard",
         });
 
         return NextResponse.json(resident, { status: 201 });

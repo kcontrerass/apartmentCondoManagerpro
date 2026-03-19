@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
+import { sendUserNotification } from '@/lib/notifications';
 
 /**
  * POST /api/polls/[id]/vote
@@ -62,6 +63,18 @@ export async function POST(
              VALUES (?, ?, ?, ?, NOW())`,
             voteId, pollId, optionId, userId
         );
+
+        const pollMeta = await prisma.poll.findUnique({
+            where: { id: pollId },
+            select: { authorId: true, title: true },
+        });
+        if (pollMeta && pollMeta.authorId !== userId) {
+            await sendUserNotification(pollMeta.authorId, {
+                title: 'Nuevo voto en encuesta',
+                body: `Alguien votó en: ${pollMeta.title}`,
+                url: '/dashboard/polls',
+            });
+        }
 
         return NextResponse.json({ success: true, data: { id: voteId } });
     } catch (error: any) {

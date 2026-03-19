@@ -1,9 +1,9 @@
 "use client";
 
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Resident, User, Unit, Complex } from "@prisma/client";
+import { Resident, Unit } from "@prisma/client";
 import { Role } from "@/types/roles";
+import { useTranslations } from "next-intl";
 
 interface ResidentWithExtras extends Resident {
     user: {
@@ -27,21 +27,24 @@ interface ResidentTableProps {
 }
 
 export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }: ResidentTableProps) {
+    const t = useTranslations("Residents");
+    const tCommon = useTranslations("Common");
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800">
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Nombre</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Unidad</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Desde</th>
-                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">Contacto Emergencia</th>
-                        <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">Acciones</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("name")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("unit")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("since")}</th>
+                        <th className="py-4 px-4 text-sm font-semibold text-slate-900 dark:text-white">{t("emergencyContact")}</th>
+                        <th className="py-4 px-4 text-right text-sm font-semibold text-slate-900 dark:text-white">{tCommon("actions")}</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                     {residents.map((resident) => {
-                        const emergency = resident.emergencyContact as any;
+                        const emergency = resident.emergencyContact as { name?: string; phone?: string } | null;
                         return (
                             <tr key={resident.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                                 <td className="py-4 px-4">
@@ -53,7 +56,7 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                                 <td className="py-4 px-4">
                                     <div className="flex flex-col">
                                         <span className="text-sm font-medium text-slate-900 dark:text-white">
-                                            Unidad {resident.unit.number}
+                                            {t("unitLabel", { number: resident.unit.number })}
                                         </span>
                                         <span className="text-xs text-slate-500">{resident.unit.complex.name}</span>
                                     </div>
@@ -67,20 +70,20 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
                                             <span>{emergency.name}</span>
                                             <span className="text-xs">{emergency.phone}</span>
                                         </div>
-                                    ) : "N/A"}
+                                    ) : "—"}
                                 </td>
                                 <td className="py-4 px-4 text-right">
                                     <div className="flex justify-end gap-2">
-                                        <Button variant="secondary" size="sm" onClick={() => onView?.(resident.id)}>
+                                        <Button variant="secondary" size="sm" onClick={() => onView?.(resident.id)} title={tCommon("view")}>
                                             <span className="material-symbols-outlined text-[18px]">visibility</span>
                                         </Button>
 
                                         {(userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
                                             <>
-                                                <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)}>
+                                                <Button variant="secondary" size="sm" onClick={() => onEdit?.(resident)} title={tCommon("edit")}>
                                                     <span className="material-symbols-outlined text-[18px]">edit</span>
                                                 </Button>
-                                                <Button variant="danger" size="sm" onClick={() => onDelete?.(resident.id)}>
+                                                <Button variant="danger" size="sm" onClick={() => onDelete?.(resident.id)} title={tCommon("delete")}>
                                                     <span className="material-symbols-outlined text-[18px]">delete</span>
                                                 </Button>
                                             </>
@@ -94,7 +97,7 @@ export function ResidentTable({ residents, userRole, onEdit, onDelete, onView }:
             </table>
             {residents.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-slate-500">No se encontraron residentes.</p>
+                    <p className="text-slate-500">{t("noResidentsFound")}</p>
                 </div>
             )}
         </div>

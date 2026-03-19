@@ -3,11 +3,12 @@
 import { useActionState, Suspense } from 'react';
 import { resetPasswordAction } from '@/lib/actions/auth-actions';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 function ResetPasswordForm() {
+    const tForgot = useTranslations('ForgotPassword');
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
     const [state, formAction, isPending] = useActionState(resetPasswordAction, undefined);
@@ -22,7 +23,7 @@ function ResetPasswordForm() {
                     Invalid request. Missing reset token.
                 </div>
                 <Link href="/forgot-password" className="text-primary hover:underline">
-                    Request a new password reset link
+                    {tForgot('linkFromResetPage')}
                 </Link>
             </div>
         );

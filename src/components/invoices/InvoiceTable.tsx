@@ -3,8 +3,8 @@
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { useTranslations } from "next-intl";
+import { enUS, es } from "date-fns/locale";
+import { useLocale, useTranslations } from "next-intl";
 import { Role } from "@/types/roles";
 import { formatPrice } from "@/lib/utils";
 
@@ -19,6 +19,8 @@ interface InvoiceTableProps {
 
 export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, userRole, isLoading }: InvoiceTableProps) {
     const t = useTranslations('Invoices');
+    const locale = useLocale();
+    const dateLocale = locale === 'es' ? es : enUS;
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -130,7 +132,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                 })()}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
+                                {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: dateLocale })}
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex justify-end gap-2">

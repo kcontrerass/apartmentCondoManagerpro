@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
+import { sendComplexNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
     try {
@@ -126,6 +127,16 @@ export async function POST(req: Request) {
                 authorId: session.user.id,
             }
         });
+
+        await sendComplexNotification(
+            finalComplexId,
+            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN", "SUPER_ADMIN"],
+            {
+                title: "Nuevo documento",
+                body: document.title,
+                url: "/dashboard/documents",
+            }
+        );
 
         return NextResponse.json(document);
     } catch (error) {

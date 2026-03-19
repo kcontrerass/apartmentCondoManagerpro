@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { Role } from "@/types/roles";
 import { staffCreateSchema } from "@/lib/validations/staff";
 import bcrypt from "bcrypt";
+import { sendUserNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
     try {
@@ -176,6 +177,12 @@ export async function POST(request: Request) {
 
         // Remove password from response
         const { password: _, ...userWithoutPassword } = newUser;
+
+        await sendUserNotification(newUser.id, {
+            title: "Cuenta creada",
+            body: `Se creó tu usuario en el portal (${newUser.role}). Inicia sesión con el correo indicado por administración.`,
+            url: "/login",
+        });
 
         return NextResponse.json(userWithoutPassword, { status: 201 });
 

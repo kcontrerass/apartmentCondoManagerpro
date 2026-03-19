@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
+import { Role } from '@/types/roles';
+import { resolveUserScope } from '@/lib/user-scope';
 
 /**
  * GET /api/complexes/[id]/announcements
@@ -31,8 +33,6 @@ export async function GET(
         const limit = parseInt(searchParams.get('limit') || '50');
         const search = searchParams.get('search');
 
-        console.log(`[API] Fetching announcements for complex: ${complexId}, status: ${status}, user: ${session.user.id}`);
-
         // Verify complex exists
         const complex = await prisma.complex.findUnique({
             where: { id: complexId },
@@ -43,6 +43,16 @@ export async function GET(
                 { success: false, error: { code: 'NOT_FOUND', message: 'Complejo no encontrado' } },
                 { status: 404 }
             );
+        }
+
+        if (session.user.role !== Role.SUPER_ADMIN) {
+            const scope = await resolveUserScope(session.user.id);
+            if (!scope?.complexId || scope.complexId !== complexId) {
+                return NextResponse.json(
+                    { success: false, error: { code: 'FORBIDDEN', message: 'No tienes acceso a este complejo' } },
+                    { status: 403 }
+                );
+            }
         }
 
         // Build where clause
@@ -93,8 +103,6 @@ export async function GET(
             },
             take: limit,
         });
-
-        console.log(`[API] Found ${announcements.length} announcements for complex: ${complexId}`);
 
         return NextResponse.json({
             success: true,

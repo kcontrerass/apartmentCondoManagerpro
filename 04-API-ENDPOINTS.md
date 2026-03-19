@@ -11,11 +11,10 @@ Production: https://condomanager.vercel.app/api
 
 ## 🔐 Authentication
 
-Todos los endpoints (excepto `/auth/*`) requieren un JWT token en el header:
+La autenticación se maneja con **NextAuth session cookies** (httpOnly, secure en producción).
+No se usa bearer token/JWT manual en headers para rutas internas.
 
-```http
-Authorization: Bearer <token>
-```
+Para endpoints que llaman servicios externos internos (ej. cron), se usa `Authorization: Bearer <secret>` solo cuando corresponde.
 
 ---
 
@@ -47,8 +46,7 @@ Registrar un nuevo usuario
       "email": "user@example.com",
       "name": "Juan Pérez",
       "role": "RESIDENT"
-    },
-    "token": "jwt_token"
+    }
   }
 }
 ```
@@ -77,8 +75,7 @@ Iniciar sesión
       "name": "Juan Pérez",
       "role": "RESIDENT",
       "complex_id": "uuid"
-    },
-    "token": "jwt_token"
+    }
   }
 }
 ```
@@ -90,7 +87,7 @@ Obtener usuario actual
 
 **Headers:**
 ```http
-Authorization: Bearer <token>
+Cookie: next-auth.session-token=<session-cookie>
 ```
 
 **Response 200:**
@@ -620,15 +617,16 @@ Content-Disposition: attachment; filename="INV-2024-001.pdf"
 
 ### 7. Payments (Pagos)
 
-#### POST /api/payments/create-intent
-Crear intención de pago (Stripe)
+#### POST /api/payments/checkout
+Crear sesión de checkout (Recurrente)
 
 **Permissions:** RESIDENT (solo sus facturas), ADMIN
 
 **Body:**
 ```json
 {
-  "invoice_id": "uuid"
+  "invoiceId": "uuid",
+  "method": "CARD"
 }
 ```
 
@@ -637,9 +635,7 @@ Crear intención de pago (Stripe)
 {
   "success": true,
   "data": {
-    "client_secret": "pi_xxx_secret_xxx",
-    "amount": 225.00,
-    "currency": "gtq"
+    "url": "https://app.recurrente.com/checkout/..."
   }
 }
 ```
@@ -647,19 +643,24 @@ Crear intención de pago (Stripe)
 ---
 
 #### POST /api/payments/webhook
-Webhook de Stripe (Internal)
+Webhook de Recurrente (Internal)
 
 **Headers:**
 ```http
-Stripe-Signature: xxx
+X-Signature: <signature>
+X-Timestamp: <unix_timestamp> (opcional según proveedor)
 ```
 
-**Body:** [Stripe Event Object]
+**Body:** [Recurrente Event Object]
 
 **Response 200:**
 ```json
 {
-  "received": true
+  "success": true,
+  "data": {
+    "received": true,
+    "processed": true
+  }
 }
 ```
 
@@ -692,9 +693,9 @@ Listar pagos
         "amount": 225.00,
         "method": "CREDIT_CARD",
         "status": "COMPLETED",
-        "stripe_payment_id": "pi_xxx",
+        "provider_payment_id": "recurrente_checkout_or_payment_id",
         "confirmation_code": "ABC123",
-        "receipt_url": "https://stripe.com/receipts/...",
+        "receipt_url": "https://app.recurrente.com/...",
         "payment_date": "2024-01-10T14:30:00Z"
       }
     ]
@@ -1211,7 +1212,7 @@ Listar documentos
         "title": "Reglamento Interno 2024",
         "category": "REGLAMENTO",
         "description": "Reglamento actualizado",
-        "file_url": "https://s3.../reglamento.pdf",
+        "file_url": "https://res.cloudinary.com/<cloud>/raw/upload/v.../reglamento.pdf",
         "file_name": "reglamento-2024.pdf",
         "file_size": 1048576,
         "file_type": "PDF",
@@ -1247,7 +1248,7 @@ visible_to_residents: true
   "data": {
     "id": "uuid",
     "title": "Reglamento Interno 2024",
-    "file_url": "https://s3.../reglamento.pdf",
+    "file_url": "https://res.cloudinary.com/<cloud>/raw/upload/v.../reglamento.pdf",
     "created_at": "2024-01-01T00:00:00Z"
   },
   "message": "Documento subido exitosamente"
@@ -1369,7 +1370,7 @@ Content-Type: application/pdf
 | GET /api/residents | ✅ | ✅ | ✅ | ❌ | Own |
 | POST /api/invoices/generate | ✅ | ✅ | ❌ | ❌ | ❌ |
 | GET /api/invoices | ✅ | ✅ | ✅ | ❌ | Own |
-| POST /api/payments/create-intent | ✅ | ✅ | ❌ | ❌ | Own |
+| POST /api/payments/checkout | ✅ | ✅ | ❌ | ❌ | Own |
 | POST /api/reservations | ✅ | ✅ | ✅ | ❌ | ✅ |
 | POST /api/visitors/pre-register | ✅ | ✅ | ❌ | ❌ | ✅ |
 | POST /api/visitors/:id/check-in | ✅ | ✅ | ❌ | ✅ | ❌ |

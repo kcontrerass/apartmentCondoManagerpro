@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { authenticate } from '@/lib/actions/auth-actions';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/routing';
 
 export default function LoginPage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -103,12 +103,12 @@ export default function LoginPage() {
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
                 <p className="text-center text-sm text-slate-600 dark:text-slate-400">
                     ¿Nuevo en ADESSO-365?{' '}
-                    <a
+                    <Link
                         href="/register"
                         className="font-bold text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80 transition-colors"
                     >
                         Regístrate aquí
-                    </a>
+                    </Link>
                 </p>
             </div>
             <div

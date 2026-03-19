@@ -23,6 +23,7 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
     const [visitors, setVisitors] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     const userRole = user?.role as Role;
     const userId = user?.id;
@@ -68,10 +69,17 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
         setIsLoading(true);
         try {
             const response = await fetch("/api/visitors");
-            const data = await response.ok ? await response.json() : [];
-            setVisitors(data);
+            const payload = await response.json();
+            if (response.ok) {
+                const data = payload?.data ?? payload;
+                setVisitors(Array.isArray(data) ? data : []);
+            } else {
+                setVisitors([]);
+                toast.error(payload?.error?.message || t("errorLoadingVisitors"));
+            }
         } catch (error) {
             console.error(error);
+            toast.error(t("errorLoadingVisitors"));
         } finally {
             setIsLoading(false);
         }
@@ -84,24 +92,61 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: newStatus }),
             });
+            const payload = await response.json().catch(() => null);
             if (response.ok) {
-                toast.success("Estado actualizado");
+                toast.success(t("statusUpdated"));
                 fetchVisitors();
+            } else {
+                toast.error(payload?.error?.message || t("errorUpdatingStatus"));
             }
         } catch (error) {
-            toast.error("Error al actualizar");
+            toast.error(t("errorUpdatingStatus"));
+        }
+    };
+
+    const handleDeleteVisitor = async (id: string) => {
+        try {
+            const response = await fetch(`/api/visitors/${id}`, {
+                method: "DELETE",
+            });
+            const payload = await response.json().catch(() => null);
+            if (response.ok) {
+                toast.success(t("recordDeleted"));
+                fetchVisitors();
+            } else {
+                toast.error(payload?.error?.message || t("errorDeleting"));
+            }
+        } catch {
+            toast.error(t("errorDeleting"));
         }
     };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case "SCHEDULED": return <Badge variant="info">Programada</Badge>;
-            case "ARRIVED": return <Badge variant="success">En Complejo</Badge>;
-            case "DEPARTED": return <Badge variant="neutral">Salida</Badge>;
-            case "CANCELLED": return <Badge variant="error">Cancelada</Badge>;
+            case "SCHEDULED": return <Badge variant="info">{t("scheduled")}</Badge>;
+            case "ARRIVED": return <Badge variant="success">{t("arrived")}</Badge>;
+            case "DEPARTED": return <Badge variant="neutral">{t("departed")}</Badge>;
+            case "CANCELLED": return <Badge variant="error">{t("cancelled")}</Badge>;
             default: return <Badge>{status}</Badge>;
         }
     };
+
+    const filteredVisitors = visitors.filter((v: any) => {
+        if (!searchTerm.trim()) return true;
+        const query = searchTerm.toLowerCase();
+        const haystack = [
+            v.visitorName,
+            v.visitorId,
+            v.vehiclePlate,
+            v.unit?.number,
+            v.status,
+        ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+        return haystack.includes(query);
+    });
 
     return (
         <div className="space-y-6">
@@ -118,9 +163,24 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
             />
 
             <div className="grid gap-4">
+                <Card className="p-4">
+                    <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            search
+                        </span>
+                        <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
+                        />
+                    </div>
+                </Card>
+
                 {isLoading ? (
-                    <Card className="p-8 text-center text-slate-500">Cargando...</Card>
-                ) : visitors.length === 0 ? (
+                    <Card className="p-8 text-center text-slate-500">{t("loading")}</Card>
+                ) : filteredVisitors.length === 0 ? (
                     <Card className="p-8 text-center text-slate-500">{t("noVisitors")}</Card>
                 ) : (
                     <div className="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto">
@@ -135,14 +195,17 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {visitors.map((v: any) => (
+                                {filteredVisitors.map((v: any) => (
                                     <tr key={v.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                         <td className="p-4">
                                             <div className="font-medium">{v.visitorName}</div>
-                                            <div className="text-xs text-slate-500">{v.visitorId}</div>
+                                            <div className="text-xs text-slate-500">
+                                                {v.visitorId || t("noDocument")}
+                                                {v.vehiclePlate ? ` • ${t("plateLabel")}: ${v.vehiclePlate}` : ""}
+                                            </div>
                                         </td>
                                         <td className="p-4">
-                                            <div className="text-sm">Unit {v.unit.number}</div>
+                                            <div className="text-sm">{t("unitPrefix")} {v.unit.number}</div>
                                         </td>
                                         <td className="p-4">
                                             <div className="text-sm">{format(new Date(v.scheduledDate), "dd MMM, yyyy")}</div>
@@ -162,6 +225,17 @@ export function AccessControlClient({ user, initialComplexes, residentUnit }: Ac
                                             {isResident && v.status === "SCHEDULED" && (
                                                 <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleStatusUpdate(v.id, "CANCELLED")} icon="cancel">
                                                     {t("cancel")}
+                                                </Button>
+                                            )}
+                                            {isGuard && v.status === "DEPARTED" && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="text-red-500"
+                                                    onClick={() => handleDeleteVisitor(v.id)}
+                                                    icon="delete"
+                                                >
+                                                    {t("deleteRecord")}
                                                 </Button>
                                             )}
                                         </td>

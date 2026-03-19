@@ -21,11 +21,18 @@ const EventForm: React.FC<EventFormProps> = ({
 }) => {
     const t = useTranslations('events');
 
-    const formatForInput = (dateStr?: string | Date) => {
+    const formatDateForInput = (dateStr?: string | Date) => {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return '';
-        return d.toISOString().slice(0, 16);
+        return d.toISOString().slice(0, 10);
+    };
+
+    const formatTimeForInput = (dateStr?: string | Date) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '';
+        return d.toISOString().slice(11, 16);
     };
 
     const {
@@ -37,9 +44,9 @@ const EventForm: React.FC<EventFormProps> = ({
         defaultValues: {
             ...initialData,
             complexId,
-            eventDate: initialData?.eventDate ? formatForInput(initialData.eventDate) : '',
-            startTime: initialData?.startTime ? formatForInput(initialData.startTime) : '',
-            endTime: initialData?.endTime ? formatForInput(initialData.endTime) : '',
+            eventDate: initialData?.eventDate ? formatDateForInput(initialData.eventDate) : '',
+            startTime: initialData?.startTime ? formatTimeForInput(initialData.startTime) : '',
+            endTime: initialData?.endTime ? formatTimeForInput(initialData.endTime) : '',
         },
     });
 
@@ -49,8 +56,19 @@ const EventForm: React.FC<EventFormProps> = ({
         }
     }, [errors]);
 
+    const handleFormSubmit = async (data: EventCreateInput) => {
+        const startDateTime = `${data.eventDate}T${data.startTime}`;
+        const endDateTime = `${data.eventDate}T${data.endTime}`;
+        await onSubmit({
+            ...data,
+            eventDate: data.eventDate,
+            startTime: startDateTime,
+            endTime: endDateTime,
+        });
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-8">
             <input type="hidden" {...register('complexId')} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -63,7 +81,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         {...register('title')}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.title ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none font-medium shadow-sm`}
-                        placeholder="Ej: Fiesta de Fin de Año"
+                        placeholder={t('titlePlaceholder')}
                     />
                     {errors.title && (
                         <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">{errors.title.message}</p>
@@ -73,14 +91,14 @@ const EventForm: React.FC<EventFormProps> = ({
                 {/* Description */}
                 <div className="col-span-1 md:col-span-2">
                     <label className="block text-sm font-bold text-slate-700 mb-2">
-                        Descripción *
+                        {t('description')} *
                     </label>
                     <textarea
                         {...register('description')}
                         rows={4}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.description ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none resize-none font-medium shadow-sm`}
-                        placeholder="Detalles sobre el evento..."
+                        placeholder={t('descriptionPlaceholder')}
                     />
                     {errors.description && (
                         <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">{errors.description.message}</p>
@@ -95,7 +113,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     <input
                         {...register('location')}
                         className="w-full px-5 py-3.5 rounded-2xl border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 focus:outline-none transition-all outline-none font-medium shadow-sm"
-                        placeholder="Ej: Salón Social"
+                        placeholder={t('locationPlaceholder')}
                     />
                 </div>
 
@@ -106,7 +124,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         {t('eventDate')} *
                     </label>
                     <input
-                        type="datetime-local"
+                        type="date"
                         {...register('eventDate')}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.eventDate ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none font-medium shadow-sm`}
@@ -122,7 +140,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         {t('startTime')} *
                     </label>
                     <input
-                        type="datetime-local"
+                        type="time"
                         {...register('startTime')}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.startTime ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none font-medium shadow-sm`}
@@ -137,7 +155,7 @@ const EventForm: React.FC<EventFormProps> = ({
                         {t('endTime')} *
                     </label>
                     <input
-                        type="datetime-local"
+                        type="time"
                         {...register('endTime')}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.endTime ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none font-medium shadow-sm`}
@@ -150,14 +168,14 @@ const EventForm: React.FC<EventFormProps> = ({
                 {/* Max Attendees */}
                 <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">
-                        Capacidad Máxima
+                        {t('maxAttendees')}
                     </label>
                     <input
                         type="number"
                         {...register('maxAttendees', { valueAsNumber: true })}
                         className={`w-full px-5 py-3.5 rounded-2xl border ${errors.maxAttendees ? 'border-red-500 ring-4 ring-red-100' : 'border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10'
                             } focus:outline-none transition-all outline-none font-medium shadow-sm`}
-                        placeholder="Sin límite"
+                        placeholder={t('maxAttendeesPlaceholder')}
                     />
                     {errors.maxAttendees && (
                         <p className="mt-1.5 text-xs text-red-500 font-bold ml-1">{errors.maxAttendees.message}</p>
@@ -171,7 +189,7 @@ const EventForm: React.FC<EventFormProps> = ({
                     disabled={isLoading}
                     className="px-10 py-4 bg-primary text-white font-extrabold rounded-2xl shadow-xl shadow-primary-light/50 hover:bg-primary-dark hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-widest text-sm"
                 >
-                    {isLoading ? 'Guardando...' : (initialData?.title ? 'Actualizar Evento' : 'Crear Evento')}
+                    {isLoading ? t('saving') : (initialData?.title ? t('update') : t('create'))}
                 </button>
             </div>
         </form>

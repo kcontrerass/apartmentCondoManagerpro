@@ -171,14 +171,15 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
 
             const data = await response.json();
             if (response.ok) {
-                if (data.url) {
-                    window.location.href = data.url;
+                const checkoutUrl = data?.data?.url || data?.url;
+                if (checkoutUrl) {
+                    window.location.href = checkoutUrl;
                 } else {
                     setShowInstructions(true);
                     fetchInvoices();
                 }
             } else {
-                toast.error(data.error || "Error al iniciar el pago");
+                toast.error(data?.error?.message || data?.error || "Error al iniciar el pago");
             }
         } catch (error) {
             console.error("Error initiating payment:", error);

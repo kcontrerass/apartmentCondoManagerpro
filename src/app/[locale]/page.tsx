@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 
-export default async function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
   const session = await auth();
 
   if (!session) {
-    redirect("/login");
+    redirect(`/${locale}/login`);
   }
 
-  redirect("/dashboard");
+  redirect(`/${locale}/dashboard`);
 }

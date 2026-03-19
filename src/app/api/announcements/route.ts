@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { announcementCreateSchema } from '@/lib/validations/announcement';
 import { sendComplexNotification } from '@/lib/notifications';
+import { resolveUserScope } from '@/lib/user-scope';
 
 /**
  * GET /api/announcements
@@ -152,11 +153,14 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user belongs to this complex (except SUPER_ADMIN)
-        if (userRole !== 'SUPER_ADMIN' && (session.user as any).complexId !== data.complexId) {
-            return NextResponse.json(
-                { success: false, error: { code: 'FORBIDDEN', message: 'No tienes acceso a este complejo' } },
-                { status: 403 }
-            );
+        if (userRole !== 'SUPER_ADMIN') {
+            const scope = await resolveUserScope(session.user.id!);
+            if (!scope?.complexId || scope.complexId !== data.complexId) {
+                return NextResponse.json(
+                    { success: false, error: { code: 'FORBIDDEN', message: 'No tienes acceso a este complejo' } },
+                    { status: 403 }
+                );
+            }
         }
 
         // Create announcement
@@ -193,7 +197,7 @@ export async function POST(request: NextRequest) {
             targetRoles = ['RESIDENT', 'GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'];
         }
 
-        const notificationComplexId = data.complexId || (session.user as any).complexId;
+        const notificationComplexId = data.complexId;
 
         if (notificationComplexId) {
             await sendComplexNotification(notificationComplexId, targetRoles, {

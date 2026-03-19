@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { serviceSchema } from "@/lib/validations/service";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
+import { sendComplexNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
     try {
@@ -216,6 +217,16 @@ export async function POST(request: Request) {
         }, {
             timeout: 30000 // 30 seconds for bulk mandatory assignment
         });
+
+        await sendComplexNotification(
+            validatedData.complexId,
+            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN", "SUPER_ADMIN"],
+            {
+                title: "Nuevo servicio en el complejo",
+                body: service.name,
+                url: "/dashboard/services",
+            }
+        );
 
         return NextResponse.json(service, { status: 201 });
     } catch (error: any) {

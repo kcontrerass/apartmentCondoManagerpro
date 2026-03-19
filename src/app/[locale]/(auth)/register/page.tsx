@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { register } from '@/lib/actions/auth-actions';
+import { Link } from '@/i18n/routing';
 
 export default function RegisterPage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -86,9 +87,9 @@ export default function RegisterPage() {
             <div>
                 <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
                     Already have an account?{' '}
-                    <a href="/login" className="font-medium text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80">
+                    <Link href="/login" className="font-medium text-primary hover:text-primary-dark dark:text-primary dark:hover:text-primary/80">
                         Sign in
-                    </a>
+                    </Link>
                 </p>
             </div>
 

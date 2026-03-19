@@ -7,6 +7,7 @@ import { Role } from "@/types/roles";
 import { UploadDocumentModal } from "./UploadDocumentModal";
 import { toast } from "react-hot-toast";
 import { Modal } from "@/components/ui/Modal";
+import { useTranslations } from "next-intl";
 
 interface Document {
     id: string;
@@ -25,19 +26,21 @@ interface DocumentListProps {
     complexId: string;
 }
 
-function getViewFileNotation(fileType: string | null): string {
-    if (!fileType) return "ARCHIVO";
+function getViewFileNotation(fileType: string | null, fileUnknown: string): string {
+    if (!fileType) return fileUnknown;
 
     const normalized = fileType.split(";")[0].trim().toLowerCase();
     if (normalized.includes("pdf")) return "PDF";
 
     const subtype = normalized.split("/")[1];
-    if (!subtype) return "ARCHIVO";
+    if (!subtype) return fileUnknown;
 
     return subtype.toUpperCase();
 }
 
 export function DocumentList({ userRole, complexId }: DocumentListProps) {
+    const t = useTranslations("Documents");
+    const tCommon = useTranslations("Common");
     const [documents, setDocuments] = useState<Document[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,19 +72,19 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
         try {
             const response = await fetch(`/api/documents/${documentToDelete}`, { method: "DELETE" });
             if (response.ok) {
-                toast.success("Documento eliminado");
+                toast.success(t("toastDeleted"));
                 setDocumentToDelete(null);
                 fetchDocuments();
             } else {
-                toast.error("Error al eliminar");
+                toast.error(t("toastDeleteError"));
             }
         } catch {
-            toast.error("Error al eliminar");
+            toast.error(t("toastDeleteError"));
         }
     };
 
     const formatFileSize = (bytes: number | null) => {
-        if (!bytes) return "N/A";
+        if (!bytes) return t("notAvailable");
         const units = ["B", "KB", "MB", "GB"];
         let size = bytes;
         let unitIndex = 0;
@@ -104,7 +107,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                 <div className="flex justify-end">
                     <Button onClick={() => setIsModalOpen(true)}>
                         <span className="material-symbols-outlined mr-2">upload</span>
-                        Agregar Documento
+                        {t("addDocument")}
                     </Button>
                 </div>
             )}
@@ -112,7 +115,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
             {documents.length === 0 ? (
                 <Card className="p-12 text-center text-slate-500">
                     <span className="material-symbols-outlined text-4xl mb-4 text-slate-300">description</span>
-                    <p>No hay documentos disponibles en este complejo.</p>
+                    <p>{t("empty")}</p>
                 </Card>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -130,6 +133,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                             type="button"
                                             onClick={() => setDocumentToDelete(doc.id)}
                                             className="text-slate-400 hover:text-red-500 transition-colors"
+                                            title={tCommon("delete")}
                                         >
                                             <span className="material-symbols-outlined text-[20px]">delete</span>
                                         </button>
@@ -139,7 +143,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                     {doc.title}
                                 </h3>
                                 <p className="text-sm text-slate-500 mb-4 line-clamp-2">
-                                    {doc.description || "Sin descripción"}
+                                    {doc.description || t("noDescription")}
                                 </p>
                             </div>
 
@@ -155,14 +159,16 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                         rel="noopener noreferrer"
                                         className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"
                                     >
-                                        Ver ({getViewFileNotation(doc.fileType)}){" "}
+                                        {t("viewWithType", {
+                                            type: getViewFileNotation(doc.fileType, t("fileUnknown")),
+                                        })}{" "}
                                         <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                                     </a>
                                     <a
                                         href={`/api/documents/${doc.id}/download`}
                                         className="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary font-semibold text-sm flex items-center gap-1"
                                     >
-                                        Descargar <span className="material-symbols-outlined text-[16px]">download</span>
+                                        {t("download")} <span className="material-symbols-outlined text-[16px]">download</span>
                                     </a>
                                 </div>
                             </div>
@@ -182,24 +188,24 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
             <Modal
                 isOpen={documentToDelete !== null}
                 onClose={() => setDocumentToDelete(null)}
-                title="Eliminar Documento"
+                title={t("deleteModalTitle")}
             >
                 <div className="pt-4 space-y-4">
                     <p className="text-slate-600 dark:text-slate-300">
-                        ¿Estás seguro de que deseas eliminar este documento? Esta acción no se puede deshacer.
+                        {t("deleteModalMessage")}
                     </p>
                     <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                         <Button
                             variant="outline"
                             onClick={() => setDocumentToDelete(null)}
                         >
-                            Cancelar
+                            {tCommon("cancel")}
                         </Button>
                         <Button
                             variant="danger"
                             onClick={handleDelete}
                         >
-                            Eliminar Documento
+                            {t("deleteDocument")}
                         </Button>
                     </div>
                 </div>

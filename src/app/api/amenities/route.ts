@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { createAmenitySchema } from "@/lib/validations/amenity";
 import { Role } from "@/types/roles";
+import { sendComplexNotification } from "@/lib/notifications";
 
 export async function GET(request: Request) {
     try {
@@ -111,6 +112,16 @@ export async function POST(request: Request) {
                 complexId: validatedData.complexId
             }
         });
+
+        await sendComplexNotification(
+            validatedData.complexId,
+            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN", "SUPER_ADMIN"],
+            {
+                title: "Nueva amenidad",
+                body: amenity.name,
+                url: "/dashboard/amenities",
+            }
+        );
 
         return NextResponse.json(amenity, { status: 201 });
     } catch (error: any) {

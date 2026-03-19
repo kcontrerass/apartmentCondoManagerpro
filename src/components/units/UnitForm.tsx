@@ -1,4 +1,7 @@
+"use client";
+
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { unitSchema, UnitInput } from "@/lib/validations/unit";
@@ -15,7 +18,17 @@ interface UnitFormProps {
     complexId?: string | null;
 }
 
+const FREQ_KEYS: Record<string, "frequencyOnce" | "frequencyDaily" | "frequencyWeekly" | "frequencyMonthly" | "frequencyYearly"> = {
+    ONCE: "frequencyOnce",
+    DAILY: "frequencyDaily",
+    WEEKLY: "frequencyWeekly",
+    MONTHLY: "frequencyMonthly",
+    YEARLY: "frequencyYearly",
+};
+
 export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComplexSelector, complexId }: UnitFormProps) {
+    const t = useTranslations("Units");
+    const tf = useTranslations("Services");
     const [availableServices, setAvailableServices] = useState<any[]>([]);
     const [isLoadingServices, setIsLoadingServices] = useState(false);
 
@@ -111,13 +124,13 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
             {showComplexSelector && (
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Complejo
+                        {t("form.complex")}
                     </label>
                     <select
                         className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("complexId")}
                     >
-                        <option value="">Seleccione un complejo</option>
+                        <option value="">{t("form.selectComplex")}</option>
                         {complexes?.map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
@@ -129,23 +142,23 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                    label="Número de Unidad"
-                    placeholder="Ej: A-101"
+                    label={t("form.unitNumber")}
+                    placeholder={t("form.unitNumberPlaceholder")}
                     {...register("number")}
                     error={errors.number?.message as string}
                 />
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Tipo
+                        {t("form.type")}
                     </label>
                     <select
                         className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("type")}
                     >
-                        <option value="Apartamento">Apartamento</option>
-                        <option value="Casa">Casa</option>
-                        <option value="Otro">Otro</option>
+                        <option value="Apartamento">{t("form.typeApartment")}</option>
+                        <option value="Casa">{t("form.typeHouse")}</option>
+                        <option value="Otro">{t("form.typeOther")}</option>
                     </select>
                     {errors.type?.message && (
                         <p className="text-xs text-red-500 mt-1">{errors.type?.message as string}</p>
@@ -153,14 +166,14 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                 </div>
 
                 <Input
-                    label="Habitaciones"
+                    label={t("form.bedrooms")}
                     type="number"
                     {...register("bedrooms", { valueAsNumber: true })}
                     error={errors.bedrooms?.message as string}
                 />
 
                 <Input
-                    label="Baños"
+                    label={t("form.bathrooms")}
                     type="number"
                     step="0.5"
                     {...register("bathrooms", { valueAsNumber: true })}
@@ -168,7 +181,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                 />
 
                 <Input
-                    label="Parqueos Propios"
+                    label={t("form.parkingSpots")}
                     type="number"
                     min="0"
                     placeholder="0"
@@ -177,7 +190,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                 />
 
                 <Input
-                    label="Área (m²)"
+                    label={t("form.area")}
                     type="number"
                     {...register("area", { valueAsNumber: true })}
                     error={errors.area?.message as string}
@@ -185,15 +198,15 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
 
                 <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Estado
+                        {t("form.status")}
                     </label>
                     <select
                         className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("status")}
                     >
-                        <option value="VACANT">Vacante</option>
-                        <option value="OCCUPIED">Ocupada</option>
-                        <option value="MAINTENANCE">Mantenimiento</option>
+                        <option value="VACANT">{t("vacant")}</option>
+                        <option value="OCCUPIED">{t("occupied")}</option>
+                        <option value="MAINTENANCE">{t("maintenance")}</option>
                     </select>
                 </div>
             </div>
@@ -202,7 +215,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
             {availableServices.length > 0 && (
                 <div className="space-y-3 pt-2">
                     <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Servicios Opcionales
+                        {t("form.optionalServices")}
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {availableServices.map((service) => (
@@ -218,13 +231,13 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                                 />
                                 <div>
                                     <p className="text-sm font-medium text-slate-900 dark:text-white">{service.name}</p>
-                                    <p className="text-xs text-slate-500">${Number(service.basePrice).toFixed(2)} / {service.frequency}</p>
+                                    <p className="text-xs text-slate-500">${Number(service.basePrice).toFixed(2)} / {FREQ_KEYS[service.frequency] ? tf(FREQ_KEYS[service.frequency]) : service.frequency}</p>
                                 </div>
                                 {service.hasQuantity && (
                                     <input
                                         type="number"
                                         min={1}
-                                        placeholder="Cantidad"
+                                        placeholder={t("form.quantityShort")}
                                         className="ml-2 w-16 px-2 py-1 border rounded"
                                         value={serviceQuantities[service.id] || 1}
                                         onClick={(e) => e.stopPropagation()}
@@ -238,12 +251,12 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
             )}
 
             {isLoadingServices && (
-                <p className="text-xs text-slate-500 animate-pulse">Cargando servicios disponibles...</p>
+                <p className="text-xs text-slate-500 animate-pulse">{t("form.loadingServices")}</p>
             )}
 
             <div className="flex justify-end pt-4">
                 <Button type="submit" isLoading={isLoading} className="w-full md:w-auto">
-                    {initialData ? "Actualizar Unidad" : "Crear Unidad"}
+                    {initialData ? t("form.updateUnit") : t("form.createUnit")}
                 </Button>
             </div>
         </form>

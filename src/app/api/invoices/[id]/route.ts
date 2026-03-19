@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { updateInvoiceSchema } from "@/lib/validations/invoice";
 import { Role } from "@/types/roles";
+import { notifyInvoicePaidToUnitResidents } from "@/lib/notifications";
 
 export async function GET(
     request: Request,
@@ -117,7 +118,7 @@ export async function PATCH(
         });
 
         // If marked as PAID, find linked reservation and approve it
-        if (validatedData.status === "PAID") {
+        if (validatedData.status === "PAID" && invoice.status !== "PAID") {
             const linkedReservation = await (prisma as any).reservation.findUnique({
                 where: { invoiceId: id }
             });
@@ -129,6 +130,8 @@ export async function PATCH(
                 });
                 console.log(`Reservation ${linkedReservation.id} approved via invoice update`);
             }
+
+            await notifyInvoicePaidToUnitResidents(id);
         }
 
         return NextResponse.json(updatedInvoice);

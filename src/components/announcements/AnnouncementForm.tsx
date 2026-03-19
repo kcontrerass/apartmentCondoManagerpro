@@ -5,7 +5,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslations } from 'next-intl';
 import { announcementCreateSchema, AnnouncementCreateInput } from '@/lib/validations/announcement';
-import { AnnouncementPriority } from '@/types/announcement';
 import { toast } from 'sonner';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
@@ -24,11 +23,11 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
 }) => {
     const t = useTranslations('announcements');
 
-    const formatForInput = (dateStr?: string | Date) => {
+    const formatDateForInput = (dateStr?: string | Date) => {
         if (!dateStr) return '';
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return '';
-        return d.toISOString().slice(0, 16);
+        return d.toISOString().slice(0, 10);
     };
 
     const {
@@ -41,8 +40,8 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
             ...initialData,
             complexId,
             priority: initialData?.priority || 'NORMAL',
-            publishedAt: initialData?.publishedAt ? formatForInput(initialData.publishedAt) : '',
-            expiresAt: initialData?.expiresAt ? formatForInput(initialData.expiresAt) : '',
+            publishedAt: initialData?.publishedAt ? formatDateForInput(initialData.publishedAt) : '',
+            expiresAt: initialData?.expiresAt ? formatDateForInput(initialData.expiresAt) : '',
         },
     });
 
@@ -60,7 +59,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
             },
             (err) => {
                 console.log('[AnnouncementForm] Validation Failed:', err);
-                toast.error("Por favor revisa los errores en el formulario");
+                toast.error(t("validationError"));
             }
         )} className="space-y-6">
             <input type="hidden" {...register('complexId')} />
@@ -69,7 +68,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                 <div className="p-4 bg-red-50 border border-red-200 rounded-xl mb-6">
                     <p className="text-red-800 font-bold text-sm mb-2 flex items-center">
                         <ExclamationTriangleIcon className="w-5 h-5 mr-2 text-red-500" />
-                        No se pudo guardar el aviso. Por favor corrige lo siguiente:
+                        {t("formFixErrors")}
                     </p>
                     <ul className="list-disc list-inside space-y-1">
                         {Object.entries(errors).map(([key, error]) => (
@@ -91,7 +90,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                         {...register('title')}
                         className={`w-full px-4 py-3 rounded-xl border ${errors.title ? 'border-red-500 ring-red-100' : 'border-gray-200 focus:border-primary focus:ring-primary-light'
                             } focus:outline-none focus:ring-4 transition-all outline-none`}
-                        placeholder="Ej: Mantenimiento de elevadores"
+                        placeholder={t("titlePlaceholder")}
                     />
                     {errors.title && (
                         <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.title.message}</p>
@@ -107,27 +106,11 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                         {...register('priority')}
                         className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-primary-light focus:outline-none focus:ring-4 transition-all outline-none"
                     >
-                        <option value="NORMAL">Normal</option>
-                        <option value="LOW">Baja</option>
-                        <option value="HIGH">Alta</option>
-                        <option value="URGENT">Urgente</option>
+                        <option value="NORMAL">{t("priorityNormal")}</option>
+                        <option value="LOW">{t("priorityLow")}</option>
+                        <option value="HIGH">{t("priorityHigh")}</option>
+                        <option value="URGENT">{t("priorityUrgent")}</option>
                     </select>
-                </div>
-
-                {/* dates */}
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        {t('publishedAt')}
-                    </label>
-                    <input
-                        type="datetime-local"
-                        {...register('publishedAt')}
-                        className={`w-full px-4 py-3 rounded-xl border ${errors.publishedAt ? 'border-red-500 ring-red-100' : 'border-gray-200'
-                            } focus:border-primary focus:ring-primary-light focus:outline-none focus:ring-4 transition-all outline-none`}
-                    />
-                    {errors.publishedAt && (
-                        <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.publishedAt.message}</p>
-                    )}
                 </div>
 
                 <div>
@@ -135,7 +118,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                         {t('expiresAt')}
                     </label>
                     <input
-                        type="datetime-local"
+                        type="date"
                         {...register('expiresAt')}
                         className={`w-full px-4 py-3 rounded-xl border ${errors.expiresAt ? 'border-red-500 ring-red-100' : 'border-gray-200'
                             } focus:border-primary focus:ring-primary-light focus:outline-none focus:ring-4 transition-all outline-none`}
@@ -155,7 +138,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                         rows={6}
                         className={`w-full px-4 py-3 rounded-xl border ${errors.content ? 'border-red-500 ring-red-100' : 'border-gray-200 focus:border-primary focus:ring-primary-light'
                             } focus:outline-none focus:ring-4 transition-all outline-none resize-none`}
-                        placeholder="Escribe el aviso detallado aquí..."
+                        placeholder={t("contentPlaceholder")}
                     />
                     {errors.content && (
                         <p className="mt-1.5 text-xs text-red-500 font-medium">{errors.content.message}</p>
@@ -169,7 +152,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                     disabled={isLoading}
                     className="px-8 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary-light hover:bg-primary-dark hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {isLoading ? 'Publicando...' : (initialData?.title ? 'Actualizar Aviso' : t('create'))}
+                    {isLoading ? t("publishing") : (initialData?.title ? t("update") : t('create'))}
                 </button>
             </div>
         </form>

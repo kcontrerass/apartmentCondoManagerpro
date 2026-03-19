@@ -1,10 +1,18 @@
 import type { NextAuthConfig } from 'next-auth';
+import { routing } from '@/i18n/routing';
+
+const defaultLocale = routing.defaultLocale;
+
+function localeFromPathname(pathname: string): string {
+    const seg = pathname.split('/').filter(Boolean)[0];
+    return routing.locales.includes(seg as (typeof routing.locales)[number]) ? seg : defaultLocale;
+}
 
 export const authConfig = {
     pages: {
-        signIn: '/login',
-        newUser: '/register',
-        error: '/login', // Error code passed in url query string
+        signIn: `/${defaultLocale}/login`,
+        newUser: `/${defaultLocale}/register`,
+        error: `/${defaultLocale}/login`,
     },
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {
@@ -15,13 +23,18 @@ export const authConfig = {
             const isOnDashboard = pathname.includes('/dashboard');
 
             // Match /login, /register, etc. and their translated versions
-            const isOnAuth = pathname.includes('/login') || pathname.includes('/register');
+            const isOnAuth =
+                pathname.includes('/login') ||
+                pathname.includes('/register') ||
+                pathname.includes('/forgot-password') ||
+                pathname.includes('/reset-password');
 
             if (isOnDashboard) {
                 if (isLoggedIn) return true;
                 return false; // Redirect unauthenticated users to login page
             } else if (isLoggedIn && isOnAuth) {
-                return Response.redirect(new URL('/dashboard', nextUrl));
+                const locale = localeFromPathname(pathname);
+                return Response.redirect(new URL(`/${locale}/dashboard`, nextUrl));
             }
             return true;
         },

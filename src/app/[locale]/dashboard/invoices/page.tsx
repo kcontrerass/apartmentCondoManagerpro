@@ -3,10 +3,15 @@ import { InvoicesClient } from "./InvoicesClient";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
     const session = await auth();
     if (!session) {
-        redirect("/login");
+        redirect(`/${locale}/login`);
     }
 
     return (

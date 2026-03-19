@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { rsvpSchema } from '@/lib/validations/event';
+import { sendComplexNotification } from '@/lib/notifications';
 
 /**
  * POST /api/events/[id]/rsvp
@@ -119,6 +120,22 @@ export async function POST(
         });
 
         console.log(`[RSVP API] Saved RSVP for user=${session.user.id} status=${status} guests=${guests}`);
+
+        const rsvpLabel =
+            status === 'GOING'
+                ? 'confirmó asistencia'
+                : status === 'MAYBE'
+                  ? 'respondió "tal vez"'
+                  : 'declinó';
+        await sendComplexNotification(
+            event.complexId,
+            ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'],
+            {
+                title: 'Respuesta a evento',
+                body: `${session.user.name || 'Un usuario'} ${rsvpLabel}: ${event.title}`,
+                url: `/dashboard/events/${eventId}`,
+            }
+        );
 
         return NextResponse.json({
             success: true,

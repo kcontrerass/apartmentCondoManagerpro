@@ -1,14 +1,24 @@
-import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendUserNotification } from "@/lib/notifications";
+import { apiError, apiOk } from "@/lib/api-response";
 
 // This endpoint is designed to be called by a CRON job (e.g., daily)
 // It checks for active optional services that need to be billed for the current month
 export async function GET(request: Request) {
     try {
-        // Security: In production, verify a CRON secret header here.
-        // const authHeader = request.headers.get('authorization');
-        // if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) { return new Response('Unauthorized', { status: 401 }); }
+        const cronSecret = process.env.CRON_SECRET?.trim();
+        const authHeader = request.headers.get("authorization");
+
+        if (process.env.NODE_ENV === "production" && !cronSecret) {
+            return apiError(
+                { code: "CRON_SECRET_MISSING", message: "CRON_SECRET no está configurado" },
+                500
+            );
+        }
+
+        if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+            return apiError({ code: "UNAUTHORIZED", message: "No autorizado" }, 401);
+        }
 
         const now = new Date();
         const currentMonth = now.getMonth() + 1;
@@ -127,15 +137,17 @@ export async function GET(request: Request) {
             }
         }
 
-        return NextResponse.json({
-            status: "success",
+        return apiOk({
             processed: processedCount,
             skipped: skippedCount,
-            errors: errorsCount
+            errors: errorsCount,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Cron billing error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return apiError(
+            { code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : "Error interno de cron" },
+            500
+        );
     }
 }

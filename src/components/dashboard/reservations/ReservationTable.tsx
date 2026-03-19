@@ -71,7 +71,7 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
             await fetchData();
         } catch (e: any) {
             console.error(e);
-            alert(`Error: ${e.message || 'No se pudo actualizar la reserva'}`);
+            alert(`Error: ${e.message || t('errors.updateFailed')}`);
         }
     };
 
@@ -87,7 +87,7 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
             setRefundReservationId(null);
         } catch (e: any) {
             console.error(e);
-            alert(`Error al procesar reembolso: ${e.message}`);
+            alert(`${t('errors.refundFailed')}: ${e.message}`);
         } finally {
             setIsProcessingRefund(false);
         }
@@ -118,12 +118,12 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
                     <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.amenity')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.resident')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Unidad</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.unit')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.start')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.end')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.status')}</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.payment')}</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Depósito</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">{t('table.deposit')}</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider whitespace-nowrap">{tCommon('actions')}</th>
                     </tr>
                 </thead>
@@ -235,7 +235,7 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
                                                     onClick={() => setRefundReservationId(r.id)}
                                                     className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border-none px-3"
                                                 >
-                                                    Devolver
+                                                    {t('depositActions.refund')}
                                                 </Button>
                                                 <Button
                                                     variant="secondary"
@@ -243,7 +243,7 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
                                                     onClick={() => handleStatusChange(r.id, { depositStatus: 'RETAINED' } as any)}
                                                     className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-none"
                                                 >
-                                                    Retener
+                                                    {t('depositActions.retain')}
                                                 </Button>
                                             </>
                                         )}
@@ -266,7 +266,7 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
                 isOpen={!!confirmDeleteId}
                 onClose={() => setConfirmDeleteId(null)}
                 onConfirm={() => confirmDeleteId && handleDelete(confirmDeleteId)}
-                title={t('confirmDeleteTitle' as any) || "Eliminar Reserva"}
+                title={t('confirmDeleteTitle')}
                 message={t('deleteConfirm')}
                 isLoading={isDeleting}
                 confirmText={tCommon('delete')}

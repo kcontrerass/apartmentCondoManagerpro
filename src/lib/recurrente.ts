@@ -1,15 +1,11 @@
-const RECURRENTE_PUBLIC_KEY = process.env.RECURRENTE_PUBLIC_KEY;
-const RECURRENTE_SECRET_KEY = process.env.RECURRENTE_SECRET_KEY;
+import { createHmac, timingSafeEqual } from "crypto";
+
+const RECURRENTE_PUBLIC_KEY = process.env.RECURRENTE_PUBLIC_KEY?.trim();
+const RECURRENTE_SECRET_KEY = process.env.RECURRENTE_SECRET_KEY?.trim();
+const RECURRENTE_WEBHOOK_SECRET = process.env.RECURRENTE_WEBHOOK_SECRET?.trim();
 
 if (!RECURRENTE_PUBLIC_KEY || !RECURRENTE_SECRET_KEY) {
-    console.error('RECURRENTE_PUBLIC_KEY or RECURRENTE_SECRET_KEY is missing');
-} else {
-    console.log('Recurrente Keys loaded:', {
-        publicKeyLength: RECURRENTE_PUBLIC_KEY.length,
-        secretKeyLength: RECURRENTE_SECRET_KEY.length,
-        publicPrefix: RECURRENTE_PUBLIC_KEY.substring(0, 4) + '...',
-        secretPrefix: RECURRENTE_SECRET_KEY.substring(0, 4) + '...'
-    });
+    console.error("[Recurrente] Missing API keys");
 }
 
 const BASE_URL = 'https://app.recurrente.com/api';
@@ -25,8 +21,8 @@ export const recurrente = {
             }[];
             success_url?: string;
             cancel_url?: string;
-            metadata?: Record<string, any>;
-            [key: string]: any;
+            metadata?: Record<string, unknown>;
+            [key: string]: unknown;
         }) => {
             try {
                 const requestHeaders = {
@@ -34,15 +30,6 @@ export const recurrente = {
                     'X-PUBLIC-KEY': (RECURRENTE_PUBLIC_KEY || '').trim(),
                     'X-SECRET-KEY': (RECURRENTE_SECRET_KEY || '').trim(),
                 };
-
-                console.log('Sending Recurrente Request:', {
-                    url: `${BASE_URL}/checkouts`,
-                    headers: {
-                        ...requestHeaders,
-                        'X-PUBLIC-KEY': requestHeaders['X-PUBLIC-KEY'].substring(0, 5) + '...' + requestHeaders['X-PUBLIC-KEY'].slice(-3),
-                        'X-SECRET-KEY': requestHeaders['X-SECRET-KEY'].substring(0, 5) + '...' + requestHeaders['X-SECRET-KEY'].slice(-3),
-                    }
-                });
 
                 const response = await fetch(`${BASE_URL}/checkouts`, {
                     method: 'POST',
@@ -55,18 +42,14 @@ export const recurrente = {
                     throw new Error(JSON.stringify(errorData) || `HTTP error! status: ${response.status}`);
                 }
 
-                const responseData = await response.json();
-                console.log(responseData)
-                console.log('Recurrente Response:', JSON.stringify(responseData, null, 2));
-                return responseData;
-            } catch (error: any) {
+                return await response.json();
+            } catch (error: unknown) {
                 console.error('Error creating Recurrente checkout:', error);
                 throw error;
             }
         },
         retrieve: async (id: string) => {
             try {
-                console.log(`[Recurrente] Retrieving checkout from: ${BASE_URL}/checkouts/${id}`);
                 const response = await fetch(`${BASE_URL}/checkouts/${id}`, {
                     method: 'GET',
                     headers: {
@@ -82,16 +65,81 @@ export const recurrente = {
                 }
 
                 return await response.json();
-            } catch (error: any) {
+            } catch (error: unknown) {
                 console.error('Error retrieving Recurrente checkout:', error);
                 throw error;
             }
         }
     },
     webhooks: {
-        verifySignature: (signature: string | null, secret: string) => {
-            // Placeholder for verification logic
-            return true;
+        verifySignature: (params: {
+            rawBody: string;
+            signatureHeader: string | null;
+            timestampHeader?: string | null;
+            toleranceSeconds?: number;
+        }): boolean => {
+            if (!RECURRENTE_WEBHOOK_SECRET) return false;
+
+            const { rawBody, signatureHeader, timestampHeader, toleranceSeconds = 300 } = params;
+            if (!signatureHeader) return false;
+
+            const parsed: Record<string, string> = {};
+            for (const chunk of signatureHeader.split(",")) {
+                const [k, ...rest] = chunk.split("=");
+                if (!k || rest.length === 0) continue;
+                parsed[k.trim().toLowerCase()] = rest.join("=").trim();
+            }
+
+            const providedCandidates = [
+                parsed.v1,
+                parsed.signature,
+                signatureHeader.trim(),
+            ].filter(Boolean) as string[];
+
+            const timestampRaw = parsed.t || parsed.timestamp || timestampHeader || "";
+            const timestamp = Number(timestampRaw);
+            const hasTimestamp = Number.isFinite(timestamp) && timestamp > 0;
+
+            if (hasTimestamp) {
+                const nowSeconds = Math.floor(Date.now() / 1000);
+                if (Math.abs(nowSeconds - timestamp) > toleranceSeconds) {
+                    return false;
+                }
+            }
+
+            const payloadWithTimestamp = hasTimestamp ? `${timestamp}.${rawBody}` : rawBody;
+            const digestHexWithTimestamp = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+                .update(payloadWithTimestamp)
+                .digest("hex");
+            const digestHexRaw = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+                .update(rawBody)
+                .digest("hex");
+            const digestBase64WithTimestamp = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+                .update(payloadWithTimestamp)
+                .digest("base64");
+            const digestBase64Raw = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+                .update(rawBody)
+                .digest("base64");
+
+            const expectedCandidates = [
+                digestHexWithTimestamp,
+                digestHexRaw,
+                digestBase64WithTimestamp,
+                digestBase64Raw,
+            ];
+
+            for (const provided of providedCandidates) {
+                for (const expected of expectedCandidates) {
+                    const providedBuf = Buffer.from(provided, "utf8");
+                    const expectedBuf = Buffer.from(expected, "utf8");
+                    if (providedBuf.length !== expectedBuf.length) continue;
+                    if (timingSafeEqual(providedBuf, expectedBuf)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 };

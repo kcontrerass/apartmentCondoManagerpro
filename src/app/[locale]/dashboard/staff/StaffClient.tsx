@@ -19,7 +19,7 @@ interface StaffClientProps {
 }
 
 export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientProps) => {
-    const t = useTranslations("common");
+    const t = useTranslations("Staff");
     const [staff, setStaff] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,7 +38,7 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             setStaff(data);
         } catch (error) {
             console.error(error);
-            toast.error("Error al cargar el equipo");
+            toast.error(t("errorLoadingTeam"));
         } finally {
             setIsLoading(false);
         }
@@ -63,17 +63,17 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             const result = await res.json();
 
             if (!res.ok) {
-                toast.error(result.error || "Error al guardar");
+                toast.error(result.error || t("errorSaving"));
                 return;
             }
 
-            toast.success("Usuario guardado exitosamente");
+            toast.success(t("userSaved"));
             setIsModalOpen(false);
             fetchStaff();
             setEditingUser(null);
         } catch (error) {
             console.error(error);
-            toast.error("Error de conexión");
+            toast.error(t("connectionError"));
         } finally {
             setIsSubmitting(false);
         }
@@ -95,17 +95,17 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
 
             if (!res.ok) {
                 const data = await res.json();
-                toast.error(data.error || "Error al eliminar");
+                toast.error(data.error || t("errorDeleting"));
                 return;
             }
 
-            toast.success("Usuario eliminado");
+            toast.success(t("userDeleted"));
             setIsDeleteModalOpen(false);
             setUserToDelete(null);
             fetchStaff();
         } catch (error) {
             console.error(error);
-            toast.error("Error al eliminar");
+            toast.error(t("errorDeleting"));
         } finally {
             setIsDeleting(false);
         }
@@ -125,8 +125,8 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
     return (
         <div className="space-y-8">
             <PageHeader
-                title="Equipo y Personal"
-                subtitle="Gestiona los usuarios del staff (Guardias, Operadores, Administradores)."
+                title={t("title")}
+                subtitle={t("subtitle")}
                 actions={
                     <Button
                         variant="primary"
@@ -136,7 +136,7 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
                             setIsModalOpen(true);
                         }}
                     >
-                        Nuevo Usuario
+                        {t("newUser")}
                     </Button>
                 }
             />
@@ -149,7 +149,7 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
                         </span>
                         <input
                             type="text"
-                            placeholder="Buscar por nombre, email o rol..."
+                            placeholder={t("searchPlaceholder")}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-sm"
@@ -177,11 +177,12 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             <Modal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
-                title={editingUser ? "Editar Usuario" : "Nuevo Usuario"}
+                title={editingUser ? t("editUser") : t("newUser")}
             >
                 <StaffForm
                     initialData={editingUser}
                     onSubmit={handleSubmit}
+                    onCancel={handleCloseModal}
                     isLoading={isSubmitting}
                     isEditing={!!editingUser}
                     complexes={initialComplexes}
@@ -192,7 +193,7 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
             <Modal
                 isOpen={isDeleteModalOpen}
                 onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
-                title="Confirmar Eliminación"
+                title={t("confirmDeleteTitle")}
                 footer={
                     <div className="flex gap-3">
                         <Button
@@ -200,21 +201,21 @@ export const StaffClient = ({ initialComplexes, currentUserRole }: StaffClientPr
                             onClick={() => setIsDeleteModalOpen(false)}
                             disabled={isDeleting}
                         >
-                            Cancelar
+                            {t("cancel")}
                         </Button>
                         <Button
                             variant="danger"
                             onClick={handleDelete}
                             isLoading={isDeleting}
                         >
-                            {isDeleting ? "Eliminando..." : "Eliminar Usuario"}
+                            {isDeleting ? t("deleting") : t("deleteUser")}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-4">
                     <p className="text-slate-600 dark:text-slate-400">
-                        ¿Estás seguro de eliminar a <span className="font-bold text-slate-900 dark:text-white">{userToDelete?.name}</span>? Esta acción es irreversible.
+                        {t("confirmDeleteMessageStart")} <span className="font-bold text-slate-900 dark:text-white">{userToDelete?.name}</span>? {t("confirmDeleteMessageEnd")}
                     </p>
                 </div>
             </Modal>

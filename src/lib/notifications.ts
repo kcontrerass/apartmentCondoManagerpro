@@ -1,5 +1,6 @@
 import webpush from 'web-push';
 import { prisma } from './db';
+import { routing } from '@/i18n/routing';
 
 // Configure web-push
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -17,6 +18,25 @@ interface NotificationPayload {
     icon?: string;
 }
 
+/** Prefix dashboard (and app) paths with default locale so next-intl opens the right route. */
+function withLocalePath(path: string): string {
+    if (!path || path.startsWith('http://') || path.startsWith('https://')) {
+        return path;
+    }
+    if (/^\/(en|es)(\/|$)/.test(path)) {
+        return path;
+    }
+    const normalized = path.startsWith('/') ? path : `/${path}`;
+    return `/${routing.defaultLocale}${normalized}`;
+}
+
+function normalizePayload(payload: NotificationPayload): NotificationPayload {
+    if (!payload.url) {
+        return payload;
+    }
+    return { ...payload, url: withLocalePath(payload.url) };
+}
+
 /**
  * Send a push notification to a specific user
  */
@@ -24,17 +44,16 @@ export async function sendUserNotification(userId: string, payload: Notification
     try {
         const user = await (prisma as any).user.findUnique({
             where: { id: userId },
-            select: { settings: true }
+            select: { settings: true },
         });
 
-        if (!user?.settings) return;
-
-        const settings = user.settings as any;
-        const subscription = settings.pushSubscription;
+        const settings = (user?.settings as Record<string, unknown> | null) || {};
+        const subscription = settings.pushSubscription as any;
 
         if (!subscription) return;
 
-        await webpush.sendNotification(subscription, JSON.stringify(payload));
+        const body = normalizePayload(payload);
+        await webpush.sendNotification(subscription, JSON.stringify(body));
         console.log(`Push notification sent to user ${userId}`);
     } catch (error) {
         console.error(`Error sending push to user ${userId}:`, error);
@@ -50,7 +69,6 @@ export async function sendComplexNotification(complexId: string, roles: string[]
 
         const users = await (prisma as any).user.findMany({
             where: {
-                settings: { not: null },
                 OR: [
                     {
                         AND: [
@@ -59,40 +77,67 @@ export async function sendComplexNotification(complexId: string, roles: string[]
                                 OR: [
                                     { complexId: complexId },
                                     { managedComplexes: { id: complexId } },
-                                    { residentProfile: { unit: { complexId: complexId } } }
-                                ]
-                            }
-                        ]
+                                    { residentProfile: { unit: { complexId: complexId } } },
+                                ],
+                            },
+                        ],
                     },
-                    { role: 'SUPER_ADMIN' }
-                ]
+                    { role: 'SUPER_ADMIN' },
+                ],
             },
-            select: { id: true, settings: true, role: true, name: true }
+            select: { id: true, settings: true, role: true, name: true },
         });
 
-        console.log(`👥 Found ${users.length} potential users with settings.`);
+        console.log(`👥 Found ${users.length} potential users (push only if subscribed).`);
+
+        const body = normalizePayload(payload);
 
         const sendPromises = users.map((user: any) => {
-            const settings = user.settings as any;
-            const subscription = settings?.pushSubscription;
+            const settings = (user.settings as Record<string, unknown> | null) || {};
+            const subscription = settings.pushSubscription as any;
 
             if (subscription) {
                 console.log(`📤 Sending push to ${user.name} (${user.role})`);
-                return webpush.sendNotification(subscription, JSON.stringify(payload))
+                return webpush
+                    .sendNotification(subscription, JSON.stringify(body))
                     .then(() => console.log(`✅ Push delivered to ${user.name}`))
-                    .catch(err => {
+                    .catch((err) => {
                         console.error(`❌ Error sending notification to ${user.id}:`, err.message);
-                        // If 410 Gone or 404 Not Found, we should probably clean up the subscription?
                     });
-            } else {
-                console.log(`ℹ️ User ${user.name} has settings but no pushSubscription.`);
-                return Promise.resolve();
             }
+            return Promise.resolve();
         });
 
         await Promise.all(sendPromises);
         console.log(`🏁 Broadcast notification process finished for ${users.length} users in complex ${complexId}`);
     } catch (error) {
         console.error(`🚨 Error in broadcast notification for complex ${complexId}:`, error);
+    }
+}
+
+/** Notify all residents on the unit linked to an invoice when it is marked paid (manual or webhook). */
+export async function notifyInvoicePaidToUnitResidents(invoiceId: string) {
+    try {
+        const invoice = await (prisma as any).invoice.findUnique({
+            where: { id: invoiceId },
+            include: {
+                unit: {
+                    include: {
+                        residents: { select: { userId: true } },
+                    },
+                },
+            },
+        });
+        if (!invoice?.unit?.residents?.length) return;
+
+        for (const r of invoice.unit.residents) {
+            await sendUserNotification(r.userId, {
+                title: 'Factura pagada',
+                body: `Se registró el pago de la factura ${invoice.number}.`,
+                url: '/dashboard/invoices',
+            });
+        }
+    } catch (e) {
+        console.error('[notifyInvoicePaidToUnitResidents]', e);
     }
 }

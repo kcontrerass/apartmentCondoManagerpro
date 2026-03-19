@@ -3,10 +3,15 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { ReservationsClient } from "./ReservationsClient";
 
-export default async function ReservationsPage() {
+export default async function ReservationsPage({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
     const session = await auth();
     if (!session) {
-        redirect("/login");
+        redirect(`/${locale}/login`);
     }
 
     return (

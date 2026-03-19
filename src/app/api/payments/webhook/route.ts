@@ -1,79 +1,122 @@
-import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/db";
 import { recurrente } from "@/lib/recurrente";
+import { apiError, apiOk } from "@/lib/api-response";
+import { notifyInvoicePaidToUnitResidents } from "@/lib/notifications";
+
+function pickString(values: unknown[]): string | null {
+    for (const value of values) {
+        if (typeof value === "string" && value.length > 0) return value;
+    }
+    return null;
+}
+
+function extractInvoiceId(payload: Record<string, unknown>): string | null {
+    const data = payload.data as Record<string, unknown> | undefined;
+    const object = data?.object as Record<string, unknown> | undefined;
+    const checkout = payload.checkout as Record<string, unknown> | undefined;
+    const dataMetadata = data?.metadata as Record<string, unknown> | undefined;
+    const metadata = payload.metadata as Record<string, unknown> | undefined;
+    const checkoutMetadata = checkout?.metadata as Record<string, unknown> | undefined;
+
+    const candidates = [
+        (object?.metadata as Record<string, unknown> | undefined)?.invoiceId,
+        metadata?.invoiceId,
+        checkoutMetadata?.invoiceId,
+        dataMetadata?.invoiceId,
+    ];
+    return pickString(candidates);
+}
+
+function isSuccessfulPaymentEvent(payload: Record<string, unknown>): boolean {
+    const data = payload.data as Record<string, unknown> | undefined;
+    const object = data?.object as Record<string, unknown> | undefined;
+    const eventType = pickString([payload.type, payload.event_type]);
+    const status = pickString([payload.status, payload.payment_status, object?.status]);
+    return (
+        eventType === "checkout.payment.succeeded" ||
+        eventType === "payment.succeeded" ||
+        eventType === "checkout_payment_succeeded" ||
+        status === "paid" ||
+        status === "completed" ||
+        status === "succeeded"
+    );
+}
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json(); // Recurrente sends JSON
+        const rawBody = await request.text();
+        let body: Record<string, unknown>;
+        try {
+            body = JSON.parse(rawBody) as Record<string, unknown>;
+        } catch {
+            return apiError(
+                { code: "INVALID_PAYLOAD", message: "Webhook payload inválido" },
+                400
+            );
+        }
+
         const headersList = await headers();
-        // Check for Recurrente signature header - verify field name
-        const signature = headersList.get('x-signature') || headersList.get('recurrente-signature'); // Adjust based on actual docs if found
+        const signature = headersList.get("x-signature") || headersList.get("recurrente-signature");
+        const timestamp = headersList.get("x-timestamp") || headersList.get("recurrente-timestamp");
 
-        // Use a configured secret for webhooks if available, otherwise rely on payload validation
-        // const endpointSecret = process.env.RECURRENTE_WEBHOOK_SECRET; 
+        const isSignatureValid = recurrente.webhooks.verifySignature({
+            rawBody,
+            signatureHeader: signature,
+            timestampHeader: timestamp,
+        });
 
-        // For now, we log the event to understand its structure during first run
-        console.log("Recurrente Webhook received:", JSON.stringify(body, null, 2));
-
-        const eventType = body.type; // Assuming standard 'type' field
-
-        // Map Recurrente event types. Example: 'checkout.succeeded' or similar
-        // Based on common patterns: 'payment_intent.succeeded', 'checkout.session.completed'
-        // If exact type is unknown, we look for status in the payload object
-
-        let invoiceId = body.data?.object?.metadata?.invoiceId || body.metadata?.invoiceId;
-
-        // Fallback: Check if we can find invoice ID in other standard fields or if structure differs
-        if (!invoiceId && body.checkout && body.checkout.metadata) {
-            invoiceId = body.checkout.metadata.invoiceId;
+        if (!isSignatureValid) {
+            return apiError(
+                { code: "INVALID_SIGNATURE", message: "Firma de webhook inválida" },
+                401
+            );
         }
 
-        // Handle success event
-        // We accept multiple success indicators since documentation is sparse
-        if (eventType === 'checkout.payment.succeeded' ||
-            eventType === 'payment.succeeded' ||
-            body.event_type === 'checkout_payment_succeeded' || // Alternative format
-            (body.status === 'paid' && invoiceId) // Direct object status check
-        ) {
-
-            if (invoiceId) {
-                try {
-                    await (prisma as any).invoice.update({
-                        where: { id: invoiceId },
-                        data: {
-                            status: "PAID",
-                            updatedAt: new Date(),
-                        }
-                    });
-
-                    // Update linked reservation if exists
-                    const linkedReservation = await (prisma as any).reservation.findUnique({
-                        where: { invoiceId }
-                    });
-
-                    if (linkedReservation) {
-                        await (prisma as any).reservation.update({
-                            where: { id: linkedReservation.id },
-                            data: { status: 'APPROVED' }
-                        });
-                        console.log(`Reservation ${linkedReservation.id} approved via Recurrente webhook`);
-                    }
-
-                    console.log(`Invoice ${invoiceId} marked as PAID via Recurrente webhook`);
-                } catch (error) {
-                    console.error(`Error updating invoice ${invoiceId}:`, error);
-                    return NextResponse.json({ error: "Error updating invoice" }, { status: 500 });
-                }
-            } else {
-                console.warn("Webhook received but no invoiceId found in metadata");
-            }
+        if (!isSuccessfulPaymentEvent(body)) {
+            return apiOk({ received: true, processed: false, reason: "event_ignored" });
         }
 
-        return NextResponse.json({ received: true });
+        const invoiceId = extractInvoiceId(body);
+        if (!invoiceId) {
+            return apiOk({ received: true, processed: false, reason: "missing_invoice_id" });
+        }
 
-    } catch (err: any) {
-        console.error(`Webhook Error: ${err.message}`);
-        return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+        const paidUpdate = await prisma.invoice.updateMany({
+            where: {
+                id: invoiceId,
+                status: { not: "PAID" },
+            },
+            data: {
+                status: "PAID",
+                paymentMethod: "CARD",
+                updatedAt: new Date(),
+            },
+        });
+
+        const linkedReservation = await prisma.reservation.findUnique({
+            where: { invoiceId },
+            select: { id: true, status: true },
+        });
+
+        if (linkedReservation && linkedReservation.status !== "APPROVED") {
+            await prisma.reservation.update({
+                where: { id: linkedReservation.id },
+                data: { status: "APPROVED" },
+            });
+        }
+
+        if (paidUpdate.count > 0) {
+            await notifyInvoicePaidToUnitResidents(invoiceId);
+        }
+
+        return apiOk({ received: true, processed: true, invoiceId });
+
+    } catch (err: unknown) {
+        console.error("[PAYMENTS_WEBHOOK]", err);
+        return apiError(
+            { code: "WEBHOOK_ERROR", message: err instanceof Error ? err.message : "Error en webhook" },
+            400
+        );
     }
 }

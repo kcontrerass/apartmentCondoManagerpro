@@ -4,8 +4,15 @@ import { PageHeader } from "@/components/dashboard/PageHeader";
 import { prisma } from "@/lib/db";
 import { DocumentList } from "@/components/documents/DocumentList";
 import { Role } from "@/types/roles";
+import { getTranslations } from "next-intl/server";
 
-export default async function DocumentsPage() {
+export default async function DocumentsPage({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Documents" });
     const session = await auth();
     if (!session?.user) return null;
 
@@ -29,8 +36,8 @@ export default async function DocumentsPage() {
         <MainLayout user={session.user}>
             <div className="space-y-8">
                 <PageHeader
-                    title="Documentos"
-                    subtitle="Consulta y descarga documentos oficiales, reglamentos y políticas del condominio."
+                    title={t("title")}
+                    subtitle={t("subtitle")}
                 />
 
                 <DocumentList

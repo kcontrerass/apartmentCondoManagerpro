@@ -1,5 +1,24 @@
 import { z } from 'zod';
 
+function toDateFromInputs(eventDate: string | undefined, value: string): Date | null {
+    if (!value) return null;
+
+    // If already full date-time, parse directly.
+    if (value.includes('T') || value.includes(' ')) {
+        const full = new Date(value);
+        return Number.isNaN(full.getTime()) ? null : full;
+    }
+
+    // If time-only format (HH:mm), combine with eventDate.
+    if (/^\d{2}:\d{2}$/.test(value)) {
+        if (!eventDate) return null;
+        const combined = new Date(`${eventDate}T${value}`);
+        return Number.isNaN(combined.getTime()) ? null : combined;
+    }
+
+    return null;
+}
+
 /**
  * Base schema for an event
  */
@@ -24,8 +43,10 @@ export const eventBaseSchema = z.object({
  * Schema for creating an event
  */
 export const eventCreateSchema = eventBaseSchema.refine((data) => {
-    // Validate that endTime is after startTime
-    return new Date(data.endTime) > new Date(data.startTime);
+    const start = toDateFromInputs(data.eventDate, data.startTime);
+    const end = toDateFromInputs(data.eventDate, data.endTime);
+    if (!start || !end) return false;
+    return end > start;
 }, {
     message: 'La hora de fin debe ser posterior a la hora de inicio',
     path: ['endTime'],
@@ -37,7 +58,10 @@ export const eventCreateSchema = eventBaseSchema.refine((data) => {
 export const eventUpdateSchema = eventBaseSchema.partial().refine((data) => {
     // Validate that endTime is after startTime if both are provided
     if (data.startTime && data.endTime) {
-        return new Date(data.endTime) > new Date(data.startTime);
+        const start = toDateFromInputs(data.eventDate, data.startTime);
+        const end = toDateFromInputs(data.eventDate, data.endTime);
+        if (!start || !end) return false;
+        return end > start;
     }
     return true;
 }, {
