@@ -19,6 +19,7 @@ export async function GET(request: Request) {
         const unitId = searchParams.get("unitId");
         const userIdFilter = searchParams.get("userId");
         let complexId = searchParams.get("complexId");
+        const searchQ = searchParams.get("search")?.trim() ?? "";
 
         // Only apply RBAC if complexId is not already provided (e.g., from search)
         if (!complexId) {
@@ -42,14 +43,24 @@ export async function GET(request: Request) {
             }
         }
 
-        const residents = await prisma.resident.findMany({
-            where: {
-                AND: [
-                    unitId ? { unitId } : {},
-                    userIdFilter ? { userId: userIdFilter } : {},
-                    complexId ? { unit: { complexId } } : {},
+        const andFilters: Record<string, unknown>[] = [];
+        if (unitId) andFilters.push({ unitId });
+        if (userIdFilter) andFilters.push({ userId: userIdFilter });
+        if (complexId) andFilters.push({ unit: { complexId } } as any);
+        if (searchQ) {
+            andFilters.push({
+                OR: [
+                    { user: { name: { contains: searchQ, mode: "insensitive" } } },
+                    { user: { email: { contains: searchQ, mode: "insensitive" } } },
+                    { user: { phone: { contains: searchQ, mode: "insensitive" } } },
+                    { unit: { number: { contains: searchQ, mode: "insensitive" } } },
+                    { unit: { complex: { name: { contains: searchQ, mode: "insensitive" } } } },
                 ],
-            },
+            });
+        }
+
+        const residents = await prisma.resident.findMany({
+            where: andFilters.length > 0 ? { AND: andFilters } : {},
             include: {
                 user: {
                     select: {

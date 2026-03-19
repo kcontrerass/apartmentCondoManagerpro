@@ -157,6 +157,7 @@
         "title": "Residents",
         "subtitle": "Resident administration",
         "newResident": "Assign Resident",
+        "searchPlaceholder": "Search by name, email, phone, unit or complex…",
         "name": "Name",
         "email": "Email",
         "phone": "Phone",
@@ -426,11 +427,13 @@
         "successSave": "Amenity saved successfully",
         "errorSaving": "Error saving amenity",
         "unexpectedError": "An unexpected error occurred",
-        "noAmenities": "No amenities found."
+        "noAmenities": "No amenities found.",
+        "searchPlaceholder": "Search by name, description or complex…"
     },
     "Reservations": {
         "title": "Reservations",
         "subtitle": "Management of common area reservations",
+        "searchPlaceholder": "Search by amenity, resident, unit, complex, notes…",
         "new": "New Reservation",
         "book": "Book Now",
         "myReservations": "My Reservations",

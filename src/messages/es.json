@@ -157,6 +157,7 @@
         "title": "Residentes",
         "subtitle": "Administración de residentes",
         "newResident": "Asignar Residente",
+        "searchPlaceholder": "Buscar por nombre, correo, teléfono, unidad o complejo…",
         "name": "Nombre",
         "email": "Correo",
         "phone": "Teléfono",
@@ -426,11 +427,13 @@
         "successSave": "Amenidad guardada correctamente",
         "errorSaving": "Error al guardar la amenidad",
         "unexpectedError": "Ocurrió un error inesperado",
-        "noAmenities": "No se encontraron amenidades."
+        "noAmenities": "No se encontraron amenidades.",
+        "searchPlaceholder": "Buscar por nombre, descripción o complejo…"
     },
     "Reservations": {
         "title": "Reservas",
         "subtitle": "Gestión de reservaciones de áreas comunes",
+        "searchPlaceholder": "Buscar por amenidad, residente, unidad, complejo, notas…",
         "new": "Nueva Reserva",
         "book": "Reservar",
         "myReservations": "Mis Reservas",

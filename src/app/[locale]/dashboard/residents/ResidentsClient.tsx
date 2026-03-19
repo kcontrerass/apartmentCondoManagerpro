@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -15,6 +15,7 @@ import { Role } from "@/types/roles";
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { toast } from "sonner";
+import { Input } from "@/components/ui/Input";
 
 interface ResidentWithExtras extends Resident {
     user: {
@@ -56,6 +57,8 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [residentToDelete, setResidentToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -84,7 +87,7 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
         recoverComplexId();
     }, [complexId, userRole, userId]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
             // Fetch residents
@@ -92,6 +95,8 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
             const params = new URLSearchParams();
             if (unitIdFromQuery) params.append("unitId", unitIdFromQuery);
             if (complexIdFromQuery) params.append("complexId", complexIdFromQuery);
+            const q = debouncedSearch.trim();
+            if (q) params.append("search", q);
             if (params.toString()) residentsUrl += `?${params.toString()}`;
 
             const [resResponse, usersResponse, unitsResponse] = await Promise.all([
@@ -115,11 +120,16 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [unitIdFromQuery, complexIdFromQuery, debouncedSearch]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
 
     useEffect(() => {
         fetchData();
-    }, [unitIdFromQuery, complexIdFromQuery]);
+    }, [fetchData]);
 
     const handleSubmit = async (data: ResidentInput) => {
         setIsSubmitting(true);
@@ -195,6 +205,21 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
             />
 
             <Card>
+                <div className="p-4 space-y-4">
+                    <div className="relative max-w-md">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">
+                            search
+                        </span>
+                        <Input
+                            type="search"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="pl-10"
+                            aria-label={t("searchPlaceholder")}
+                        />
+                    </div>
+
                 {isLoading ? (
                     <div className="flex justify-center py-12">
                         <Spinner />
@@ -222,6 +247,7 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
                         onView={(id) => router.push(`/dashboard/residents/${id}`)}
                     />
                 )}
+                </div>
             </Card>
 
             <Modal

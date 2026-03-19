@@ -14,8 +14,9 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const complexId = searchParams.get("complexId");
+        const searchQ = searchParams.get("search")?.trim() ?? "";
 
-        const where: any = {};
+        const baseWhere: any = {};
 
         // RBAC:
         // Residents can ONLY see amenities of their own complex
@@ -32,8 +33,8 @@ export async function GET(request: Request) {
                 return NextResponse.json([]); // Return empty list instead of error
             }
 
-            where.complexId = resident.unit.complexId;
-            console.log(`[API Amenities] Resident ${session.user.id} filtering by complex: ${where.complexId}`);
+            baseWhere.complexId = resident.unit.complexId;
+            console.log(`[API Amenities] Resident ${session.user.id} filtering by complex: ${baseWhere.complexId}`);
         } else if (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
             const userComplexId = (session.user as any).complexId;
             if (!userComplexId) {
@@ -42,13 +43,29 @@ export async function GET(request: Request) {
             if (complexId && complexId !== userComplexId) {
                 return NextResponse.json({ error: "No tienes permiso para ver amenidades de este complejo" }, { status: 403 });
             }
-            where.complexId = userComplexId;
-            console.log(`[API Amenities] Managed user ${session.user.id} filtering by complex: ${where.complexId}`);
+            baseWhere.complexId = userComplexId;
+            console.log(`[API Amenities] Managed user ${session.user.id} filtering by complex: ${baseWhere.complexId}`);
         } else if (complexId) {
             // Other roles (SUPER_ADMIN) filter by complex if provided
-            where.complexId = complexId;
-            console.log(`[API Amenities] Other role filtering by complex: ${where.complexId}`);
+            baseWhere.complexId = complexId;
+            console.log(`[API Amenities] Other role filtering by complex: ${baseWhere.complexId}`);
         }
+
+        const where: any =
+            searchQ
+                ? {
+                      AND: [
+                          ...(Object.keys(baseWhere).length > 0 ? [baseWhere] : []),
+                          {
+                              OR: [
+                                  { name: { contains: searchQ, mode: "insensitive" } },
+                                  { description: { contains: searchQ, mode: "insensitive" } },
+                                  { complex: { name: { contains: searchQ, mode: "insensitive" } } },
+                              ],
+                          },
+                      ],
+                  }
+                : baseWhere;
 
         console.log("[API Amenities] Where clause:", JSON.stringify(where, null, 2));
 

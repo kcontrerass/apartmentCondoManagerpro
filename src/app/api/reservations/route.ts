@@ -36,28 +36,55 @@ export async function GET(request: Request) {
         const userId = searchParams.get("userId");
         const status = searchParams.get("status") as ReservationStatus | null;
         const complexId = searchParams.get("complexId");
+        const searchQ = searchParams.get("search")?.trim() ?? "";
 
-        const where: any = {};
-        if (amenityId) where.amenityId = amenityId;
-        if (userId) where.userId = userId;
-        if (status) where.status = status;
+        const clauses: any[] = [];
+
+        if (amenityId) clauses.push({ amenityId });
+        if (userId) clauses.push({ userId });
+        if (status) clauses.push({ status });
 
         // RBAC: Residents can only see their own reservations
         if (session.user.role === Role.RESIDENT) {
-            where.userId = session.user.id;
+            clauses.push({ userId: session.user.id });
         } else if (session.user.role === Role.ADMIN) {
-            // Admins can only see their complex's reservations
-            where.amenity = {
-                complex: {
-                    adminId: session.user.id
-                }
-            };
+            clauses.push({
+                amenity: {
+                    complex: {
+                        adminId: session.user.id,
+                    },
+                },
+            });
         } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.SUPER_ADMIN) {
-            // SUPER_ADMIN and OPERATOR (if global) can see everything or filter by complex
             if (complexId) {
-                where.amenity = { complexId };
+                clauses.push({ amenity: { complexId } });
             }
         }
+
+        if (searchQ) {
+            clauses.push({
+                OR: [
+                    { amenity: { name: { contains: searchQ, mode: "insensitive" } } },
+                    { user: { name: { contains: searchQ, mode: "insensitive" } } },
+                    { user: { email: { contains: searchQ, mode: "insensitive" } } },
+                    { notes: { contains: searchQ, mode: "insensitive" } },
+                    {
+                        user: {
+                            residentProfile: {
+                                unit: { number: { contains: searchQ, mode: "insensitive" } },
+                            },
+                        },
+                    },
+                    {
+                        amenity: {
+                            complex: { name: { contains: searchQ, mode: "insensitive" } },
+                        },
+                    },
+                ],
+            });
+        }
+
+        const where = clauses.length > 0 ? { AND: clauses } : {};
 
         const reservations = await (prisma as any).reservation.findMany({
             where,

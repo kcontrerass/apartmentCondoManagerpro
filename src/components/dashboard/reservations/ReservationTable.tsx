@@ -23,7 +23,14 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
-export default function ReservationTable({ userRole }: { userRole?: Role }) {
+export default function ReservationTable({
+    userRole,
+    search = "",
+}: {
+    userRole?: Role;
+    /** Texto de búsqueda (debounced desde el padre) */
+    search?: string;
+}) {
     const t = useTranslations('Reservations');
     const tCommon = useTranslations('Common');
     const locale = useLocale();
@@ -39,7 +46,8 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const data = await getReservations();
+            const q = search.trim();
+            const data = await getReservations(q ? { search: q } : undefined);
             setReservations(data);
         } catch (e) {
             console.error(e);
@@ -50,7 +58,8 @@ export default function ReservationTable({ userRole }: { userRole?: Role }) {
 
     useEffect(() => {
         fetchData();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch when search changes
+    }, [search]);
 
     const handleDelete = async (id: string) => {
         setIsDeleting(true);

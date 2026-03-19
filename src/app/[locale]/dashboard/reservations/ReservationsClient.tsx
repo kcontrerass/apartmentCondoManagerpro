@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -14,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { getReservations, updateReservation } from "@/lib/api/reservations";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/Input";
 
 interface ReservationsClientProps {
     user: any;
@@ -25,33 +25,45 @@ export function ReservationsClient({ user }: ReservationsClientProps) {
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [reservations, setReservations] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(() => user?.role === Role.RESIDENT);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [reservationToCancel, setReservationToCancel] = useState<string | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
     const userRole = user?.role as Role;
     const isResident = userRole === Role.RESIDENT;
-    const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN || userRole === Role.BOARD_OF_DIRECTORS;
 
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
-    const fetchReservations = async () => {
+    const fetchReservations = useCallback(async () => {
+        if (userRole !== Role.RESIDENT) return;
         setIsLoading(true);
         try {
-            const data = await getReservations();
+            const q = debouncedSearch.trim();
+            const data = await getReservations(q ? { search: q } : undefined);
             setReservations(data);
         } catch (error) {
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [debouncedSearch, userRole]);
 
     useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+        return () => clearTimeout(t);
+    }, [searchInput]);
+
+    useEffect(() => {
+        if (userRole !== Role.RESIDENT) {
+            setIsLoading(false);
+            return;
+        }
         fetchReservations();
-    }, []);
+    }, [fetchReservations, userRole]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -116,7 +128,21 @@ export function ReservationsClient({ user }: ReservationsClientProps) {
             />
 
             <Card>
-                <div className="p-4">
+                <div className="p-4 space-y-4">
+                    <div className="relative max-w-md">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">
+                            search
+                        </span>
+                        <Input
+                            type="search"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="pl-10"
+                            aria-label={t("searchPlaceholder")}
+                        />
+                    </div>
+
                     {isLoading ? (
                         <div className="flex justify-center py-12">
                             <Spinner />
@@ -132,7 +158,7 @@ export function ReservationsClient({ user }: ReservationsClientProps) {
                                     }}
                                 />
                             ) : (
-                                <ReservationTable userRole={userRole} />
+                                <ReservationTable userRole={userRole} search={debouncedSearch} />
                             )}
                         </>
                     )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
@@ -14,6 +14,7 @@ import ReservationForm from "@/components/dashboard/reservations/ReservationForm
 import { CreateAmenityInput } from "@/lib/validations/amenity";
 import { Spinner } from "@/components/ui/Spinner";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/Input";
 
 interface AmenitiesClientProps {
     user: any;
@@ -34,6 +35,8 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [amenityToDelete, setAmenityToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [searchInput, setSearchInput] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
 
     const userRole = user?.role as Role;
     const isResident = userRole === Role.RESIDENT;
@@ -42,10 +45,14 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
-    const fetchAmenities = async () => {
+    const fetchAmenities = useCallback(async () => {
         setIsLoading(true);
         try {
-            const response = await fetch("/api/amenities");
+            const params = new URLSearchParams();
+            const q = debouncedSearch.trim();
+            if (q) params.append("search", q);
+            const url = params.toString() ? `/api/amenities?${params.toString()}` : "/api/amenities";
+            const response = await fetch(url);
             const data = await response.json();
             if (response.ok) setAmenities(data);
         } catch (error) {
@@ -53,7 +60,7 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [debouncedSearch]);
 
     const fetchComplexes = async () => {
         try {
@@ -66,7 +73,15 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(searchInput.trim()), 300);
+        return () => clearTimeout(timer);
+    }, [searchInput]);
+
+    useEffect(() => {
         fetchAmenities();
+    }, [fetchAmenities]);
+
+    useEffect(() => {
         fetchComplexes();
     }, []);
 
@@ -186,6 +201,21 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
             />
 
             <Card>
+                <div className="p-4 space-y-4">
+                    <div className="relative max-w-md">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">
+                            search
+                        </span>
+                        <Input
+                            type="search"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="pl-10"
+                            aria-label={t("searchPlaceholder")}
+                        />
+                    </div>
+
                 {isLoading ? (
                     <div className="flex justify-center py-12">
                         <Spinner />
@@ -202,6 +232,7 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
                         isAdmin={isAdmin}
                     />
                 )}
+                </div>
             </Card>
 
             <Modal
