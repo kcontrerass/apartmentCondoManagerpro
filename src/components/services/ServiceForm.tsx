@@ -25,6 +25,7 @@ export function ServiceForm({
     showComplexSelector,
     defaultComplexId,
 }: ServiceFormProps) {
+    const t = useTranslations("Services");
     const {
         register,
         handleSubmit,

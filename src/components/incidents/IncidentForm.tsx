@@ -22,6 +22,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
     onSubmit,
     isLoading
 }) => {
+    const t = useTranslations("Incidents");
     const {
         register,
         handleSubmit,

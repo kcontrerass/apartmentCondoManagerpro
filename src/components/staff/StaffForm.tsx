@@ -44,8 +44,8 @@ export const StaffForm = ({ initialData, onSubmit, onCancel, isLoading, isEditin
         handleSubmit,
         watch,
         formState: { errors },
-    } = useForm({
-        resolver: zodResolver(schema),
+    } = useForm<any>({
+        resolver: zodResolver(schema) as any,
         defaultValues: initialData || {
             name: "",
             email: "",

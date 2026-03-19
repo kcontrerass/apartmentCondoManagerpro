@@ -26,14 +26,14 @@ export async function resolveUserScope(userId: string): Promise<UserScope | null
 
     if (user.role === Role.RESIDENT) {
         return {
-            role: user.role,
+            role: user.role as Role,
             complexId: user.residentProfile?.unit?.complexId ?? null,
             unitId: user.residentProfile?.unitId ?? null,
         };
     }
 
     return {
-        role: user.role,
+        role: user.role as Role,
         complexId: user.complexId ?? null,
         unitId: null,
     };

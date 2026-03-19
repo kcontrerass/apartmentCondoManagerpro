@@ -161,8 +161,10 @@ export async function POST(request: Request) {
                 visitorId: validatedData.visitorId,
                 reason: buildReasonWithVehicleMeta(
                     validatedData.reason,
-                    validatedData.arrivesInVehicle,
+                    validatedData.arrivesInVehicle === true,
                     validatedData.vehiclePlate
+                        ? validatedData.vehiclePlate.trim().toUpperCase().replace(/\s+/g, "")
+                        : undefined
                 ),
                 scheduledDate: new Date(validatedData.scheduledDate),
                 unitId: validatedData.unitId,
