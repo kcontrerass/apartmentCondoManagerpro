@@ -212,9 +212,13 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
     )).filter(Boolean);
 
     const filteredInvoices = invoices.filter(invoice => {
+        const lowerSearch = searchTerm.toLowerCase();
         const matchesSearch =
-            invoice.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            invoice.unit?.number?.toLowerCase().includes(searchTerm.toLowerCase());
+            invoice.number?.toLowerCase().includes(lowerSearch) ||
+            invoice.unit?.number?.toLowerCase().includes(lowerSearch) ||
+            invoice.unit?.residents?.some((r: any) => 
+                r.user?.name?.toLowerCase().includes(lowerSearch)
+            );
 
         const matchesStatus = statusFilter === "ALL" || invoice.status === statusFilter;
 
@@ -255,7 +259,7 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
                         label={t('searchPlaceholder') || "Buscar por unidad o número..."}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Ej. A-101 o INV-001"
+                        placeholder="Ej. A-101, INV-001 o Juan Perez"
                     />
                 </div>
                 <div className="w-full sm:w-auto min-w-[150px]">

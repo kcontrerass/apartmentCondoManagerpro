@@ -111,7 +111,7 @@ const AnnouncementsClient = ({ user }: AnnouncementsClientProps) => {
         <div className="space-y-8">
             <PageHeader
                 title={t('title')}
-                subtitle="Gestiona los comunicados de tu complejo"
+                subtitle={t('subtitle')}
                 actions={
                     canManage && (
                         <Button
@@ -151,7 +151,7 @@ const AnnouncementsClient = ({ user }: AnnouncementsClientProps) => {
                                 {tab.label}
                             </div>
                             <div className="text-slate-900 dark:text-white font-bold">
-                                {filters.status === tab.status ? 'Seleccionado' : 'Ver'}
+                                {filters.status === tab.status ? t('selected') : t('view')}
                             </div>
                         </div>
                     </button>
@@ -162,10 +162,10 @@ const AnnouncementsClient = ({ user }: AnnouncementsClientProps) => {
                 {!complexId && userRole !== Role.SUPER_ADMIN ? (
                     <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
                         <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">apartment</span>
-                        <p className="text-slate-600 font-bold">No se pudo identificar tu complejo</p>
-                        <p className="text-slate-500 text-sm mt-1 mb-6">Tu sesión puede estar incompleta. Por favor, intenta cerrar sesión y volver a entrar.</p>
+                        <p className="text-slate-600 font-bold">{t('noComplex')}</p>
+                        <p className="text-slate-500 text-sm mt-1 mb-6">{t('noComplexDesc')}</p>
                         <Button onClick={() => window.location.reload()} variant="outline">
-                            Recargar página
+                            {t('reload')}
                         </Button>
                     </div>
                 ) : loading ? (
@@ -179,7 +179,7 @@ const AnnouncementsClient = ({ user }: AnnouncementsClientProps) => {
                                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                                 <input
                                     type="text"
-                                    placeholder="Buscar por título..."
+                                    placeholder={t('searchPlaceholder')}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     className="w-full pl-12 pr-4 h-11 bg-slate-50 dark:bg-background-dark/50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm outline-none transition-all shadow-inner"
@@ -207,10 +207,10 @@ const AnnouncementsClient = ({ user }: AnnouncementsClientProps) => {
                         setConfirmDeleteId(null);
                     }
                 }}
-                title="Eliminar Aviso"
-                message="¿Estás seguro de que deseas eliminar este aviso? Esta acción no se puede deshacer."
-                confirmText="Eliminar"
-                cancelText="Cancelar"
+                title={t('confirmDeleteTitle')}
+                message={t('confirmDeleteMessage')}
+                confirmText={t('confirmDeleteButton')}
+                cancelText={t('cancel')}
             />
         </div>
     );

@@ -24,7 +24,12 @@ const EventTable: React.FC<EventTableProps> = ({
     const t = useTranslations('events');
 
     const formatDate = (date: Date | string) => {
-        return format(new Date(date), "d 'de' MMM, yyyy", { locale: es });
+        const d = new Date(date);
+        return d.toLocaleDateString(undefined, { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        });
     };
 
     const formatTime = (date: Date | string) => {

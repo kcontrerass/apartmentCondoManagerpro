@@ -35,16 +35,21 @@ const AnnouncementTable: React.FC<AnnouncementTableProps> = ({
 
     const getPriorityLabel = (priority: AnnouncementPriority) => {
         switch (priority) {
-            case 'URGENT': return 'Urgente';
-            case 'HIGH': return 'Alta';
-            case 'LOW': return 'Baja';
-            default: return 'Normal';
+            case 'URGENT': return t('priorityUrgent');
+            case 'HIGH': return t('priorityHigh');
+            case 'LOW': return t('priorityLow');
+            default: return t('priorityNormal');
         }
     };
 
     const formatDate = (date: Date | string | null) => {
         if (!date) return '-';
-        return format(new Date(date), "d 'de' MMM, yyyy", { locale: es });
+        const d = new Date(date);
+        return d.toLocaleDateString(undefined, { 
+            day: 'numeric', 
+            month: 'short', 
+            year: 'numeric' 
+        });
     };
 
     if (announcements.length === 0) {

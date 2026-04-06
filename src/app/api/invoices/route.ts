@@ -30,6 +30,17 @@ export async function GET(request: Request) {
             whereClause.OR = [
                 { number: { contains: search, mode: 'insensitive' } },
                 { description: { contains: search, mode: 'insensitive' } },
+                {
+                    unit: {
+                        residents: {
+                            some: {
+                                user: {
+                                    name: { contains: search, mode: 'insensitive' }
+                                }
+                            }
+                        }
+                    }
+                }
             ];
         }
 

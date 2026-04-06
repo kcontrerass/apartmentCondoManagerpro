@@ -105,7 +105,7 @@ const EventsClient = ({ user }: EventsClientProps) => {
         <div className="space-y-8">
             <PageHeader
                 title={t('title')}
-                subtitle="Eventos y actividades para la comunidad"
+                subtitle={t('subtitle')}
                 actions={
                     canManage && (
                         <Button
@@ -146,7 +146,7 @@ const EventsClient = ({ user }: EventsClientProps) => {
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                         <input
                             type="text"
-                            placeholder="Buscar por título..."
+                            placeholder={t('searchPlaceholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-12 pr-4 h-11 bg-slate-50 dark:bg-background-dark/50 border-none rounded-xl focus:ring-2 focus:ring-primary/20 text-sm outline-none transition-all shadow-inner"
@@ -178,12 +178,12 @@ const EventsClient = ({ user }: EventsClientProps) => {
             {!complexId && userRole !== Role.SUPER_ADMIN ? (
                 <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-slate-50 dark:bg-background-dark/20 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
                     <span className="material-symbols-outlined text-6xl text-slate-200 mb-4">apartment</span>
-                    <p className="text-slate-600 dark:text-slate-300 font-bold">No se pudo identificar tu complejo</p>
+                    <p className="text-slate-600 dark:text-slate-300 font-bold">{t('noComplex')}</p>
                     <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 mb-6 max-w-xs mx-auto">
-                        Tu sesión puede estar incompleta. Por favor, intenta cerrar sesión y volver a entrar o recargar la página.
+                        {t('noComplexDesc')}
                     </p>
                     <Button onClick={() => window.location.reload()} variant="outline">
-                        Recargar página
+                        {t('reload')}
                     </Button>
                 </div>
             ) : loading ? (
@@ -193,8 +193,8 @@ const EventsClient = ({ user }: EventsClientProps) => {
             ) : events.length === 0 ? (
                 <Card className="flex flex-col items-center justify-center py-24 text-center">
                     <span className="material-symbols-outlined text-6xl text-slate-200 mb-6">event_busy</span>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">No hay eventos para mostrar</h3>
-                    <p className="text-slate-500 max-w-xs mx-auto mt-2">Vuelve pronto para ver nuevas actividades en tu comunidad.</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('noEvents')}</h3>
+                    <p className="text-slate-500 max-w-xs mx-auto mt-2">{t('noEventsDesc')}</p>
                 </Card>
             ) : viewMode === 'table' ? (
                 <Card>
@@ -222,10 +222,10 @@ const EventsClient = ({ user }: EventsClientProps) => {
                         setConfirmDeleteId(null);
                     }
                 }}
-                title="Eliminar Evento"
-                message="¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer."
-                confirmText="Eliminar"
-                cancelText="Cancelar"
+                title={t('confirmDeleteTitle')}
+                message={t('confirmDeleteMessage')}
+                confirmText={t('deleteButton')}
+                cancelText={t('cancel')}
             />
         </div>
     );
