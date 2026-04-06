@@ -63,7 +63,6 @@ export function ComplexesClient({ userRole }: ComplexesClientProps) {
                         options={[
                             { label: "Todos los tipos", value: "" },
                             { label: "Edificio", value: ComplexType.BUILDING },
-                            { label: "Residencial", value: ComplexType.RESIDENTIAL },
                             { label: "Condominio", value: ComplexType.CONDO },
                             { label: "Centro Comercial", value: ComplexType.SHOPPING_CENTER },
                         ]}

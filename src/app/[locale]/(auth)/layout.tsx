@@ -1,76 +1,97 @@
+'use client';
+
 import Image from 'next/image';
+import { useTheme } from "@/components/providers/ThemeProvider";
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter, usePathname } from '@/i18n/routing';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/Button';
 
 export default function AuthLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const t = useTranslations("Auth");
+    const { theme, toggleTheme } = useTheme();
+    const locale = useLocale();
+    const router = useRouter();
+    const pathname = usePathname();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const toggleLanguage = () => {
+        const nextLocale = locale === 'es' ? 'en' : 'es';
+        router.replace(pathname, { locale: nextLocale });
+    };
+
     return (
-        <div className="flex min-h-screen bg-white dark:bg-slate-950 font-sans">
-            {/* Left Box - Dynamic Branding / Image */}
-            <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900 border-r border-slate-200 dark:border-slate-800">
-                {/* Optional subtle gradient overlay */}
-                <div className="absolute inset-0  via-slate-900/95 to-slate-950/90 z-10 mix-blend-multiply flex flex-col justify-between p-12">
-                    <div className="z-20">
-                        {/* We can use a stylized generic logo or purely topological element here if no specific logo exists */}
-                        <div className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-xl flex items-center justify-center text-white ring-1 ring-white/20 mb-6 shadow-2xl">
-                            <span className="material-symbols-outlined text-[28px]">apartment</span>
-                        </div>
-                        <h1 className="text-white text-4xl font-extrabold tracking-tight mb-4">
-                            El futuro de la gestión residencial.
-                        </h1>
-                        <p className="text-slate-300/90 text-lg max-w-sm leading-relaxed">
-                            Control total, conectividad inteligente y una experiencia premium para administradores y residentes.
-                        </p>
-                    </div>
-                    <div className="z-20">
-                        <p className="text-white/50 text-sm font-medium">© {new Date().getFullYear()} ADESSO-365</p>
-                    </div>
-                </div>
-
-                {/* Background generic architecture image */}
-                <Image
-                    src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
-                    alt="ADESSO-365 Architecture"
-                    fill
-                    className="object-cover opacity-60 z-0 grayscale-[0.2]"
-                    priority
-                />
+        <div className="relative min-h-screen pt-10 flex flex-col items-center justify-center bg-[#FDFDFD] dark:bg-slate-950 font-sans selection:bg-primary/20 transition-colors duration-500">
+            {/* Subtle Texture Background */}
+            <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] dark:opacity-[0.05]">
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
             </div>
 
-            {/* Right Box - Auth Form */}
-            <div className="flex-1 flex flex-col justify-center items-center px-4 sm:px-6 lg:px-20 xl:px-24 bg-slate-50 dark:bg-background-dark relative">
-                {/* Mobile top band */}
-                <div className="absolute top-8 left-8 lg:hidden flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white shadow-lg shadow-primary/20">
-                        <span className="material-symbols-outlined text-[18px]">apartment</span>
-                    </div>
-                    <span className="text-slate-900 dark:text-white font-bold tracking-wide">ADESSO-365</span>
-                </div>
+            {/* Top Bar Controls */}
+            <div className="absolute top-6 right-6 z-50 flex items-center gap-3">
+                {/* Theme Toggle */}
+                {mounted && (
+                    <button
+                        onClick={toggleTheme}
+                        className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-slate-500 hover:text-primary transition-all duration-300 shadow-sm"
+                        title={theme === 'dark' ? t("loginInstructions") : t("loginInstructions")}
+                    >
+                        <span className="material-symbols-outlined text-[20px]">
+                            {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                        </span>
+                    </button>
+                )}
 
-                <div className="w-full max-w-sm pt-12 pb-12 mt-8 lg:mt-0">
-                    <div className="mb-8 hidden lg:block text-center sm:text-left">
-                        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                            Bienvenido a <span className="text-primary dark:text-primary">ADESSO-365</span>
-                        </h2>
-                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            Ingresa tus credenciales para acceder a tu panel.
-                        </p>
-                    </div>
-                    <div className="mb-8 lg:hidden text-center">
-                        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                            Bienvenido a <br />ADESSO-365
-                        </h2>
-                        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            Ingresa tus credenciales para acceder a tu panel.
-                        </p>
-                    </div>
-
-                    <div className="bg-white dark:bg-background-dark/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] rounded-2xl p-8 sm:p-10 border border-slate-100 dark:border-slate-800 backdrop-blur-xl transition-all duration-300">
-                        {children}
-                    </div>
-                </div>
+                {/* Language Switcher */}
+                <button
+                    onClick={toggleLanguage}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-slate-500 hover:text-primary transition-all duration-300 shadow-sm font-bold text-xs uppercase tracking-wider"
+                >
+                    <span className="material-symbols-outlined text-[18px]">language</span>
+                    {locale === 'es' ? 'EN' : 'ES'}
+                </button>
             </div>
+
+            <main className="relative z-10 w-full max-w-[440px] px-6">
+                {/* Branding - Clean & Centered */}
+                <div className="mb-10 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 mb-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm text-primary transition-all duration-300">
+                        <span className="material-symbols-outlined text-[28px]">apartment</span>
+                    </div>
+                    <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase transition-all duration-300">
+                        ADESSO<span className="text-primary">-</span>365
+                    </h1>
+                </div>
+
+                {/* Main Auth Container */}
+                <div className="bg-white dark:bg-slate-900/40 border border-slate-100 dark:border-white/5 rounded-[32px] p-8 sm:p-12 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] backdrop-blur-2xl transition-all duration-500">
+                    {children}
+                </div>
+
+                {/* Footer Copy */}
+                <div className="mt-12 text-center text-slate-400 dark:text-slate-500 text-[11px] font-bold uppercase tracking-[0.2em] transition-all duration-300 space-y-2">
+                    <p>
+                        © {new Date().getFullYear()} ADESSO-365 • PropTech Solutions
+                    </p>
+                    <p className="flex items-center justify-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800" />
+                        {t("authorizedPoint")}
+                    </p>
+                </div>
+            </main>
+
+            {/* Subtle help corner text */}
+
         </div>
     );
 }
+
+

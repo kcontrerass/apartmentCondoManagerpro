@@ -7,6 +7,7 @@ import { enUS, es } from "date-fns/locale";
 import { useLocale, useTranslations } from "next-intl";
 import { Role } from "@/types/roles";
 import { formatPrice } from "@/lib/utils";
+import { generateInvoicePDF } from "@/lib/utils/pdf-generator";
 
 interface InvoiceTableProps {
     invoices: any[];
@@ -34,6 +35,25 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
     };
 
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+
+    const handleDownload = (invoice: any) => {
+        generateInvoicePDF({
+            invoiceNumber: invoice.number,
+            date: format(new Date(invoice.createdAt), 'dd/MM/yyyy'),
+            dueDate: format(new Date(invoice.dueDate), 'dd/MM/yyyy'),
+            residentName: invoice.resident?.name || invoice.unit?.residents?.[0]?.user?.name || "Residente",
+            unitNumber: invoice.unit?.number || "N/A",
+            complexName: invoice.complex?.name || "ADESSO-365 Complex",
+            complexAddress: invoice.complex?.address || "",
+            items: (invoice.items || []).map((item: any) => ({
+                description: item.description,
+                amount: Number(item.amount)
+            })),
+            total: Number(invoice.totalAmount),
+            status: invoice.status,
+            bankAccount: invoice.complex?.bankAccount
+        });
+    };
 
     return (
         <div className="overflow-x-auto">
@@ -136,6 +156,16 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex justify-end gap-2">
+                                    {invoice.status === "PAID" && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            onClick={() => handleDownload(invoice)}
+                                            title="Descargar PDF"
+                                        >
+                                            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                        </Button>
+                                    )}
                                     <Button
                                         variant="secondary"
                                         size="sm"

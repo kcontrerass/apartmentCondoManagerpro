@@ -145,7 +145,6 @@ export function ComplexForm({ initialData, id, isEditing }: ComplexFormProps) {
                         {...register("type")}
                         options={[
                             { label: t("types.BUILDING" as never), value: ComplexType.BUILDING },
-                            { label: t("types.RESIDENTIAL" as never), value: ComplexType.RESIDENTIAL },
                             { label: t("types.CONDO" as never), value: ComplexType.CONDO },
                             { label: t("types.SHOPPING_CENTER" as never), value: ComplexType.SHOPPING_CENTER },
                         ]}

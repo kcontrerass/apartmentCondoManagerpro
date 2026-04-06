@@ -158,6 +158,7 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                     >
                         <option value="Apartamento">{t("form.typeApartment")}</option>
                         <option value="Casa">{t("form.typeHouse")}</option>
+                        <option value="Local">{t("form.typeCommercial")}</option>
                         <option value="Otro">{t("form.typeOther")}</option>
                     </select>
                     {errors.type?.message && (

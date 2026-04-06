@@ -3,14 +3,17 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import Link from "next/link";
 
+import { getTranslations } from 'next-intl/server';
+
 export default async function CommunicationsPage() {
+    const t = await getTranslations('Communications');
     const session = await auth();
     if (!session?.user) return null;
 
     const modules = [
         {
-            title: "Avisos",
-            description: "Consulta y gestiona los comunicados oficiales del complejo.",
+            title: t('announcementsTitle'),
+            description: t('announcementsDesc'),
             href: "/dashboard/announcements",
             icon: "campaign",
             color: "bg-blue-500",
@@ -18,8 +21,8 @@ export default async function CommunicationsPage() {
             textColor: "text-blue-600"
         },
         {
-            title: "Eventos",
-            description: "Descubre y participa en las actividades comunitarias y asambleas.",
+            title: t('eventsTitle'),
+            description: t('eventsDesc'),
             href: "/dashboard/events",
             icon: "event",
             color: "bg-purple-500",
@@ -32,8 +35,8 @@ export default async function CommunicationsPage() {
         <MainLayout user={session.user}>
             <div className="space-y-10">
                 <PageHeader
-                    title="Comunicaciones"
-                    subtitle="Mantente informado y participa activamente en tu comunidad"
+                    title={t('title')}
+                    subtitle={t('subtitle')}
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

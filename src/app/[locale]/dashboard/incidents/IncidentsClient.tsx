@@ -10,6 +10,7 @@ import { Role } from "@/types/roles";
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 import { Breadcrumbs } from '@/components/dashboard/Breadcrumbs';
 
 interface IncidentsClientProps {
@@ -25,6 +26,7 @@ export default function IncidentsClient({
     residentComplexId,
     residentUnitId
 }: IncidentsClientProps) {
+    const t = useTranslations('Incidents');
     const [userRoleState, setUserRoleState] = useState<Role>(userRole);
     const [complexId, setComplexId] = useState<string | null>(userComplexId || residentComplexId || null);
     const [isRecovering, setIsRecovering] = useState(false);
@@ -151,10 +153,10 @@ export default function IncidentsClient({
                 <div>
                     <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white items-center flex gap-3">
                         <span className="material-symbols-outlined text-3xl text-primary">report</span>
-                        Reportes e Incidentes
+                        {t('table.titleReporter').split(' / ')[0]}
                     </h1>
                     <p className="text-slate-500 font-medium mt-1">
-                        Gestiona y reporta problemas dentro del complejo.
+                        {t('empty').includes('no hay') ? "Gestiona y reporta problemas dentro del complejo." : t('empty')}
                     </p>
                 </div>
 
@@ -164,7 +166,7 @@ export default function IncidentsClient({
                         className="shadow-xl shadow-primary/20"
                         icon="add_circle"
                     >
-                        Reportar Incidente
+                        {t('form.submit')}
                     </Button>
                 )}
             </div>
@@ -191,7 +193,7 @@ export default function IncidentsClient({
             <Modal
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-                title="Nuevo Reporte de Incidente"
+                title={t('form.newReportTitle')}
             >
                 <IncidentForm
                     complexId={complexId || ''}
@@ -205,7 +207,7 @@ export default function IncidentsClient({
             <Modal
                 isOpen={isDeleteModalOpen}
                 onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
-                title="Confirmar Eliminación"
+                title={t('confirmDeleteTitle')}
                 footer={
                     <div className="flex gap-3">
                         <Button
@@ -213,21 +215,21 @@ export default function IncidentsClient({
                             onClick={() => setIsDeleteModalOpen(false)}
                             disabled={isDeleting}
                         >
-                            Cancelar
+                            {t('cancel')}
                         </Button>
                         <Button
                             variant="danger"
                             onClick={handleDelete}
                             isLoading={isDeleting}
                         >
-                            {isDeleting ? "Eliminando..." : "Eliminar Incidente"}
+                            {isDeleting ? t('deleting') : t('deleteButton')}
                         </Button>
                     </div>
                 }
             >
                 <div className="space-y-4">
                     <p className="text-slate-600 dark:text-slate-400">
-                        ¿Estás seguro de que deseas eliminar este incidente definitivamente? Esta acción no se puede deshacer.
+                        {t('confirmDeleteMessage')}
                     </p>
                 </div>
             </Modal>

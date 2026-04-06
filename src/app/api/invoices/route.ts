@@ -88,10 +88,18 @@ export async function GET(request: Request) {
             where: whereClause,
             include: {
                 unit: {
-                    select: { number: true }
+                    include: {
+                        residents: {
+                            include: {
+                                user: {
+                                    select: { name: true }
+                                }
+                            }
+                        }
+                    }
                 },
                 complex: {
-                    select: { name: true, phone: true, bankAccount: true }
+                    select: { name: true, phone: true, bankAccount: true, address: true }
                 },
                 reservation: {
                     select: { id: true, paymentMethod: true }

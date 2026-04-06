@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { ComplexSelector } from '@/components/dashboard/ComplexSelector';
 import { Role } from '@/types/roles';
 import { useSelectedComplex } from '@/components/providers/ComplexProvider';
+import { useTranslations } from 'next-intl';
 
 interface PollListProps {
     complexId: string;
@@ -16,6 +17,7 @@ interface PollListProps {
 }
 
 export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId, userRole }) => {
+    const t = useTranslations('Polls');
     const { selectedComplexId, setSelectedComplexId, isSuperAdmin } = useSelectedComplex();
 
     // For SuperAdmin, we use the global selectedComplexId. 
@@ -23,7 +25,7 @@ export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId,
     const currentComplexId = isSuperAdmin ? (selectedComplexId || '') : initialComplexId;
 
     const { polls, loading, fetchPolls, createPoll, vote, deletePoll } = usePolls(currentComplexId);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPollModalOpen, setIsPollModalOpen] = useState(false);
     const [filter, setFilter] = useState<'ALL' | 'OPEN' | 'CLOSED'>('ALL');
 
     useEffect(() => {
@@ -45,7 +47,7 @@ export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId,
     const handleCreatePoll = async (data: any) => {
         try {
             await createPoll(data);
-            setIsModalOpen(false);
+            setIsPollModalOpen(false);
         } catch (error) {
             // Error is handled in the hook (toast)
         }
@@ -61,7 +63,7 @@ export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId,
                             <ComplexSelector
                                 value={selectedComplexId}
                                 onChange={(id) => setSelectedComplexId(id)}
-                                label="Filtrar por Condominio"
+                                label={t('filterByComplex')}
                             />
                         </div>
                     )}
@@ -71,31 +73,31 @@ export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId,
                             onClick={() => setFilter('ALL')}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === 'ALL' ? 'bg-white dark:bg-slate-700 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            Todas
+                            {t('filters.all')}
                         </button>
                         <button
                             onClick={() => setFilter('OPEN')}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === 'OPEN' ? 'bg-white dark:bg-slate-700 text-emerald-500 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            Activas
+                            {t('filters.open')}
                         </button>
                         <button
                             onClick={() => setFilter('CLOSED')}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filter === 'CLOSED' ? 'bg-white dark:bg-slate-700 text-slate-400 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
-                            Cerradas
+                            {t('filters.closed')}
                         </button>
                     </div>
                 </div>
 
                 {isAdmin && (
                     <Button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => setIsPollModalOpen(true)}
                         icon="add_circle"
                         className="shadow-xl shadow-primary/20 h-[48px] px-8"
                         disabled={!currentComplexId}
                     >
-                        Nueva Votación
+                        {t('new')}
                     </Button>
                 )}
             </div>
@@ -121,19 +123,19 @@ export const PollList: React.FC<PollListProps> = ({ complexId: initialComplexId,
                     <div className="w-20 h-20 bg-slate-50 dark:bg-background-dark rounded-full flex items-center justify-center mx-auto mb-6">
                         <span className="material-symbols-outlined text-slate-300 text-4xl">how_to_vote</span>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No hay votaciones</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{t('emptyTitle')}</h3>
                     <p className="text-slate-500 text-sm max-w-xs mx-auto">
                         {!currentComplexId
-                            ? "Selecciona un condominio para ver sus votaciones."
-                            : "No se encontraron encuestas disponibles bajo este filtro."}
+                            ? t('selectComplexHelp')
+                            : t('noPollsFound')}
                     </p>
                 </div>
             )}
 
             <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Nueva Votación Digital"
+                isOpen={isPollModalOpen}
+                onClose={() => setIsPollModalOpen(false)}
+                title={t('modalTitle')}
             >
                 <PollForm
                     complexId={currentComplexId}

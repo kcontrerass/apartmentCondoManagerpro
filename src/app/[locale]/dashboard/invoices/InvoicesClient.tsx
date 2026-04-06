@@ -134,6 +134,7 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
         }
     };
 
+
     const handleUpdateStatus = async (id: string, status: string) => {
         try {
             const response = await fetch(`/api/invoices/${id}`, {
@@ -234,13 +235,15 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
                 subtitle={isResident ? t('subtitleResident') : t('subtitleAdmin')}
                 actions={
                     isAdmin && (
-                        <Button
-                            variant="primary"
-                            icon="receipt_long"
-                            onClick={() => setIsGenerateModalOpen(true)}
-                        >
-                            {t('generate')}
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="primary"
+                                icon="receipt_long"
+                                onClick={() => setIsGenerateModalOpen(true)}
+                            >
+                                {t('generate')}
+                            </Button>
+                        </div>
                     )
                 }
             />
