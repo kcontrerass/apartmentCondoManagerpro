@@ -154,7 +154,7 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <a
-                                        href={`/api/documents/${doc.id}/download?disposition=inline`}
+                                        href={doc.fileUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-primary hover:text-primary/80 font-semibold text-sm flex items-center gap-1"
@@ -165,7 +165,10 @@ export function DocumentList({ userRole, complexId }: DocumentListProps) {
                                         <span className="material-symbols-outlined text-[16px]">open_in_new</span>
                                     </a>
                                     <a
-                                        href={`/api/documents/${doc.id}/download`}
+                                        href={doc.fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        download
                                         className="text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-primary font-semibold text-sm flex items-center gap-1"
                                     >
                                         {t("download")} <span className="material-symbols-outlined text-[16px]">download</span>

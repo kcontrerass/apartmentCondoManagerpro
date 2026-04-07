@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
-import { deleteCloudinaryAssetByUrl } from "@/lib/cloudinary";
+import { deleteS3Object, extractKeyFromS3Url } from "@/lib/s3";
 
 export async function PATCH(
     req: Request,
@@ -96,12 +96,15 @@ export async function DELETE(
             return new NextResponse("Forbidden", { status: 403 });
         }
 
-        // Best-effort cleanup in Cloudinary if the file is hosted there.
-        if (document.fileUrl?.includes("res.cloudinary.com")) {
+        // Best-effort cleanup in S3 if the file is hosted there.
+        if (document.fileUrl?.includes(".amazonaws.com")) {
             try {
-                await deleteCloudinaryAssetByUrl(document.fileUrl);
-            } catch (cloudinaryError) {
-                console.error("[DOCUMENT_DELETE_CLOUDINARY]", cloudinaryError);
+                const key = extractKeyFromS3Url(document.fileUrl);
+                if (key) {
+                    await deleteS3Object(key);
+                }
+            } catch (s3Error) {
+                console.error("[DOCUMENT_DELETE_S3]", s3Error);
             }
         }
 

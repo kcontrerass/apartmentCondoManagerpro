@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
-import { isCloudinaryConfigured, uploadFileToCloudinary } from "@/lib/cloudinary";
+import { isS3Configured, uploadFileToS3 } from "@/lib/s3";
 
 const ALLOWED_TYPES = new Set([
     "application/pdf",
@@ -11,7 +11,7 @@ const ALLOWED_TYPES = new Set([
     "image/gif",
 ]);
 
-const MAX_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_SIZE_BYTES = 50 * 1024 * 1024; // Increased to 50 MB for documents
 
 export async function POST(req: Request) {
     try {
@@ -28,10 +28,10 @@ export async function POST(req: Request) {
             return new NextResponse("Forbidden", { status: 403 });
         }
 
-        if (!isCloudinaryConfigured) {
+        if (!isS3Configured) {
             return NextResponse.json(
                 {
-                    error: "Cloudinary no está configurado. Define CLOUDINARY_URL o CLOUDINARY_CLOUD_NAME/NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY/NEXT_PUBLIC_CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET.",
+                    error: "AWS S3 no está configurado. Revisa las variables de entorno AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION y AWS_S3_BUCKET.",
                 },
                 { status: 500 }
             );
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         }
 
         if (file.size > MAX_SIZE_BYTES) {
-            return NextResponse.json({ error: "El archivo supera el límite de 10 MB" }, { status: 400 });
+            return NextResponse.json({ error: "El archivo supera el límite de 50 MB" }, { status: 400 });
         }
 
         if (!ALLOWED_TYPES.has(file.type)) {
@@ -56,19 +56,19 @@ export async function POST(req: Request) {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer());
-        const uploaded = await uploadFileToCloudinary({
+        const uploaded = await uploadFileToS3({
             buffer,
-            folder: "adesso-365/documents",
+            folder: "documents",
             originalFilename: file.name,
             mimeType: file.type,
         });
 
         return NextResponse.json({
-            fileUrl: uploaded.secure_url,
+            fileUrl: uploaded.fileUrl,
             fileSize: file.size,
             fileType: file.type,
-            cloudinaryPublicId: uploaded.public_id,
-            cloudinaryResourceType: uploaded.resource_type,
+            s3Key: uploaded.key,
+            s3Bucket: uploaded.bucket,
         });
     } catch (error) {
         console.error("[DOCUMENTS_UPLOAD]", error);

@@ -10,13 +10,14 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1025.0",
+    "@aws-sdk/s3-request-presigner": "^3.1025.0",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.22.0",
     "@stripe/stripe-js": "^8.6.3",
     "bcrypt": "^6.0.0",
     "chart.js": "^4.5.1",
-    "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.2.3",
