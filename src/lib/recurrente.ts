@@ -1,11 +1,9 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
-const RECURRENTE_PUBLIC_KEY = process.env.RECURRENTE_PUBLIC_KEY?.trim();
-const RECURRENTE_SECRET_KEY = process.env.RECURRENTE_SECRET_KEY?.trim();
-const RECURRENTE_WEBHOOK_SECRET = process.env.RECURRENTE_WEBHOOK_SECRET?.trim();
-
-if (!RECURRENTE_PUBLIC_KEY || !RECURRENTE_SECRET_KEY) {
-    console.error("[Recurrente] Missing API keys");
+export interface RecurrenteKeys {
+    publicKey: string;
+    secretKey: string;
+    webhookSecret?: string;
 }
 
 const BASE_URL = 'https://app.recurrente.com/api';
@@ -23,12 +21,17 @@ export const recurrente = {
             cancel_url?: string;
             metadata?: Record<string, unknown>;
             [key: string]: unknown;
-        }) => {
+        }, keys?: RecurrenteKeys) => {
             try {
+                const pubKey = keys?.publicKey;
+                const secKey = keys?.secretKey;
+
+                if (!pubKey || !secKey) throw new Error("Missing Recurrente API Keys check complex settings");
+
                 const requestHeaders = {
                     'Content-Type': 'application/json',
-                    'X-PUBLIC-KEY': (RECURRENTE_PUBLIC_KEY || '').trim(),
-                    'X-SECRET-KEY': (RECURRENTE_SECRET_KEY || '').trim(),
+                    'X-PUBLIC-KEY': pubKey,
+                    'X-SECRET-KEY': secKey,
                 };
 
                 const response = await fetch(`${BASE_URL}/checkouts`, {
@@ -48,14 +51,21 @@ export const recurrente = {
                 throw error;
             }
         },
-        retrieve: async (id: string) => {
+        retrieve: async (id: string, keys?: RecurrenteKeys) => {
             try {
+                const pubKey = keys?.publicKey || '';
+                const secKey = keys?.secretKey || '';
+
+                if (!pubKey || !secKey) {
+                    return null;
+                }
+
                 const response = await fetch(`${BASE_URL}/checkouts/${id}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-PUBLIC-KEY': RECURRENTE_PUBLIC_KEY || '',
-                        'X-SECRET-KEY': RECURRENTE_SECRET_KEY || '',
+                        'X-PUBLIC-KEY': pubKey,
+                        'X-SECRET-KEY': secKey,
                     },
                 });
 
@@ -77,8 +87,10 @@ export const recurrente = {
             signatureHeader: string | null;
             timestampHeader?: string | null;
             toleranceSeconds?: number;
+            keys?: RecurrenteKeys;
         }): boolean => {
-            if (!RECURRENTE_WEBHOOK_SECRET) return false;
+            const secret = params.keys?.webhookSecret;
+            if (!secret) return false;
 
             const { rawBody, signatureHeader, timestampHeader, toleranceSeconds = 300 } = params;
             if (!signatureHeader) return false;
@@ -108,16 +120,16 @@ export const recurrente = {
             }
 
             const payloadWithTimestamp = hasTimestamp ? `${timestamp}.${rawBody}` : rawBody;
-            const digestHexWithTimestamp = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+            const digestHexWithTimestamp = createHmac("sha256", secret)
                 .update(payloadWithTimestamp)
                 .digest("hex");
-            const digestHexRaw = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+            const digestHexRaw = createHmac("sha256", secret)
                 .update(rawBody)
                 .digest("hex");
-            const digestBase64WithTimestamp = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+            const digestBase64WithTimestamp = createHmac("sha256", secret)
                 .update(payloadWithTimestamp)
                 .digest("base64");
-            const digestBase64Raw = createHmac("sha256", RECURRENTE_WEBHOOK_SECRET)
+            const digestBase64Raw = createHmac("sha256", secret)
                 .update(rawBody)
                 .digest("base64");
 

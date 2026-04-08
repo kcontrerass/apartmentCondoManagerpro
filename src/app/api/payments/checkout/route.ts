@@ -107,6 +107,8 @@ export async function POST(request: Request) {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
             const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
+            const recurrenteKeys = (amenity.complex.settings as any)?.recurrente;
+
             const checkoutSession = await recurrente.checkouts.create({
                 items: [{
                     name: `Reserva: ${amenity.name} - ${amenity.complex?.name}`,
@@ -127,7 +129,7 @@ export async function POST(request: Request) {
                     userId: session.user.id,
                     totalAmount
                 }
-            });
+            }, recurrenteKeys);
 
             const url = checkoutSession.checkout_url || checkoutSession.url;
             return apiOk({ url });
@@ -143,7 +145,7 @@ export async function POST(request: Request) {
 
         const invoice = await (prisma as any).invoice.findUnique({
             where: { id: invoiceId },
-            include: { unit: true }
+            include: { unit: { include: { complex: true } } }
         });
 
         if (!invoice) {
@@ -176,6 +178,8 @@ export async function POST(request: Request) {
         const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
         if (method === "CARD" || !method) {
+            const recurrenteKeys = (invoice.unit.complex.settings as any)?.recurrente;
+
             // Recurrente Checkout Creation
             const checkoutSession = await recurrente.checkouts.create({
                 items: [{
@@ -193,7 +197,7 @@ export async function POST(request: Request) {
                     invoiceId: invoice.id,
                     unitId: invoice.unitId,
                 }
-            });
+            }, recurrenteKeys);
 
             // Update invoice with intended payment method
             await (prisma as any).invoice.update({

@@ -75,6 +75,7 @@ export async function PUT(
                 settings: {
                     ...existingSettings,
                     permissions: sanitizedPermissions,
+                    recurrente: body.settings?.recurrente || existingSettings.recurrente,
                     billing: body.settings?.billing || existingSettings.billing,
                 },
             },

@@ -50,6 +50,7 @@
         "linkFromResetPage": "Cómo recuperar el acceso (administrador)"
     },
     "Auth": {
+        "tagline": "Gestión integral para Condominios, Edificios y Centros Comerciales",
         "welcomeBack": "Bienvenido de vuelta",
         "loginInstructions": "Ingresa tus credenciales para acceder al portal.",
         "email": "Email",
@@ -164,7 +165,9 @@
             "type": "Tipo",
             "typeApartment": "Apartamento",
             "typeHouse": "Casa",
-            "typeCommercial": "Local",
+            "typeLocal": "Local",
+            "typeOffice": "Oficina",
+            "typeClinic": "Clínica",
             "typeOther": "Otro",
             "bedrooms": "Habitaciones",
             "bathrooms": "Baños",
@@ -989,6 +992,11 @@
         "error": "Error al guardar",
         "errorDesc": "No se pudieron guardar los ajustes. Intente nuevamente.",
         "errorComplex": "Error: No se encontró el complejo activo.",
-        "selectComplexHelp": "Por favor, selecciona un complejo para configurar sus permisos."
+        "selectComplexHelp": "Por favor, selecciona un complejo para configurar sus permisos.",
+        "recurrenteConfigTitle": "Configuración Pasarela de Pagos (Recurrente)",
+        "recurrentePublicLabel": "Public Key",
+        "recurrenteSecretLabel": "Secret Key",
+        "recurrenteWebhookLabel": "Webhook Secret",
+        "recurrenteWebhookHelp": "Secret necesario para validar pagos en automático. Déjalo en blanco si aún no tienes uno."
     }
 }

@@ -38,7 +38,7 @@ export function UnitsClient({ user }: UnitsClientProps) {
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
 
     const [units, setUnits] = useState<UnitWithResidents[]>([]);
-    const [complexes, setComplexes] = useState<{ id: string, name: string }[]>([]);
+    const [complexes, setComplexes] = useState<{ id: string, name: string, type?: string }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingUnit, setEditingUnit] = useState<UnitWithResidents | null>(null);

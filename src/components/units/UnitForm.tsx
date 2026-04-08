@@ -13,7 +13,7 @@ interface UnitFormProps {
     initialData?: Partial<Unit>;
     onSubmit: (data: UnitInput) => Promise<void>;
     isLoading?: boolean;
-    complexes?: { id: string, name: string }[];
+    complexes?: { id: string, name: string, type?: string }[];
     showComplexSelector?: boolean;
     complexId?: string | null;
 }
@@ -156,10 +156,32 @@ export function UnitForm({ initialData, onSubmit, isLoading, complexes, showComp
                         className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
                         {...register("type")}
                     >
-                        <option value="Apartamento">{t("form.typeApartment")}</option>
-                        <option value="Casa">{t("form.typeHouse")}</option>
-                        <option value="Local">{t("form.typeCommercial")}</option>
-                        <option value="Otro">{t("form.typeOther")}</option>
+                        {(() => {
+                            const activeComplexId = complexId || watchedComplexId || (initialData as any)?.complexId;
+                            const activeComplex = complexes?.find(c => c.id === activeComplexId);
+                            const complexType = activeComplex?.type || "RESIDENTIAL"; // Fallback to safe default
+                            
+                            if (complexType === "SHOPPING_CENTER") {
+                                return (
+                                    <>
+                                        <option value="Local">{t("form.typeLocal") || "Local"}</option>
+                                        <option value="Oficina">{t("form.typeOffice") || "Oficina"}</option>
+                                        <option value="Clínica">{t("form.typeClinic") || "Clínica"}</option>
+                                        <option value="Otro">{t("form.typeOther")}</option>
+                                    </>
+                                );
+                            }
+                            
+                            // DEFAULT for BUILDING, RESIDENTIAL, CONDO
+                            return (
+                                <>
+                                    <option value="Apartamento">{t("form.typeApartment")}</option>
+                                    <option value="Casa">{t("form.typeHouse")}</option>
+                                    <option value="Oficina">{t("form.typeOffice") || "Oficina"}</option>
+                                    <option value="Otro">{t("form.typeOther")}</option>
+                                </>
+                            );
+                        })()}
                     </select>
                     {errors.type?.message && (
                         <p className="text-xs text-red-500 mt-1">{errors.type?.message as string}</p>

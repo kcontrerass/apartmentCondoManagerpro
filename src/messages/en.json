@@ -50,6 +50,7 @@
         "linkFromResetPage": "How to recover access (administrator)"
     },
     "Auth": {
+        "tagline": "Comprehensive management for Condominiums, Buildings, and Shopping Centers",
         "welcomeBack": "Welcome back",
         "loginInstructions": "Enter your credentials to access the portal.",
         "email": "Email",
@@ -164,7 +165,9 @@
             "type": "Type",
             "typeApartment": "Apartment",
             "typeHouse": "House",
-            "typeCommercial": "Commercial unit",
+            "typeLocal": "Retail Space",
+            "typeOffice": "Office",
+            "typeClinic": "Clinic",
             "typeOther": "Other",
             "bedrooms": "Bedrooms",
             "bathrooms": "Bathrooms",
@@ -949,7 +952,12 @@
         "error": "Save error",
         "errorDesc": "Could not save the settings. Please try again.",
         "errorComplex": "Error: Active complex not found.",
-        "selectComplexHelp": "Please select a complex to configure its permissions."
+        "selectComplexHelp": "Please select a complex to configure its permissions.",
+        "recurrenteConfigTitle": "Payment Gateway Configuration (Recurrente)",
+        "recurrentePublicLabel": "Public Key",
+        "recurrenteSecretLabel": "Secret Key",
+        "recurrenteWebhookLabel": "Webhook Secret",
+        "recurrenteWebhookHelp": "Secret required to validate payments automatically. Leave blank if you don't have one yet."
     },
     "Communications": {
         "title": "Communications",

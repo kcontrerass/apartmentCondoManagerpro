@@ -9,7 +9,7 @@ import { UnitInput } from "@/lib/validations/unit";
 import { toast } from "sonner";
 import { Unit } from "@prisma/client";
 
-export function UnitEditButton({ unit }: { unit: Unit }) {
+export function UnitEditButton({ unit }: { unit: Unit & { complex?: { id: string, name: string, type: string } } }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
@@ -58,6 +58,7 @@ export function UnitEditButton({ unit }: { unit: Unit }) {
                     isLoading={isSubmitting}
                     showComplexSelector={false}
                     complexId={unit.complexId}
+                    complexes={unit.complex ? [unit.complex] : undefined}
                 />
             </Modal>
         </>

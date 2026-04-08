@@ -11,7 +11,7 @@ function pickString(values: unknown[]): string | null {
     return null;
 }
 
-function extractInvoiceId(payload: Record<string, unknown>): string | null {
+function extractMetadataValue(payload: Record<string, unknown>, key: string): string | null {
     const data = payload.data as Record<string, unknown> | undefined;
     const object = data?.object as Record<string, unknown> | undefined;
     const checkout = payload.checkout as Record<string, unknown> | undefined;
@@ -20,12 +20,20 @@ function extractInvoiceId(payload: Record<string, unknown>): string | null {
     const checkoutMetadata = checkout?.metadata as Record<string, unknown> | undefined;
 
     const candidates = [
-        (object?.metadata as Record<string, unknown> | undefined)?.invoiceId,
-        metadata?.invoiceId,
-        checkoutMetadata?.invoiceId,
-        dataMetadata?.invoiceId,
+        (object?.metadata as Record<string, unknown> | undefined)?.[key],
+        metadata?.[key],
+        checkoutMetadata?.[key],
+        dataMetadata?.[key],
     ];
     return pickString(candidates);
+}
+
+function extractInvoiceId(payload: Record<string, unknown>): string | null {
+    return extractMetadataValue(payload, "invoiceId");
+}
+
+function extractAmenityId(payload: Record<string, unknown>): string | null {
+    return extractMetadataValue(payload, "amenityId");
 }
 
 function isSuccessfulPaymentEvent(payload: Record<string, unknown>): boolean {
@@ -56,6 +64,28 @@ export async function POST(request: Request) {
             );
         }
 
+        // Find complex and get webhook secret
+        let webhookSecret: string | undefined = undefined;
+
+        const invokeType = extractMetadataValue(body, "type");
+        const invoiceId = extractInvoiceId(body);
+        const amenityId = extractAmenityId(body);
+
+        if (invokeType === 'RESERVATION' && amenityId) {
+            const amenity = await prisma.amenity.findUnique({
+                where: { id: amenityId },
+                include: { complex: true }
+            });
+            webhookSecret = (amenity?.complex?.settings as any)?.recurrente?.webhookSecret;
+        } else if (invoiceId) {
+            // Wait, we need to bypass typescript types if necessary, using `any`
+            const invoice = await (prisma as any).invoice.findUnique({
+                where: { id: invoiceId },
+                include: { unit: { include: { complex: true } } }
+            });
+            webhookSecret = (invoice?.unit?.complex?.settings as any)?.recurrente?.webhookSecret;
+        }
+
         const headersList = await headers();
         const signature = headersList.get("x-signature") || headersList.get("recurrente-signature");
         const timestamp = headersList.get("x-timestamp") || headersList.get("recurrente-timestamp");
@@ -64,11 +94,12 @@ export async function POST(request: Request) {
             rawBody,
             signatureHeader: signature,
             timestampHeader: timestamp,
+            keys: webhookSecret ? { webhookSecret, publicKey: '', secretKey: '' } : undefined
         });
 
         if (!isSignatureValid) {
             return apiError(
-                { code: "INVALID_SIGNATURE", message: "Firma de webhook inválida" },
+                { code: "INVALID_SIGNATURE", message: "Firma de webhook inválida o clave no configurada en el complejo" },
                 401
             );
         }
@@ -77,7 +108,6 @@ export async function POST(request: Request) {
             return apiOk({ received: true, processed: false, reason: "event_ignored" });
         }
 
-        const invoiceId = extractInvoiceId(body);
         if (!invoiceId) {
             return apiOk({ received: true, processed: false, reason: "missing_invoice_id" });
         }

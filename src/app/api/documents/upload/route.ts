@@ -58,7 +58,7 @@ export async function POST(req: Request) {
         const buffer = Buffer.from(await file.arrayBuffer());
         const uploaded = await uploadFileToS3({
             buffer,
-            folder: "documents",
+            folder: "Documentos",
             originalFilename: file.name,
             mimeType: file.type,
         });

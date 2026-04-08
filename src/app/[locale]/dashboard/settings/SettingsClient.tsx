@@ -24,6 +24,9 @@ export default function SettingsClient({ user }: { user: any }) {
     const [complexId, setLocalComplexId] = useState<string | null>(selectedComplexId);
     const [bankAccount, setBankAccount] = useState("");
     const [phone, setPhone] = useState("");
+    const [recurrentePublicKey, setRecurrentePublicKey] = useState("");
+    const [recurrenteSecretKey, setRecurrenteSecretKey] = useState("");
+    const [recurrenteWebhookSecret, setRecurrenteWebhookSecret] = useState("");
     const [permissions, setPermissions] = useState<PermissionSettings>({
         [Role.ADMIN]: {},
         [Role.RESIDENT]: {},
@@ -125,10 +128,9 @@ export default function SettingsClient({ user }: { user: any }) {
                 setPermissions(mergedPermissions);
                 setBankAccount(complexData.bankAccount || "");
                 setPhone(complexData.phone || "");
-                
-                setPermissions(mergedPermissions);
-                setBankAccount(complexData.bankAccount || "");
-                setPhone(complexData.phone || "");
+                setRecurrentePublicKey(existingSettings.recurrente?.publicKey || complexData.settings?.recurrente?.publicKey || "");
+                setRecurrenteSecretKey(existingSettings.recurrente?.secretKey || complexData.settings?.recurrente?.secretKey || "");
+                setRecurrenteWebhookSecret(existingSettings.recurrente?.webhookSecret || complexData.settings?.recurrente?.webhookSecret || "");
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -205,7 +207,12 @@ export default function SettingsClient({ user }: { user: any }) {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     settings: { 
-                        permissions
+                        permissions,
+                        recurrente: {
+                            publicKey: recurrentePublicKey.trim(),
+                            secretKey: recurrenteSecretKey.trim(),
+                            webhookSecret: recurrenteWebhookSecret.trim()
+                        }
                     },
                     bankAccount,
                     phone
@@ -312,6 +319,52 @@ export default function SettingsClient({ user }: { user: any }) {
                                 />
                                 <p className="text-xs text-slate-500 mt-1">
                                     {t('whatsappHelp')}
+                                </p>
+                            </div>
+
+                            <div className="lg:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">{t('recurrenteConfigTitle', { default: 'Configuración Pasarela de Pagos (Recurrente)' })}</h4>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    {t('recurrentePublicLabel', { default: 'Public Key' })}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={recurrentePublicKey}
+                                    onChange={(e) => setRecurrentePublicKey(e.target.value)}
+                                    placeholder="pk_test_..."
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    {t('recurrenteSecretLabel', { default: 'Secret Key' })}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={recurrenteSecretKey}
+                                    onChange={(e) => setRecurrenteSecretKey(e.target.value)}
+                                    placeholder="sk_test_..."
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
+                                />
+                            </div>
+
+                            <div className="lg:col-span-2">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                                    {t('recurrenteWebhookLabel', { default: 'Webhook Secret' })}
+                                </label>
+                                <input
+                                    type="password"
+                                    value={recurrenteWebhookSecret}
+                                    onChange={(e) => setRecurrenteWebhookSecret(e.target.value)}
+                                    placeholder="wh_sec_..."
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
+                                />
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {t('recurrenteWebhookHelp', { default: 'Secret necesario para validar pagos en automático. Déjalo en blanco si aún no tienes uno.' })}
                                 </p>
                             </div>
                         </div>

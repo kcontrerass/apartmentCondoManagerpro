@@ -40,8 +40,22 @@ export async function uploadFileToS3({
     }
 
     const timestamp = Date.now();
-    const sanitizedFilename = originalFilename.replace(/\s+/g, "-").toLowerCase();
-    const key = `${folder}/${timestamp}-${sanitizedFilename}`;
+    
+    // Extraer extensión del nombre original si existe, sino usar el mimeType
+    const extIndex = originalFilename.lastIndexOf('.');
+    let ext = extIndex !== -1 ? originalFilename.substring(extIndex + 1).toLowerCase() : '';
+    let baseName = extIndex !== -1 ? originalFilename.substring(0, extIndex) : originalFilename;
+    
+    // Si no tiene extensión, usar mimeType (ej: "image/jpeg" -> "jpeg", "application/pdf" -> "pdf")
+    if (!ext && mimeType) {
+        ext = mimeType.split('/')[1] || 'bin';
+    }
+
+    // Limpiar el nombre base
+    const sanitizedBase = baseName.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").toLowerCase();
+    
+    // Crear el key asegurando que la extensión esté presente
+    const key = `${folder}/${timestamp}-${sanitizedBase}.${ext}`;
 
     const command = new PutObjectCommand({
         Bucket: bucketName,
