@@ -9,8 +9,15 @@ import { ProfileForm } from "@/components/profile/ProfileForm";
 import { PasswordForm } from "@/components/profile/PasswordForm";
 import { NotificationManager } from "@/components/pwa/NotificationManager";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
+import { getTranslations } from "next-intl/server";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+    params
+}: {
+    params: Promise<{ locale: string }>;
+}) {
+    const { locale } = await params;
+    const t = await getTranslations({ locale, namespace: "Profile" });
     const session = await auth();
     if (!session?.user) return null;
 
@@ -45,12 +52,27 @@ export default async function ProfilePage() {
         ? user.residentProfile?.unit?.complex?.name
         : user.assignedComplex?.name || user.managedComplexes?.name;
 
+    const roleLabels: Record<string, string> = {
+        SUPER_ADMIN: t("roles.SUPER_ADMIN"),
+        ADMIN: t("roles.ADMIN"),
+        BOARD_OF_DIRECTORS: t("roles.BOARD_OF_DIRECTORS"),
+        GUARD: t("roles.GUARD"),
+        RESIDENT: t("roles.RESIDENT"),
+    };
+    const statusLabels: Record<string, string> = {
+        ACTIVE: t("status.ACTIVE"),
+        INACTIVE: t("status.INACTIVE"),
+        SUSPENDED: t("status.SUSPENDED"),
+    };
+    const roleLabel = roleLabels[user.role] ?? user.role;
+    const statusLabel = statusLabels[user.status] ?? user.status;
+
     return (
         <MainLayout user={session.user}>
             <div className="space-y-8">
                 <PageHeader
-                    title="Mi Perfil"
-                    subtitle="Gestiona tu información personal y configuración de cuenta."
+                    title={t("title")}
+                    subtitle={t("subtitle")}
                 />
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -68,19 +90,19 @@ export default async function ProfilePage() {
                         </h2>
                         <p className="text-slate-500 mb-4">{user.email}</p>
                         <div className="flex gap-2 mb-6">
-                            <Badge variant="info">{user.role}</Badge>
+                            <Badge variant="info">{roleLabel}</Badge>
                             <Badge variant={user.status === 'ACTIVE' ? 'success' : 'neutral'}>
-                                {user.status}
+                                {statusLabel}
                             </Badge>
                         </div>
                         <div className="w-full pt-6 border-t border-slate-100 dark:border-slate-800">
                             <div className="flex justify-between text-sm mb-2">
-                                <span className="text-slate-500">Miembro desde</span>
+                                <span className="text-slate-500">{t("memberSince")}</span>
                                 <span className="font-medium">{new Date(user.createdAt).toLocaleDateString()}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-500">Complejo</span>
-                                <span className="font-medium text-primary">{complexName || 'Global'}</span>
+                                <span className="text-slate-500">{t("complex")}</span>
+                                <span className="font-medium text-primary">{complexName || t("global")}</span>
                             </div>
                         </div>
 
@@ -97,7 +119,7 @@ export default async function ProfilePage() {
                         <Card className="p-8">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                                 <span className="material-symbols-outlined text-primary">person</span>
-                                Información Personal
+                                {t("personalInfo")}
                             </h3>
                             <ProfileForm user={user} />
                         </Card>
@@ -105,7 +127,7 @@ export default async function ProfilePage() {
                         <Card className="p-8">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-red-600">
                                 <span className="material-symbols-outlined">security</span>
-                                Seguridad
+                                {t("security")}
                             </h3>
                             <PasswordForm />
                         </Card>

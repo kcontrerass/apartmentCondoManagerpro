@@ -828,7 +828,11 @@
         "installing": "Instalando...",
         "later": "Más tarde",
         "dismiss": "Cerrar",
-        "waitingPrompt": "Si el botón instalar sigue deshabilitado, abre el menú del navegador y selecciona \"Instalar aplicación\" o \"Añadir a pantalla de inicio\"."
+        "waitingPrompt": "Si el botón instalar sigue deshabilitado, abre el menú del navegador y selecciona \"Instalar aplicación\" o \"Añadir a pantalla de inicio\".",
+        "installed": "App instalada correctamente.",
+        "manualHelp": "Abre el menú del navegador y elige Instalar app o Añadir a pantalla de inicio.",
+        "statusDirect": "Instalación directa disponible desde este botón.",
+        "statusManual": "Si no se abre instalación, usa el menú del navegador."
     },
     "Polls": {
         "title": "Votaciones y Encuestas",
@@ -915,6 +919,77 @@
         "toastSaveFailed": "Error al guardar: {status}",
         "toastUnexpected": "Error inesperado al subir el documento",
         "toastUploaded": "Documento subido correctamente"
+    },
+    "Profile": {
+        "title": "Mi Perfil",
+        "subtitle": "Gestiona tu información personal y configuración de cuenta.",
+        "memberSince": "Miembro desde",
+        "complex": "Complejo",
+        "global": "Global",
+        "personalInfo": "Información Personal",
+        "security": "Seguridad",
+        "roles": {
+            "SUPER_ADMIN": "Súper Admin",
+            "ADMIN": "Administrador",
+            "BOARD_OF_DIRECTORS": "Junta Directiva",
+            "GUARD": "Guardia",
+            "RESIDENT": "Residente"
+        },
+        "status": {
+            "ACTIVE": "Activo",
+            "INACTIVE": "Inactivo",
+            "SUSPENDED": "Suspendido"
+        },
+        "form": {
+            "nameLabel": "Nombre Completo",
+            "emailLabel": "Correo Electrónico",
+            "phoneLabel": "Teléfono",
+            "phonePlaceholder": "Ej: +502 1234 5678",
+            "nameRequired": "El nombre es requerido",
+            "saving": "Guardando...",
+            "saveChanges": "Guardar Cambios",
+            "updatedSuccess": "Perfil actualizado correctamente",
+            "updateError": "Error al actualizar el perfil",
+            "connectionError": "Error de conexión. Intenta de nuevo."
+        },
+        "password": {
+            "currentLabel": "Contraseña Actual",
+            "newLabel": "Nueva Contraseña",
+            "confirmLabel": "Confirmar Nueva Contraseña",
+            "currentRequired": "Contraseña actual requerida",
+            "newRequired": "Nueva contraseña requerida",
+            "minLength": "Mínimo 6 caracteres",
+            "confirmRequired": "Confirmación requerida",
+            "mismatch": "Las contraseñas no coinciden",
+            "updating": "Actualizando...",
+            "changeButton": "Cambiar Contraseña",
+            "updated": "Contraseña actualizada",
+            "error": "Error al actualizar"
+        },
+        "notifications": {
+            "title": "Notificaciones Push",
+            "description": "Activa las notificaciones para recibir avisos del complejo (facturas, reservas, visitas, incidencias, eventos y más) en este dispositivo. Disponible para todos los roles.",
+            "unavailableTitle": "Notificaciones no disponibles",
+            "httpsRequired": "⚠️ Las notificaciones push requieren HTTPS o localhost.",
+            "iosSupportHint": "En iPhone/iPad, las push funcionan mejor si añades la app a la pantalla de inicio (PWA) y la abres desde el icono. En Safari sin instalar, el soporte es limitado.",
+            "browserUnsupported": "Tu navegador no soporta notificaciones push o estás en modo incógnito.",
+            "iosInstallHint": {
+                "prefix": "En iOS: para recibir push de forma fiable, usa",
+                "strong": "Compartir → Añadir a pantalla de inicio",
+                "suffix": "y abre la app desde el icono."
+            },
+            "enabled": "Notificaciones activadas",
+            "disable": "Desactivar",
+            "processing": "Procesando...",
+            "enable": "Activar Notificaciones",
+            "blocked": "Las notificaciones han sido bloqueadas. Por favor, habilítalas en la configuración de sitios de tu navegador.",
+            "subscribedSuccess": "¡Suscrito a notificaciones!",
+            "subscribeError": "Error al suscribirse a las notificaciones",
+            "unsubscribedSuccess": "Notificaciones desactivadas",
+            "unsubscribeError": "Error al desactivar las notificaciones",
+            "testSent": "Notificación de prueba enviada",
+            "testError": "Error al enviar la notificación de prueba"
+        }
     },
     "Unassigned": {
         "title": "Asignación Pendiente",

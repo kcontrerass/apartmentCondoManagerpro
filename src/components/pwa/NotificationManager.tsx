@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
+import { useTranslations } from 'next-intl';
 
 export function NotificationManager() {
+    const t = useTranslations("Profile.notifications");
     const [isSupported, setIsSupported] = useState(false);
     const [permission, setPermission] = useState<NotificationPermission>('default');
     const [isSubscribed, setIsSubscribed] = useState(false);
@@ -76,11 +78,11 @@ export function NotificationManager() {
                 if (!response.ok) throw new Error('Failed to save subscription on server');
 
                 setIsSubscribed(true);
-                toast.success('¡Suscrito a notificaciones!');
+                toast.success(t('subscribedSuccess'));
             }
         } catch (error) {
             console.error('Error subscribing to push:', error);
-            toast.error('Error al suscribirse a las notificaciones');
+            toast.error(t('subscribeError'));
         } finally {
             setLoading(false);
         }
@@ -103,10 +105,10 @@ export function NotificationManager() {
             });
 
             setIsSubscribed(false);
-            toast.success('Notificaciones desactivadas');
+            toast.success(t('unsubscribedSuccess'));
         } catch (error) {
             console.error('Error unsubscribing:', error);
-            toast.error('Error al desactivar las notificaciones');
+            toast.error(t('unsubscribeError'));
         } finally {
             setLoading(false);
         }
@@ -124,10 +126,10 @@ export function NotificationManager() {
                 throw new Error('Failed to send test notification');
             }
 
-            toast.success('Notificación de prueba enviada');
+            toast.success(t('testSent'));
         } catch (error) {
             console.error('Error sending test push:', error);
-            toast.error('Error al enviar la notificación de prueba');
+            toast.error(t('testError'));
         } finally {
             setTestLoading(false);
         }
@@ -151,18 +153,18 @@ export function NotificationManager() {
             <div className="p-4 border rounded-lg bg-slate-50 dark:bg-slate-800/50 mt-4 border-dashed">
                 <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                     <span className="material-symbols-outlined text-amber-500 text-sm">warning</span>
-                    Notificaciones no disponibles
+                    {t('unavailableTitle')}
                 </h3>
                 <div className="text-xs text-slate-500 space-y-2">
                     {!isSecure && (
                         <p className="text-red-500 font-medium">
-                            ⚠️ Las notificaciones push requieren HTTPS o localhost.
+                            {t('httpsRequired')}
                         </p>
                     )}
                     <p>
                         {isiOS
-                            ? 'En iPhone/iPad, las push funcionan mejor si añades la app a la pantalla de inicio (PWA) y la abres desde el icono. En Safari sin instalar, el soporte es limitado.'
-                            : 'Tu navegador no soporta notificaciones push o estás en modo incógnito.'}
+                            ? t('iosSupportHint')
+                            : t('browserUnsupported')}
                     </p>
                 </div>
             </div>
@@ -171,15 +173,13 @@ export function NotificationManager() {
 
     return (
         <div className="p-4 border rounded-lg bg-card mt-4">
-            <h3 className="text-lg font-semibold mb-2">Notificaciones Push</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('title')}</h3>
             <p className="text-sm text-slate-500 mb-4">
-                Activa las notificaciones para recibir avisos del complejo (facturas, reservas, visitas, incidencias,
-                eventos y más) en este dispositivo. Disponible para todos los roles.
+                {t('description')}
             </p>
             {isiOS && !isStandalone && (
                 <p className="text-xs text-amber-700 dark:text-amber-400 mb-3 rounded-md bg-amber-50 dark:bg-amber-950/40 p-2">
-                    En iOS: para recibir push de forma fiable, usa <strong>Compartir → Añadir a pantalla de inicio</strong> y
-                    abre la app desde el icono.
+                    {t('iosInstallHint.prefix')} <strong>{t('iosInstallHint.strong')}</strong> {t('iosInstallHint.suffix')}
                 </p>
             )}
 
@@ -187,7 +187,7 @@ export function NotificationManager() {
                 <div className="space-y-4">
                     <div className="text-sm text-green-600 flex items-center gap-2">
                         <span className="material-symbols-outlined font-icon">check_circle</span>
-                        Notificaciones activadas
+                        {t('enabled')}
                     </div>
                     <div className="flex flex-col sm:flex-row gap-2">
 
@@ -197,7 +197,7 @@ export function NotificationManager() {
                             disabled={loading}
                             className="text-red-500 hover:text-red-600 hover:bg-red-50"
                         >
-                            Desactivar
+                            {t('disable')}
                         </Button>
                     </div>
                 </div>
@@ -207,13 +207,13 @@ export function NotificationManager() {
                     disabled={loading || permission === 'denied'}
                     className="w-full sm:w-auto"
                 >
-                    {loading ? 'Procesando...' : 'Activar Notificaciones'}
+                    {loading ? t('processing') : t('enable')}
                 </Button>
             )}
 
             {permission === 'denied' && (
                 <p className="text-xs text-red-500 mt-2">
-                    Las notificaciones han sido bloqueadas. Por favor, habilítalas en la configuración de sitios de tu navegador.
+                    {t('blocked')}
                 </p>
             )}
         </div>

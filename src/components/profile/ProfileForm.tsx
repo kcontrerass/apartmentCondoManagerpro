@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 interface ProfileFormProps {
     user: {
@@ -17,6 +18,7 @@ interface ProfileFormProps {
 }
 
 export function ProfileForm({ user }: ProfileFormProps) {
+    const t = useTranslations("Profile");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const { update: updateSession } = useSession();
@@ -40,15 +42,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
             if (response.ok) {
                 // Update the NextAuth session so the sidebar name refreshes immediately
                 await updateSession({ name: data.name });
-                toast.success("Perfil actualizado correctamente");
+                toast.success(t("form.updatedSuccess"));
                 reset(data); // Reset dirty state so button disables again
                 router.refresh();
             } else {
                 const errorData = await response.json().catch(() => ({}));
-                toast.error(errorData.error || "Error al actualizar el perfil");
+                toast.error(errorData.error || t("form.updateError"));
             }
         } catch (error) {
-            toast.error("Error de conexión. Intenta de nuevo.");
+            toast.error(t("form.connectionError"));
         } finally {
             setLoading(false);
         }
@@ -58,14 +60,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nombre Completo</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("form.nameLabel")}</label>
                     <Input
-                        {...register("name", { required: "El nombre es requerido" })}
+                        {...register("name", { required: t("form.nameRequired") })}
                         error={errors.name?.message}
                     />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Correo Electrónico</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("form.emailLabel")}</label>
                     <Input
                         value={user.email}
                         disabled
@@ -73,17 +75,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Teléfono</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("form.phoneLabel")}</label>
                     <Input
                         {...register("phone")}
-                        placeholder="Ej: +502 1234 5678"
+                        placeholder={t("form.phonePlaceholder")}
                     />
                 </div>
             </div>
 
             <div className="flex justify-start">
                 <Button type="submit" isLoading={loading} disabled={loading || !isDirty}>
-                    {loading ? "Guardando..." : "Guardar Cambios"}
+                    {loading ? t("form.saving") : t("form.saveChanges")}
                 </Button>
             </div>
         </form>

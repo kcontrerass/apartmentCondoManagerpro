@@ -5,8 +5,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { toast } from "react-hot-toast";
+import { useTranslations } from "next-intl";
 
 export function PasswordForm() {
+    const t = useTranslations("Profile");
     const [loading, setLoading] = useState(false);
 
     const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
@@ -32,14 +34,14 @@ export function PasswordForm() {
             });
 
             if (response.ok) {
-                toast.success("Contraseña actualizada");
+                toast.success(t("password.updated"));
                 reset();
             } else {
                 const text = await response.text();
-                toast.error(text || "Error al actualizar");
+                toast.error(text || t("password.error"));
             }
         } catch (error) {
-            toast.error("Error al actualizar");
+            toast.error(t("password.error"));
         } finally {
             setLoading(false);
         }
@@ -49,32 +51,32 @@ export function PasswordForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contraseña Actual</label>
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("password.currentLabel")}</label>
                     <Input
                         type="password"
-                        {...register("currentPassword", { required: "Contraseña actual requerida" })}
+                        {...register("currentPassword", { required: t("password.currentRequired") })}
                         error={errors.currentPassword?.message}
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Nueva Contraseña</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("password.newLabel")}</label>
                         <Input
                             type="password"
                             {...register("newPassword", {
-                                required: "Nueva contraseña requerida",
-                                minLength: { value: 6, message: "Mínimo 6 caracteres" }
+                                required: t("password.newRequired"),
+                                minLength: { value: 6, message: t("password.minLength") }
                             })}
                             error={errors.newPassword?.message}
                         />
                     </div>
                     <div>
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Confirmar Nueva Contraseña</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t("password.confirmLabel")}</label>
                         <Input
                             type="password"
                             {...register("confirmPassword", {
-                                required: "Confirmación requerida",
-                                validate: value => value === newPassword || "Las contraseñas no coinciden"
+                                required: t("password.confirmRequired"),
+                                validate: value => value === newPassword || t("password.mismatch")
                             })}
                             error={errors.confirmPassword?.message}
                         />
@@ -84,7 +86,7 @@ export function PasswordForm() {
 
             <div className="flex justify-start">
                 <Button type="submit" variant="primary" disabled={loading}>
-                    {loading ? "Actualizando..." : "Cambiar Contraseña"}
+                    {loading ? t("password.updating") : t("password.changeButton")}
                 </Button>
             </div>
         </form>

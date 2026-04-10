@@ -828,7 +828,11 @@
         "installing": "Installing...",
         "later": "Later",
         "dismiss": "Dismiss",
-        "waitingPrompt": "If the install button stays disabled, open your browser menu and choose \"Install app\" or \"Add to Home screen\"."
+        "waitingPrompt": "If the install button stays disabled, open your browser menu and choose \"Install app\" or \"Add to Home screen\".",
+        "installed": "App installed successfully.",
+        "manualHelp": "Open your browser menu and choose Install app or Add to Home screen.",
+        "statusDirect": "Direct install available from this button.",
+        "statusManual": "If installation does not open, use your browser menu."
     },
     "Documents": {
         "title": "Documents",
@@ -875,6 +879,77 @@
         "toastSaveFailed": "Could not save document (error {status})",
         "toastUnexpected": "Unexpected error uploading document",
         "toastUploaded": "Document uploaded successfully"
+    },
+    "Profile": {
+        "title": "My Profile",
+        "subtitle": "Manage your personal information and account settings.",
+        "memberSince": "Member since",
+        "complex": "Complex",
+        "global": "Global",
+        "personalInfo": "Personal Information",
+        "security": "Security",
+        "roles": {
+            "SUPER_ADMIN": "Super Admin",
+            "ADMIN": "Administrator",
+            "BOARD_OF_DIRECTORS": "Board of Directors",
+            "GUARD": "Guard",
+            "RESIDENT": "Resident"
+        },
+        "status": {
+            "ACTIVE": "Active",
+            "INACTIVE": "Inactive",
+            "SUSPENDED": "Suspended"
+        },
+        "form": {
+            "nameLabel": "Full Name",
+            "emailLabel": "Email Address",
+            "phoneLabel": "Phone",
+            "phonePlaceholder": "Ex: +1 555 123 4567",
+            "nameRequired": "Name is required",
+            "saving": "Saving...",
+            "saveChanges": "Save Changes",
+            "updatedSuccess": "Profile updated successfully",
+            "updateError": "Error updating profile",
+            "connectionError": "Connection error. Please try again."
+        },
+        "password": {
+            "currentLabel": "Current Password",
+            "newLabel": "New Password",
+            "confirmLabel": "Confirm New Password",
+            "currentRequired": "Current password is required",
+            "newRequired": "New password is required",
+            "minLength": "Minimum 6 characters",
+            "confirmRequired": "Confirmation is required",
+            "mismatch": "Passwords do not match",
+            "updating": "Updating...",
+            "changeButton": "Change Password",
+            "updated": "Password updated",
+            "error": "Error updating password"
+        },
+        "notifications": {
+            "title": "Push Notifications",
+            "description": "Enable notifications to receive complex alerts (invoices, reservations, visits, incidents, events, and more) on this device. Available for all roles.",
+            "unavailableTitle": "Notifications unavailable",
+            "httpsRequired": "⚠️ Push notifications require HTTPS or localhost.",
+            "iosSupportHint": "On iPhone/iPad, push works best when you add the app to the Home Screen (PWA) and open it from the icon. In non-installed Safari, support is limited.",
+            "browserUnsupported": "Your browser does not support push notifications or is in incognito mode.",
+            "iosInstallHint": {
+                "prefix": "On iOS: for reliable push notifications, use",
+                "strong": "Share → Add to Home Screen",
+                "suffix": "and open the app from its icon."
+            },
+            "enabled": "Notifications enabled",
+            "disable": "Disable",
+            "processing": "Processing...",
+            "enable": "Enable Notifications",
+            "blocked": "Notifications are blocked. Please enable them in your browser site settings.",
+            "subscribedSuccess": "Subscribed to notifications!",
+            "subscribeError": "Error subscribing to notifications",
+            "unsubscribedSuccess": "Notifications disabled",
+            "unsubscribeError": "Error disabling notifications",
+            "testSent": "Test notification sent",
+            "testError": "Error sending test notification"
+        }
     },
     "Unassigned": {
         "title": "Assignment Pending",
