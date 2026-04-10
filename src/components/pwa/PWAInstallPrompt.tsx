@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -62,7 +63,10 @@ export function PWAInstallPrompt() {
   };
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    if (!deferredPrompt) {
+      toast.message(t("waitingPrompt"));
+      return;
+    }
     setIsInstalling(true);
     try {
       await deferredPrompt.prompt();
@@ -103,7 +107,7 @@ export function PWAInstallPrompt() {
         <Button
           variant="primary"
           onClick={handleInstall}
-          disabled={isInstalling || !deferredPrompt}
+          disabled={isInstalling}
           className="flex-1"
         >
           {isInstalling ? t("installing") : t("install")}

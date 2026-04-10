@@ -1013,6 +1013,8 @@
         "pwaInstallButton": "Instalar app",
         "pwaInstalling": "Instalando...",
         "pwaInstalled": "App instalada correctamente.",
-        "pwaManualHelp": "Abre el menú del navegador y elige Instalar app o Añadir a pantalla de inicio."
+        "pwaManualHelp": "Abre el menú del navegador y elige Instalar app o Añadir a pantalla de inicio.",
+        "pwaStatusDirect": "Instalacion directa disponible desde este boton.",
+        "pwaStatusManual": "Si no se abre instalacion, usa el menu del navegador."
     }
 }

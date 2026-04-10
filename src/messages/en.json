@@ -973,7 +973,9 @@
         "pwaInstallButton": "Install app",
         "pwaInstalling": "Installing...",
         "pwaInstalled": "App installed successfully.",
-        "pwaManualHelp": "Open your browser menu and choose Install app or Add to Home screen."
+        "pwaManualHelp": "Open your browser menu and choose Install app or Add to Home screen.",
+        "pwaStatusDirect": "Direct install available from this button.",
+        "pwaStatusManual": "If installation does not open, use your browser menu."
     },
     "Communications": {
         "title": "Communications",

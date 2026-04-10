@@ -15,7 +15,7 @@ export function PWAInstallButton() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalling, setIsInstalling] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
-  const [supportsInstall, setSupportsInstall] = useState(false);
+  const [isNativeInstallAvailable, setIsNativeInstallAvailable] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -24,15 +24,16 @@ export function PWAInstallButton() {
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as any).standalone === true;
     setIsStandalone(standalone);
-    setSupportsInstall("serviceWorker" in navigator);
 
     const onBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
+      setIsNativeInstallAvailable(true);
     };
 
     const onInstalled = () => {
       setDeferredPrompt(null);
+      setIsNativeInstallAvailable(false);
       toast.success(t("pwaInstalled", { default: "App instalada correctamente." }));
     };
 
@@ -44,7 +45,7 @@ export function PWAInstallButton() {
     };
   }, [t]);
 
-  if (!supportsInstall || isStandalone) return null;
+  if (isStandalone) return null;
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
@@ -61,11 +62,18 @@ export function PWAInstallButton() {
   };
 
   return (
-    <Button onClick={handleInstall} variant="secondary" className="shrink-0 h-[42px]" disabled={isInstalling}>
-      <span className="material-symbols-outlined mr-2">download</span>
-      {isInstalling
-        ? t("pwaInstalling", { default: "Instalando..." })
-        : t("pwaInstallButton", { default: "Instalar app" })}
-    </Button>
+    <div className="flex flex-col items-stretch sm:items-center gap-1">
+      <Button onClick={handleInstall} variant="secondary" className="shrink-0 h-[42px]" disabled={isInstalling}>
+        <span className="material-symbols-outlined mr-2">download</span>
+        {isInstalling
+          ? t("pwaInstalling", { default: "Instalando..." })
+          : t("pwaInstallButton", { default: "Instalar app" })}
+      </Button>
+      <p className="text-[11px] leading-4 text-slate-500 dark:text-slate-400 text-left sm:text-right">
+        {isNativeInstallAvailable
+          ? t("pwaStatusDirect", { default: "Instalacion directa disponible desde este boton." })
+          : t("pwaStatusManual", { default: "Si no se abre instalacion, usa el menu del navegador." })}
+      </p>
+    </div>
   );
 }

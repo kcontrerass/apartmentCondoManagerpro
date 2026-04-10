@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { PasswordForm } from "@/components/profile/PasswordForm";
 import { NotificationManager } from "@/components/pwa/NotificationManager";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
 export default async function ProfilePage() {
     const session = await auth();
@@ -85,6 +86,9 @@ export default async function ProfilePage() {
 
                         <div className="w-full mt-6">
                             <NotificationManager />
+                            <div className="mt-3 flex justify-center">
+                                <PWAInstallButton />
+                            </div>
                         </div>
                     </Card>
 
