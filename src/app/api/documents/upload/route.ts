@@ -11,7 +11,7 @@ const ALLOWED_TYPES = new Set([
     "image/gif",
 ]);
 
-const MAX_SIZE_BYTES = 50 * 1024 * 1024; // Increased to 50 MB for documents
+const MAX_SIZE_BYTES = 4 * 1024 * 1024; // Increased to 4 MB for documents
 
 export async function POST(req: Request) {
     try {
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         }
 
         if (file.size > MAX_SIZE_BYTES) {
-            return NextResponse.json({ error: "El archivo supera el límite de 50 MB" }, { status: 400 });
+            return NextResponse.json({ error: "El archivo supera el límite de 4 MB" }, { status: 400 });
         }
 
         if (!ALLOWED_TYPES.has(file.type)) {
@@ -72,6 +72,7 @@ export async function POST(req: Request) {
         });
     } catch (error) {
         console.error("[DOCUMENTS_UPLOAD]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        const message = error instanceof Error ? error.message : "Internal Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

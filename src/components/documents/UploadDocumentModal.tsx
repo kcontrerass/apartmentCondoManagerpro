@@ -69,7 +69,7 @@ export function UploadDocumentModal({ isOpen, onClose, onSuccess, complexId, use
             toast.error(t("toastInvalidType"));
             return;
         }
-        if (file.size > 10 * 1024 * 1024) {
+        if (file.size > 4 * 1024 * 1024) {
             toast.error(t("toastFileTooBig"));
             return;
         }

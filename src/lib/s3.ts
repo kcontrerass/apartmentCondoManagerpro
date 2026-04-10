@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 function readEnv(name: string): string | undefined {
     const value = process.env[name];
@@ -62,9 +62,6 @@ export async function uploadFileToS3({
         Key: key,
         Body: buffer,
         ContentType: mimeType,
-        // We use public-read as requested for non-expiring URLs.
-        // This requires the bucket to allow ACLs and public access.
-        ACL: "public-read" as ObjectCannedACL,
     });
 
     await s3Client.send(command);
