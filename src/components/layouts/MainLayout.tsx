@@ -10,6 +10,7 @@ import { MobileSidebarProvider } from "./MobileSidebarContext";
 
 import { UnassignedResidentView } from "@/components/dashboard/UnassignedResidentView";
 import { AnimatedPage } from "@/components/animations/AnimatedPage";
+import { PWAInstallPrompt } from "@/components/pwa/PWAInstallPrompt";
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -88,6 +89,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
     return (
         <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
             <Toaster position="top-right" richColors />
+            <PWAInstallPrompt />
             <MobileSidebarProvider>
                 {/* @ts-ignore */}
                 <Sidebar user={user} complexName={complexName} complexSettings={complexSettings} />

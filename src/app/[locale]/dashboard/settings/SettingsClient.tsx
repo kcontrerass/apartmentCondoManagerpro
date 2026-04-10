@@ -9,6 +9,7 @@ import { Role } from "@/types/roles";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useSelectedComplex } from "@/components/providers/ComplexProvider";
+import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 
 interface PermissionSettings {
     [role: string]: {
@@ -249,7 +250,8 @@ export default function SettingsClient({ user }: { user: any }) {
                     title={t('title')}
                     subtitle={t('subtitle')}
                 />
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto mt-2 lg:mt-0">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full lg:w-auto mt-2 lg:mt-0">
+                    <PWAInstallButton />
                     {(user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN) && (
                         <div className="min-w-0 sm:min-w-[200px] flex-1">
                             <ComplexSelector

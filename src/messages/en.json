@@ -818,6 +818,18 @@
         "deleteButton": "Delete Incident",
         "cancel": "Cancel"
     },
+    "PWAInstall": {
+        "title": "Install the app on this device",
+        "subtitle": "Install ADESSO-365 for a faster and more native experience.",
+        "benefit1": "Open instantly from your home screen or desktop.",
+        "benefit2": "Smoother navigation and better performance.",
+        "benefit3": "More reliable notifications and alerts.",
+        "install": "Install app",
+        "installing": "Installing...",
+        "later": "Later",
+        "dismiss": "Dismiss",
+        "waitingPrompt": "If the install button stays disabled, open your browser menu and choose \"Install app\" or \"Add to Home screen\"."
+    },
     "Documents": {
         "title": "Documents",
         "subtitle": "View and download official documents, bylaws, and complex policies.",
@@ -957,7 +969,11 @@
         "recurrentePublicLabel": "Public Key",
         "recurrenteSecretLabel": "Secret Key",
         "recurrenteWebhookLabel": "Webhook Secret",
-        "recurrenteWebhookHelp": "Secret required to validate payments automatically. Leave blank if you don't have one yet."
+        "recurrenteWebhookHelp": "Secret required to validate payments automatically. Leave blank if you don't have one yet.",
+        "pwaInstallButton": "Install app",
+        "pwaInstalling": "Installing...",
+        "pwaInstalled": "App installed successfully.",
+        "pwaManualHelp": "Open your browser menu and choose Install app or Add to Home screen."
     },
     "Communications": {
         "title": "Communications",

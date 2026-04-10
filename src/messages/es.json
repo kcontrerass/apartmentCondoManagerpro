@@ -818,6 +818,18 @@
         "deleteButton": "Eliminar Incidente",
         "cancel": "Cancelar"
     },
+    "PWAInstall": {
+        "title": "Instala la app en este dispositivo",
+        "subtitle": "Instala ADESSO-365 para una experiencia más rápida y nativa.",
+        "benefit1": "Abre la app al instante desde tu pantalla de inicio o escritorio.",
+        "benefit2": "Navegación más fluida y mejor rendimiento.",
+        "benefit3": "Notificaciones y alertas más confiables.",
+        "install": "Instalar app",
+        "installing": "Instalando...",
+        "later": "Más tarde",
+        "dismiss": "Cerrar",
+        "waitingPrompt": "Si el botón instalar sigue deshabilitado, abre el menú del navegador y selecciona \"Instalar aplicación\" o \"Añadir a pantalla de inicio\"."
+    },
     "Polls": {
         "title": "Votaciones y Encuestas",
         "subtitle": "Participa en las decisiones de tu comunidad de forma digital.",
@@ -997,6 +1009,10 @@
         "recurrentePublicLabel": "Public Key",
         "recurrenteSecretLabel": "Secret Key",
         "recurrenteWebhookLabel": "Webhook Secret",
-        "recurrenteWebhookHelp": "Secret necesario para validar pagos en automático. Déjalo en blanco si aún no tienes uno."
+        "recurrenteWebhookHelp": "Secret necesario para validar pagos en automático. Déjalo en blanco si aún no tienes uno.",
+        "pwaInstallButton": "Instalar app",
+        "pwaInstalling": "Instalando...",
+        "pwaInstalled": "App instalada correctamente.",
+        "pwaManualHelp": "Abre el menú del navegador y elige Instalar app o Añadir a pantalla de inicio."
     }
 }
