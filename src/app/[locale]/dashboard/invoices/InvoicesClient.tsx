@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -15,12 +16,16 @@ import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
 import { Input } from "@/components/ui/Input";
+import { SuperAdminBillingComplexSelector } from "@/components/invoices/SuperAdminBillingComplexSelector";
 
 interface InvoicesClientProps {
     user: any;
+    billingScopeComplexId?: string | null;
 }
 
-export function InvoicesClient({ user }: InvoicesClientProps) {
+export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesClientProps) {
+    const searchParams = useSearchParams();
+    const openInvoiceHandled = useRef<string | null>(null);
     const t = useTranslations('Invoices');
     const tReservations = useTranslations('Reservations');
     const tCommon = useTranslations('Common');
@@ -70,10 +75,19 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
             const response = await fetch("/api/invoices");
             const data = await response.json();
             if (response.ok) {
-                setInvoices(data);
+                setInvoices(Array.isArray(data) ? data : []);
+            } else {
+                const msg =
+                    typeof data?.error === "string"
+                        ? data.error
+                        : data?.error?.message || t("loadError");
+                toast.error(msg);
+                setInvoices([]);
             }
         } catch (error) {
             console.error("Error fetching invoices:", error);
+                toast.error(t("loadError"));
+            setInvoices([]);
         } finally {
             setIsLoading(false);
         }
@@ -82,6 +96,40 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
     useEffect(() => {
         fetchInvoices();
     }, []);
+
+    useEffect(() => {
+        const oid = searchParams.get("openInvoice");
+        if (!oid) {
+            openInvoiceHandled.current = null;
+            return;
+        }
+        if (openInvoiceHandled.current === oid) return;
+        openInvoiceHandled.current = oid;
+        let cancelled = false;
+        (async () => {
+            try {
+                const response = await fetch(`/api/invoices/${oid}`);
+                const data = await response.json();
+                if (!cancelled && response.ok) {
+                    setSelectedInvoice(data);
+                    setIsDetailModalOpen(true);
+                }
+            } catch (e) {
+                console.error("openInvoice:", e);
+            } finally {
+                if (!cancelled && typeof window !== "undefined") {
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete("openInvoice");
+                    const next = url.pathname + (url.searchParams.toString() ? `?${url.searchParams}` : "");
+                    window.history.replaceState({}, "", next);
+                    openInvoiceHandled.current = null;
+                }
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [searchParams]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -250,6 +298,12 @@ export function InvoicesClient({ user }: InvoicesClientProps) {
                         </div>
                     )
                 }
+            />
+
+            <SuperAdminBillingComplexSelector
+                userRole={userRole}
+                initialComplexId={billingScopeComplexId}
+                onScopeSaved={fetchInvoices}
             />
 
             <Card className="p-4 flex flex-col sm:flex-row gap-4 flex-wrap">

@@ -1,6 +1,8 @@
 import webpush from 'web-push';
+import { InvoiceCategory } from '@prisma/client';
 import { prisma } from './db';
 import { routing } from '@/i18n/routing';
+import { Role } from '@/types/roles';
 
 // Configure web-push
 if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
@@ -115,6 +117,22 @@ export async function sendComplexNotification(complexId: string, roles: string[]
     }
 }
 
+/** Push to administradores del complejo, guardias y junta cuando un residente registra o actualiza datos de huésped Airbnb. */
+export async function notifyStaffOfAirbnbGuestRegistration(opts: {
+    complexId: string;
+    unitNumber: string;
+    residentName: string;
+    guestName: string;
+    guestIdentification: string;
+}) {
+    const { complexId, unitNumber, residentName, guestName, guestIdentification } = opts;
+    await sendComplexNotification(complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS], {
+        title: 'Huésped Airbnb registrado',
+        body: `${residentName} · Unidad ${unitNumber}: ${guestName} (ID: ${guestIdentification}).`,
+        url: '/dashboard/residents',
+    });
+}
+
 /** Notify all residents on the unit linked to an invoice when it is marked paid (manual or webhook). */
 export async function notifyInvoicePaidToUnitResidents(invoiceId: string) {
     try {
@@ -129,6 +147,7 @@ export async function notifyInvoicePaidToUnitResidents(invoiceId: string) {
             },
         });
         if (!invoice?.unit?.residents?.length) return;
+        if (invoice.category === InvoiceCategory.PLATFORM_SUBSCRIPTION) return;
 
         for (const r of invoice.unit.residents) {
             await sendUserNotification(r.userId, {

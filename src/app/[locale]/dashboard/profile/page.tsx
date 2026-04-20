@@ -6,10 +6,13 @@ import { Badge } from "@/components/ui/Badge";
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ProfileForm } from "@/components/profile/ProfileForm";
+import { ResidentAirbnbForm } from "@/components/profile/ResidentAirbnbForm";
 import { PasswordForm } from "@/components/profile/PasswordForm";
+import { Role } from "@/types/roles";
 import { NotificationManager } from "@/components/pwa/NotificationManager";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { getTranslations } from "next-intl/server";
+import { roleCanResidentUseAirbnbSelfService } from "@/lib/complex-airbnb-guests";
 
 export default async function ProfilePage({
     params
@@ -32,7 +35,7 @@ export default async function ProfilePage({
                     unit: {
                         include: {
                             complex: {
-                                select: { name: true }
+                                select: { name: true, settings: true }
                             }
                         }
                     }
@@ -66,6 +69,9 @@ export default async function ProfilePage({
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
     const statusLabel = statusLabels[user.status] ?? user.status;
+    const airbnbGuestsEnabled = roleCanResidentUseAirbnbSelfService(
+        user.residentProfile?.unit?.complex?.settings
+    );
 
     return (
         <MainLayout user={session.user}>
@@ -123,6 +129,32 @@ export default async function ProfilePage({
                             </h3>
                             <ProfileForm user={user} />
                         </Card>
+
+                        {user.role === Role.RESIDENT && user.residentProfile && (
+                            <Card className="p-8">
+                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary">holiday_village</span>
+                                    {t("airbnb.title")}
+                                </h3>
+                                {airbnbGuestsEnabled ? (
+                                    <ResidentAirbnbForm
+                                        initial={{
+                                            isAirbnb: user.residentProfile.isAirbnb,
+                                            airbnbStartDate: user.residentProfile.airbnbStartDate,
+                                            airbnbEndDate: user.residentProfile.airbnbEndDate,
+                                            airbnbGuestName: user.residentProfile.airbnbGuestName,
+                                            airbnbReservationCode: user.residentProfile.airbnbReservationCode,
+                                            airbnbGuestPhone: user.residentProfile.airbnbGuestPhone,
+                                            airbnbGuestIdentification: user.residentProfile.airbnbGuestIdentification,
+                                        }}
+                                    />
+                                ) : (
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t("airbnb.disabledByComplex")}
+                                    </p>
+                                )}
+                            </Card>
+                        )}
 
                         <Card className="p-8">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-red-600">

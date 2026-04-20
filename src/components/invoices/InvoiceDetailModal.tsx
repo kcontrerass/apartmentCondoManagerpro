@@ -14,6 +14,8 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
 
     if (!invoice) return null;
 
+    const isPlatformSubscription = invoice.category === "PLATFORM_SUBSCRIPTION";
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -39,13 +41,24 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-2">
                     {t('client')}
                 </h4>
-                <div className="bg-slate-50 dark:bg-background-dark/50 rounded-lg p-3">
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                        Unidad: <span className="font-medium">{invoice.unit?.number}</span>
-                    </p>
-                    <p className="text-sm text-slate-700 dark:text-slate-300">
-                        Complejo: <span className="font-medium">{invoice.complex?.name}</span>
-                    </p>
+                <div className="bg-slate-50 dark:bg-background-dark/50 rounded-lg p-3 space-y-1">
+                    {isPlatformSubscription ? (
+                        <p className="text-sm text-slate-700 dark:text-slate-300">
+                            {t("billedToComplex")}{" "}
+                            <span className="font-medium">{invoice.complex?.name ?? "—"}</span>
+                        </p>
+                    ) : (
+                        <>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">
+                                {t("unitLabel")}{" "}
+                                <span className="font-medium">{invoice.unit?.number ?? "—"}</span>
+                            </p>
+                            <p className="text-sm text-slate-700 dark:text-slate-300">
+                                {t("complexLabel")}{" "}
+                                <span className="font-medium">{invoice.complex?.name}</span>
+                            </p>
+                        </>
+                    )}
                 </div>
             </div>
 

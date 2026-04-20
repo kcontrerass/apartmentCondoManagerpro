@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { updateInvoiceSchema } from "@/lib/validations/invoice";
@@ -22,7 +23,8 @@ export async function GET(
             include: {
                 unit: true,
                 complex: true,
-                items: true
+                items: true,
+                platformFeePayment: { select: { paidAt: true } },
             }
         });
 
@@ -46,10 +48,13 @@ export async function GET(
                 return NextResponse.json({ error: "No autorizado para este complejo" }, { status: 403 });
             }
         } else if (session.user.role === Role.RESIDENT) {
+            if (invoice.category === InvoiceCategory.PLATFORM_SUBSCRIPTION) {
+                return NextResponse.json({ error: "No tienes acceso a esta factura" }, { status: 403 });
+            }
             const resident = await prisma.resident.findUnique({
                 where: { userId: session.user.id }
             });
-            if (!resident || resident.unitId !== invoice.unitId) {
+            if (!resident || !invoice.unitId || resident.unitId !== invoice.unitId) {
                 return NextResponse.json({ error: "No tienes acceso a esta factura" }, { status: 403 });
             }
         }

@@ -20,6 +20,32 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
         return <>{children}</>;
     }
 
+    const onAirbnbRoute =
+        pathname === "/dashboard/airbnb-guests" || pathname.startsWith("/dashboard/airbnb-guests/");
+    if (onAirbnbRoute && complexSettings?.airbnbGuestsEnabled === false) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in duration-300">
+                <Card className="p-8 max-w-md bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="material-symbols-outlined text-3xl">lock</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                        Módulo Deshabilitado
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
+                        No tienes permisos para acceder a esta sección. El administrador del complejo ha inhabilitado este módulo funcional para tu rol.
+                    </p>
+                    <button
+                        onClick={() => window.history.back()}
+                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                        &larr; Volver atrás
+                    </button>
+                </Card>
+            </div>
+        );
+    }
+
     const permissions = complexSettings?.permissions?.[userRole];
     // If no explicit configuration is set, we fallback to true (allow)
     if (!permissions) return <>{children}</>;
@@ -27,6 +53,7 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
     const routeKeyMap: Record<string, string> = {
         '/dashboard/units': 'units',
         '/dashboard/residents': 'residents',
+        '/dashboard/airbnb-guests': 'airbnbGuests',
         '/dashboard/amenities': 'amenities',
         '/dashboard/reservations': 'reservations',
         '/dashboard/services': 'services',
@@ -51,7 +78,14 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
         const key = routeKeyMap[matchedRoute];
 
         // Cascade restriction: if amenities is off, reservations must also be off unconditionally
-        const isBlocked = permissions[key] === false || (key === 'reservations' && permissions['amenities'] === false);
+        let isBlocked =
+            permissions[key] === false || (key === 'reservations' && permissions['amenities'] === false);
+        if (key === 'airbnbGuests') {
+            isBlocked =
+                isBlocked ||
+                permissions['residents'] === false ||
+                complexSettings?.airbnbGuestsEnabled === false;
+        }
 
         // Only block if explicitly set to false or restricted by cascade
         if (isBlocked) {

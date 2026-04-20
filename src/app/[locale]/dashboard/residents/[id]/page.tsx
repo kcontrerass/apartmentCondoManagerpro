@@ -106,6 +106,49 @@ export default async function ResidentDetailPage({ params }: RouteParams) {
                             </div>
                         </Card>
 
+                        {resident.isAirbnb && (
+                            <Card className="p-6">
+                                <h3 className="text-lg font-semibold mb-6">{t("detailPage.airbnbTitle")}</h3>
+                                <div className="mb-4">
+                                    <Badge variant="info">{t("detailPage.airbnbActive")}</Badge>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <p className="text-sm text-slate-500 mb-1">{t("detailPage.airbnbStayPeriod")}</p>
+                                        <p className="text-sm font-medium">
+                                            {resident.airbnbStartDate && resident.airbnbEndDate
+                                                ? `${fmt(new Date(resident.airbnbStartDate))} — ${fmt(new Date(resident.airbnbEndDate))}`
+                                                : "—"}
+                                        </p>
+                                    </div>
+                                    {resident.airbnbGuestName && (
+                                        <div>
+                                            <p className="text-sm text-slate-500 mb-1">{t("detailPage.airbnbGuest")}</p>
+                                            <p className="font-medium">{resident.airbnbGuestName}</p>
+                                        </div>
+                                    )}
+                                    {resident.airbnbGuestIdentification && (
+                                        <div>
+                                            <p className="text-sm text-slate-500 mb-1">{t("detailPage.airbnbIdentification")}</p>
+                                            <p className="font-medium">{resident.airbnbGuestIdentification}</p>
+                                        </div>
+                                    )}
+                                    {resident.airbnbReservationCode && (
+                                        <div>
+                                            <p className="text-sm text-slate-500 mb-1">{t("detailPage.airbnbReservation")}</p>
+                                            <p className="font-medium">{resident.airbnbReservationCode}</p>
+                                        </div>
+                                    )}
+                                    {resident.airbnbGuestPhone && (
+                                        <div>
+                                            <p className="text-sm text-slate-500 mb-1">{t("detailPage.airbnbGuestPhoneLabel")}</p>
+                                            <p className="font-medium">{resident.airbnbGuestPhone}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </Card>
+                        )}
+
                         <Card className="p-6">
                             <h3 className="text-lg font-semibold mb-6">{t("detailPage.emergencyTitle")}</h3>
                             {emergency?.name ? (

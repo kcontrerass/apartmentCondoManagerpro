@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { DashboardClient as AdminDashboard } from "@/components/dashboard/DashboardClient";
 import { ResidentDashboard } from "@/components/dashboard/ResidentDashboard";
 import { OperatorDashboard } from "@/components/dashboard/OperatorDashboard";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { getTranslations } from 'next-intl/server';
@@ -35,6 +36,7 @@ async function getStats(userId: string, role: string) {
             prisma.invoice.findMany({
                 where: {
                     unitId: resident.unitId,
+                    category: InvoiceCategory.UNIT_BILLING,
                     OR: [
                         { year: { gt: startYear } },
                         {
@@ -201,7 +203,7 @@ async function getStats(userId: string, role: string) {
                 include: { reporter: true, unit: true }
             }),
             prisma.invoice.findMany({
-                where: { complexId: user.complexId },
+                where: { complexId: user.complexId, category: InvoiceCategory.UNIT_BILLING },
                 take: 3,
                 orderBy: { createdAt: 'desc' },
                 include: { unit: { select: { number: true } } }
@@ -312,7 +314,7 @@ async function getStats(userId: string, role: string) {
             include: { reporter: { select: { name: true } }, unit: { select: { number: true } } }
         }),
         prisma.invoice.findMany({
-            where: { complexId: { in: managedComplexIds } },
+            where: { complexId: { in: managedComplexIds }, category: InvoiceCategory.UNIT_BILLING },
             take: 3,
             orderBy: { createdAt: 'desc' },
             include: { unit: { select: { number: true } } }

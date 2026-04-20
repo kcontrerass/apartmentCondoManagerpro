@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { MainLayout } from "@/components/layouts/MainLayout";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { ReportsClient } from "@/components/dashboard/reports/ReportsClient";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { getTranslations } from 'next-intl/server';
@@ -54,7 +55,8 @@ async function getReportsData(userId: string, role: string, selectedComplexId?: 
         where: {
             complexId: { in: managedComplexIds },
             createdAt: { gte: sixMonthsAgo },
-            status: 'PAID'
+            status: 'PAID',
+            category: InvoiceCategory.UNIT_BILLING,
         },
         select: {
             totalAmount: true,

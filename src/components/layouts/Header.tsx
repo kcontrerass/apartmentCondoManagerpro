@@ -192,7 +192,7 @@ export function Header({ isUnassigned = false }: HeaderProps) {
 
         const debounce = setTimeout(performSearch, 300);
         return () => clearTimeout(debounce);
-    }, [searchQuery]);
+    }, [searchQuery, session?.user?.role, userComplexId]);
 
     const [showMobileSearch, setShowMobileSearch] = useState(false);
 

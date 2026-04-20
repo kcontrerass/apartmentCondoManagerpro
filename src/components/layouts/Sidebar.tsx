@@ -38,6 +38,8 @@ export function Sidebar({
                 items: [
                     { icon: 'dashboard', label: t('dashboard'), href: '/dashboard', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT, Role.GUARD] },
                     { icon: 'apartment', label: t('complexes'), href: '/dashboard/complexes', roles: [Role.SUPER_ADMIN] },
+                    { icon: 'account_balance', label: t('platformPayments'), href: '/dashboard/platform-payments', roles: [Role.SUPER_ADMIN, Role.ADMIN] },
+                    { icon: 'payments', label: t('platformRecurrente'), href: '/dashboard/platform-recurrente', roles: [Role.SUPER_ADMIN] },
                     { icon: 'monitoring', label: t('reports'), href: '/dashboard/reports', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                 ],
             },
@@ -46,10 +48,12 @@ export function Sidebar({
                 items: [
                     { icon: 'door_front', label: t('units'), href: '/dashboard/units', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD] },
                     { icon: 'group', label: t('residents'), href: '/dashboard/residents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD] },
+                    { icon: 'holiday_village', label: t('airbnbGuests'), href: '/dashboard/airbnb-guests', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD] },
                     { icon: 'pool', label: t('amenities'), href: '/dashboard/amenities', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT, Role.GUARD] },
                     { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT] },
                     { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.RESIDENT] },
                     { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT] },
+                    { icon: 'credit_card', label: t('platformSubscription'), href: '/dashboard/platform-subscription', roles: [Role.ADMIN] },
                     { icon: 'badge', label: t('access'), href: '/dashboard/access-control', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.RESIDENT] },
                     { icon: 'settings', label: t('settings'), href: '/dashboard/settings', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                 ],
@@ -77,15 +81,24 @@ export function Sidebar({
         if (!role) return false;
         if (role === Role.SUPER_ADMIN) return true;
 
+        if (href === "/dashboard/airbnb-guests" && complexSettings?.airbnbGuestsEnabled === false) {
+            return false;
+        }
+
         const permissions = complexSettings?.permissions?.[role];
 
         // Default to true if not explicitly disabled in settings
         if (!permissions) return true;
 
+        if (href === "/dashboard/airbnb-guests") {
+            return permissions.residents !== false && permissions.airbnbGuests !== false;
+        }
+
         // Map href to permission keys
         const routeKeyMap: Record<string, string> = {
             '/dashboard/units': 'units',
             '/dashboard/residents': 'residents',
+            '/dashboard/airbnb-guests': 'airbnbGuests',
             '/dashboard/amenities': 'amenities',
             '/dashboard/reservations': 'reservations',
             '/dashboard/services': 'services',

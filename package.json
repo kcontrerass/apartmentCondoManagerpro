@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "prisma generate",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "set-super-admin-password": "ts-node scripts/set-super-admin-password.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",

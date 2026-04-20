@@ -1,3 +1,4 @@
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { recurrente } from "@/lib/recurrente";
@@ -150,6 +151,23 @@ export async function POST(request: Request) {
 
         if (!invoice) {
             return apiError({ code: "NOT_FOUND", message: "Factura no encontrada" }, 404);
+        }
+
+        if (invoice.category === InvoiceCategory.PLATFORM_SUBSCRIPTION) {
+            return apiError(
+                {
+                    code: "INVALID_INVOICE",
+                    message: "Las facturas de suscripción a la plataforma no se pagan desde esta pantalla.",
+                },
+                400
+            );
+        }
+
+        if (!invoice.unit) {
+            return apiError(
+                { code: "INVALID_INVOICE", message: "Esta factura no tiene unidad asociada y no puede cobrarse aquí." },
+                400
+            );
         }
 
         if (invoice.status !== "PENDING" && invoice.status !== "PROCESSING" && invoice.status !== "OVERDUE") {

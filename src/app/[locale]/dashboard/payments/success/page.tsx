@@ -4,103 +4,177 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { recurrente } from "@/lib/recurrente";
 import { prisma } from "@/lib/db";
+import { getPlatformRecurrenteKeys } from "@/lib/platform-billing";
+import { fulfillPlatformFeePayment } from "@/lib/platform-fee-fulfill";
+import {
+    getRecurrenteCheckoutMetadata,
+    isRecurrenteCheckoutPaid,
+} from "@/lib/recurrente-checkout-paid";
+import { InvoiceCategory } from "@prisma/client";
 
 interface Props {
     params: Promise<{ locale: string }>;
-    searchParams: Promise<{ session_id?: string }>;
+    searchParams: Promise<{
+        session_id?: string;
+        checkout_session_id?: string;
+        id?: string;
+        scope?: string;
+    }>;
 }
 
 export default async function PaymentSuccessPage({ params, searchParams }: Props) {
     const { locale } = await params;
-    const { session_id } = await searchParams;
+    const sp = await searchParams;
+    const session_id =
+        sp.session_id ?? sp.checkout_session_id ?? sp.id;
+    const scope = sp.scope;
     const t = await getTranslations({ locale, namespace: 'Payments.success' });
 
     // Verify session via Session ID (Preferred/Secure)
     if (session_id) {
         try {
-            const checkout = await recurrente.checkouts.retrieve(session_id);
+            const platformKeys = scope === "platform" ? await getPlatformRecurrenteKeys() : null;
+            const checkout = await recurrente.checkouts.retrieve(
+                session_id,
+                platformKeys || undefined
+            );
 
             if (checkout) {
-                const metadata = checkout.metadata || checkout.checkout?.metadata || {};
+                const metadata = getRecurrenteCheckoutMetadata(checkout);
                 const type = metadata.type;
-                const status = checkout.status || checkout.payment_status || checkout.checkout?.status;
-                const isPaid = status === 'paid' || status === 'completed' || status === 'succeeded';
+                const isPaid = isRecurrenteCheckoutPaid(checkout);
 
-                if (isPaid) {
-                    // --- CASE 1: RESERVATION PAYMENT ---
-                    if (type === 'RESERVATION') {
-                        const { amenityId, startTime, endTime, notes, userId, totalAmount } = metadata;
-
-                        // Check if reservation already exists to avoid duplicates on refresh
-                        const existingRes = await (prisma as any).reservation.findFirst({
-                            where: {
-                                userId,
-                                amenityId,
-                                startTime: new Date(startTime),
-                                endTime: new Date(endTime)
-                            }
+                if (isPaid && scope === "platform") {
+                    let feeId =
+                        metadata.platformFeePaymentId != null
+                            ? String(metadata.platformFeePaymentId)
+                            : null;
+                    if (!feeId) {
+                        const row = await prisma.platformFeePayment.findFirst({
+                            where: { recurrenteCheckoutId: session_id },
+                            select: { id: true },
                         });
+                        feeId = row?.id ?? null;
+                    }
+                    if (feeId) {
+                        await fulfillPlatformFeePayment(feeId);
+                    }
+                }
 
-                        if (!existingRes) {
-                            // 1. Get user for the invoice
-                            const user = await prisma.user.findUnique({
-                                where: { id: userId },
-                                include: { residentProfile: true }
-                            });
+                if (isPaid && scope !== "platform") {
+                    // --- CASE 1: RESERVATION PAYMENT ---
+                    if (type === "RESERVATION") {
+                        const m = metadata as {
+                            amenityId?: string;
+                            startTime?: string;
+                            endTime?: string;
+                            notes?: string | null;
+                            userId?: string;
+                            totalAmount?: string | number;
+                        };
+                        const {
+                            amenityId,
+                            startTime,
+                            endTime,
+                            notes,
+                            userId,
+                            totalAmount,
+                        } = m;
 
-                            // 2. Create Invoice first
-                            const invoice = await (prisma as any).invoice.create({
-                                data: {
-                                    unitId: user?.residentProfile?.unitId,
-                                    month: new Date(startTime).getUTCMonth() + 1,
-                                    year: new Date(startTime).getUTCFullYear(),
-                                    totalAmount: Number(totalAmount),
-                                    status: 'PAID',
-                                    paymentMethod: 'CARD',
-                                    type: 'SERVICE', // or a specific type if available
-                                    description: `Reserva de amenidad (Pagado vía Tarjeta)`
-                                }
-                            });
+                        if (
+                            typeof amenityId === "string" &&
+                            typeof startTime === "string" &&
+                            typeof endTime === "string" &&
+                            typeof userId === "string" &&
+                            totalAmount !== undefined
+                        ) {
+                            const start = new Date(startTime);
+                            const end = new Date(endTime);
 
-                            // 3. Create Reservation
-                            await (prisma as any).reservation.create({
-                                data: {
+                            const existingRes = await prisma.reservation.findFirst({
+                                where: {
                                     userId,
                                     amenityId,
-                                    startTime: new Date(startTime),
-                                    endTime: new Date(endTime),
-                                    notes,
-                                    status: 'APPROVED',
-                                    invoiceId: invoice.id
-                                }
+                                    startTime: start,
+                                    endTime: end,
+                                },
                             });
-                            console.log(`Reservation created for user ${userId} after successful payment.`);
+
+                            if (!existingRes) {
+                                const user = await prisma.user.findUnique({
+                                    where: { id: userId },
+                                    include: {
+                                        residentProfile: { include: { unit: true } },
+                                    },
+                                });
+                                const unitId = user?.residentProfile?.unitId;
+                                const complexId = user?.residentProfile?.unit?.complexId;
+                                if (unitId && complexId) {
+                                    const amount = Number(totalAmount);
+                                    const invoiceNumber = `RES-PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+                                    const invoice = await prisma.invoice.create({
+                                        data: {
+                                            number: invoiceNumber,
+                                            month: start.getUTCMonth() + 1,
+                                            year: start.getUTCFullYear(),
+                                            dueDate: new Date(),
+                                            totalAmount: amount,
+                                            status: "PAID",
+                                            category: InvoiceCategory.UNIT_BILLING,
+                                            unitId,
+                                            complexId,
+                                            paymentMethod: "CARD",
+                                            items: {
+                                                create: {
+                                                    description: "Reserva de amenidad (pagada con tarjeta)",
+                                                    amount,
+                                                },
+                                            },
+                                        },
+                                    });
+
+                                    await prisma.reservation.create({
+                                        data: {
+                                            userId,
+                                            amenityId,
+                                            startTime: start,
+                                            endTime: end,
+                                            notes: typeof notes === "string" ? notes : undefined,
+                                            status: "APPROVED",
+                                            invoiceId: invoice.id,
+                                        },
+                                    });
+                                    console.log(`Reservation created for user ${userId} after successful payment.`);
+                                }
+                            }
                         }
                     }
                     // --- CASE 2: EXISTING INVOICE PAYMENT ---
                     else {
-                        const invoiceId = metadata.invoiceId;
-                        if (invoiceId) {
+                        const invoiceIdRaw = metadata.invoiceId;
+                        if (invoiceIdRaw !== undefined && invoiceIdRaw !== null && String(invoiceIdRaw).length > 0) {
+                            const invoiceId = String(invoiceIdRaw);
                             await prisma.invoice.updateMany({
                                 where: {
                                     id: invoiceId,
                                     status: { not: "PAID" },
+                                    category: InvoiceCategory.UNIT_BILLING,
                                 },
                                 data: {
                                     status: "PAID",
                                     paymentMethod: "CARD",
                                     updatedAt: new Date(),
-                                }
+                                },
                             });
 
-                            const linkedReservation = await (prisma as any).reservation.findUnique({
-                                where: { invoiceId }
+                            const linkedReservation = await prisma.reservation.findUnique({
+                                where: { invoiceId },
                             });
 
                             if (linkedReservation) {
-                                await (prisma as any).reservation.update({
+                                await prisma.reservation.update({
                                     where: { id: linkedReservation.id },
-                                    data: { status: 'APPROVED' }
+                                    data: { status: "APPROVED" },
                                 });
                             }
                         }
@@ -131,9 +205,9 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                 </div>
 
                 <div className="pt-4">
-                    <Link href="/dashboard/invoices">
+                    <Link href={scope === "platform" ? "/dashboard/platform-subscription" : "/dashboard/invoices"}>
                         <Button variant="primary" className="w-full">
-                            {t('backToInvoices')}
+                            {scope === "platform" ? t("backToSubscription") : t("backToInvoices")}
                         </Button>
                     </Link>
                 </div>

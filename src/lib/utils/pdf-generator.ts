@@ -164,3 +164,189 @@ export const generateInvoicePDF = (data: PDFData) => {
     // Save PDF
     doc.save(`Recibo_${data.invoiceNumber}.pdf`);
 };
+
+/** Comprobante PDF solo para suscripción a la plataforma (facturado al complejo). */
+export interface PlatformSubscriptionReceiptPdfData {
+    invoiceNumber: string;
+    complexName: string;
+    complexAddress: string;
+    /** Fecha de emisión (texto ya formateado) */
+    issuedAt: string;
+    /** Periodo factura ej. "3 / 2026" */
+    periodLabel: string;
+    dueDate: string;
+    /** Fecha real del pago (incluye mes); "—" si no hay dato */
+    paidAtLabel: string;
+    items: { description: string; amount: number }[];
+    total: number;
+    paymentMethodLabel: string;
+}
+
+export function invoiceJsonToPlatformSubscriptionReceiptPdfData(invoice: {
+    number: string;
+    month: number;
+    year: number;
+    dueDate: string;
+    createdAt: string;
+    updatedAt?: string;
+    status?: string;
+    totalAmount: unknown;
+    paymentMethod?: string | null;
+    category?: string;
+    complex?: { name?: string | null; address?: string | null } | null;
+    items?: { description: string; amount: unknown }[];
+    platformFeePayment?: { paidAt?: string | Date | null } | null;
+}): PlatformSubscriptionReceiptPdfData {
+    const total = Number(invoice.totalAmount);
+    const items =
+        invoice.items?.map((it) => ({
+            description: it.description,
+            amount: Number(it.amount),
+        })) ?? [];
+    const pm = invoice.paymentMethod ?? "";
+    let paymentMethodLabel = pm;
+    if (pm === "CARD") paymentMethodLabel = "Tarjeta";
+    else if (pm === "TRANSFER" || pm === "CASH") paymentMethodLabel = pm === "TRANSFER" ? "Transferencia bancaria" : "Efectivo";
+
+    const issued = new Date(invoice.createdAt);
+    const due = new Date(invoice.dueDate);
+
+    const paidRaw =
+        invoice.platformFeePayment?.paidAt != null
+            ? new Date(invoice.platformFeePayment.paidAt as string | Date)
+            : invoice.status === "PAID" && invoice.updatedAt
+              ? new Date(invoice.updatedAt)
+              : null;
+    const paidAtLabel = paidRaw && !Number.isNaN(paidRaw.getTime())
+        ? paidRaw.toLocaleDateString("es-GT", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+          })
+        : "—";
+
+    return {
+        invoiceNumber: invoice.number,
+        complexName: invoice.complex?.name ?? "Complejo",
+        complexAddress: invoice.complex?.address ?? "",
+        issuedAt: issued.toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" }),
+        periodLabel: `${invoice.month} / ${invoice.year}`,
+        dueDate: due.toLocaleDateString("es-GT", { day: "2-digit", month: "short", year: "numeric" }),
+        paidAtLabel,
+        items,
+        total: Number.isFinite(total) ? total : 0,
+        paymentMethodLabel,
+    };
+}
+
+export function generatePlatformSubscriptionReceiptPdf(data: PlatformSubscriptionReceiptPdfData) {
+    const doc = new jsPDF() as any;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    doc.setTextColor(240, 240, 240);
+    doc.setFontSize(52);
+    doc.setFont("helvetica", "bold");
+    doc.text("PAGADO", pageWidth / 2, pageHeight / 2, { align: "center", angle: 45 });
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, pageWidth, 42, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("ADESSO-365", 14, 14);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.text("Comprobante de suscripción — uso del software", 14, 20);
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("COMPROBANTE", pageWidth - 14, 18, { align: "right" });
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.text(`No. ${data.invoiceNumber}`, pageWidth - 14, 26, { align: "right" });
+
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("FACTURADO AL COMPLEJO", 14, 54);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(data.complexName, 14, 62);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    const addr = data.complexAddress?.trim() || "—";
+    const addrLines = doc.splitTextToSize(addr, pageWidth - 28);
+    doc.text(addrLines, 14, 68);
+
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(pageWidth - 80, 50, 66, 36, 2, 2, "F");
+    doc.setTextColor(15, 23, 42);
+    doc.setFontSize(8);
+    doc.text("EMISIÓN:", pageWidth - 76, 56);
+    doc.text(data.issuedAt, pageWidth - 18, 56, { align: "right" });
+    doc.text("PERIODO:", pageWidth - 76, 63);
+    doc.text(data.periodLabel, pageWidth - 18, 63, { align: "right" });
+    doc.text("VENCIMIENTO:", pageWidth - 76, 70);
+    doc.text(data.dueDate, pageWidth - 18, 70, { align: "right" });
+    doc.text("FECHA DE PAGO:", pageWidth - 76, 77);
+    doc.text(data.paidAtLabel, pageWidth - 18, 77, { align: "right" });
+
+    const tableStartY = 92 + (addrLines.length > 2 ? 6 : 0);
+    const tableBody = data.items.map((item) => [
+        item.description,
+        `Q ${item.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    ]);
+
+    autoTable(doc, {
+        startY: tableStartY,
+        head: [["CONCEPTO", "MONTO"]],
+        body: tableBody.length ? tableBody : [["Suscripción plataforma", `Q ${data.total.toFixed(2)}`]],
+        theme: "grid",
+        headStyles: {
+            fillColor: [30, 41, 59],
+            fontSize: 9,
+            fontStyle: "bold",
+            halign: "center",
+        },
+        styles: { fontSize: 9, cellPadding: 5, lineColor: [226, 232, 240] },
+        columnStyles: {
+            0: { cellWidth: "auto" },
+            1: { halign: "right", fontStyle: "bold", cellWidth: 40 },
+        },
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 8;
+    doc.setFontSize(9);
+    doc.setTextColor(71, 85, 105);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Medio de pago: ${data.paymentMethodLabel}`, 14, finalY);
+
+    doc.setFillColor(15, 23, 42);
+    doc.rect(pageWidth - 70, finalY + 4, 56, 12, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL:", pageWidth - 65, finalY + 12);
+    doc.text(
+        `Q ${data.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        pageWidth - 18,
+        finalY + 12,
+        { align: "right" }
+    );
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(100, 116, 139);
+    doc.text(
+        "Copia válida para archivo del complejo y del operador de la plataforma.",
+        pageWidth / 2,
+        pageHeight - 22,
+        { align: "center" }
+    );
+    doc.setFontSize(6);
+    doc.setTextColor(203, 213, 225);
+    doc.text("Documento generado digitalmente — ADESSO-365", pageWidth / 2, pageHeight - 12, { align: "center" });
+
+    doc.save(`Comprobante_suscripcion_${data.invoiceNumber}.pdf`);
+}

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { InvoiceCategory, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
+import { getSuperAdminBillingScopeComplexIdFromRequest } from "@/lib/super-admin-scope";
 
 export async function GET(request: Request) {
     try {
@@ -16,86 +18,97 @@ export async function GET(request: Request) {
         const status = searchParams.get("status");
         const month = searchParams.get("month");
         const year = searchParams.get("year");
-        const search = searchParams.get("search");
+        const search = searchParams.get("search")?.trim();
 
-        let whereClause: any = {};
+        const andParts: Prisma.InvoiceWhereInput[] = [
+            { category: InvoiceCategory.UNIT_BILLING },
+        ];
 
-        if (complexId) whereClause.complexId = complexId;
-        if (unitId) whereClause.unitId = unitId;
-        if (status) whereClause.status = status;
-        if (month) whereClause.month = parseInt(month);
-        if (year) whereClause.year = parseInt(year);
+        if (complexId) andParts.push({ complexId });
+        if (unitId) andParts.push({ unitId });
+        if (status) andParts.push({ status: status as "PENDING" | "PAID" | "OVERDUE" | "CANCELLED" | "PROCESSING" });
+        if (month) andParts.push({ month: parseInt(month, 10) });
+        if (year) andParts.push({ year: parseInt(year, 10) });
 
         if (search) {
-            whereClause.OR = [
-                { number: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-                {
-                    unit: {
-                        residents: {
+            andParts.push({
+                OR: [
+                    { number: { contains: search } },
+                    {
+                        unit: {
+                            residents: {
+                                some: {
+                                    user: {
+                                        name: { contains: search },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    {
+                        items: {
                             some: {
-                                user: {
-                                    name: { contains: search, mode: 'insensitive' }
-                                }
-                            }
-                        }
-                    }
-                }
-            ];
+                                description: { contains: search },
+                            },
+                        },
+                    },
+                ],
+            });
         }
 
         // RBAC filtering
         if (session.user.role === Role.ADMIN) {
             const complex = await prisma.complex.findFirst({
-                where: { adminId: session.user.id }
+                where: { adminId: session.user.id },
             });
             if (!complex) return NextResponse.json([]);
-            whereClause.complexId = complex.id;
+            andParts.push({ complexId: complex.id });
         } else if (session.user.role === Role.RESIDENT) {
             const resident = await prisma.resident.findUnique({
-                where: { userId: session.user.id }
+                where: { userId: session.user.id },
             });
             if (!resident) return NextResponse.json([]);
-            whereClause.unitId = resident.unitId;
+            andParts.push({ unitId: resident.unitId });
 
-            // Filter by startDate: only show invoices for months including or after joining
             const startDate = new Date(resident.startDate);
             const startYear = startDate.getFullYear();
             const startMonth = startDate.getMonth() + 1;
 
-            whereClause.OR = [
-                { year: { gt: startYear } },
-                {
-                    AND: [
-                        { year: startYear },
-                        { month: { gte: startMonth } }
-                    ]
-                }
-            ];
+            andParts.push({
+                OR: [
+                    { year: { gt: startYear } },
+                    {
+                        AND: [{ year: startYear }, { month: { gte: startMonth } }],
+                    },
+                ],
+            });
         } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
             const user = await prisma.user.findUnique({
                 where: { id: session.user.id },
-                select: { complexId: true }
+                select: { complexId: true },
             });
             if (!user?.complexId) return NextResponse.json([]);
-            whereClause.complexId = user.complexId;
-        } else if (session.user.role !== Role.SUPER_ADMIN) {
-            // Guards or other roles might not have access to billing list
+            andParts.push({ complexId: user.complexId });
+        } else if (session.user.role === Role.SUPER_ADMIN) {
+            const scoped = await getSuperAdminBillingScopeComplexIdFromRequest(request);
+            if (scoped) andParts.push({ complexId: scoped });
+        } else {
             return NextResponse.json({ error: "No autorizado" }, { status: 403 });
         }
 
-        // Auto-mark overdue invoices before fetching
-        // This runs on every page load to keep statuses current (Option C)
-        await (prisma as any).invoice.updateMany({
+        const whereClause: Prisma.InvoiceWhereInput = { AND: andParts };
+
+        await prisma.invoice.updateMany({
             where: {
                 status: "PENDING",
                 dueDate: { lt: new Date() },
-                number: { not: { startsWith: "RES-" } }
+                category: InvoiceCategory.UNIT_BILLING,
+                number: { not: { startsWith: "RES-" } },
             },
-            data: { status: "OVERDUE" }
+            data: { status: "OVERDUE" },
         });
 
-        const invoices = await (prisma as any).invoice.findMany({
+        const invoices = await prisma.invoice.findMany({
             where: whereClause,
             include: {
                 unit: {

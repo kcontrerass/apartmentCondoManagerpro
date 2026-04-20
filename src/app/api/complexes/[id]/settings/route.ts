@@ -45,7 +45,8 @@ export async function PUT(
             return new NextResponse("Complex not found", { status: 404 });
         }
 
-        const existingSettings: any = existingComplex.settings || {};
+        const rawSettings: any = existingComplex.settings || {};
+        const { airbnbGuestsEnabled: _legacyAirbnbFlag, ...existingSettings } = rawSettings;
         const incomingPermissions = body.settings?.permissions;
 
         // Hardening: Filter incoming permissions based on session user role hierarchy
@@ -77,7 +78,7 @@ export async function PUT(
                     permissions: sanitizedPermissions,
                     recurrente: body.settings?.recurrente || existingSettings.recurrente,
                     billing: body.settings?.billing || existingSettings.billing,
-                },
+                } as any,
             },
         });
 

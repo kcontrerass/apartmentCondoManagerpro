@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { residentSchema, ResidentInput } from "@/lib/validations/resident";
@@ -12,17 +13,33 @@ interface ResidentFormProps {
     initialData?: Partial<Resident>;
     onSubmit: (data: ResidentInput) => Promise<void>;
     isLoading?: boolean;
-    users?: { id: string, name: string, email: string }[];
-    units?: { id: string, number: string, complex: { name: string } }[];
+    users?: { id: string; name: string; email: string }[];
+    units?: { id: string; number: string; complex: { name: string } }[];
+    /** When false, Airbnb fields are hidden and forced off on submit state. Default true. */
+    airbnbGuestsEnabled?: boolean;
 }
 
-export function ResidentForm({ initialData, onSubmit, isLoading, users, units }: ResidentFormProps) {
+function toDateInput(d: Date | string | null | undefined) {
+    if (!d) return "";
+    return new Date(d).toISOString().split("T")[0];
+}
+
+export function ResidentForm({
+    initialData,
+    onSubmit,
+    isLoading,
+    users,
+    units,
+    airbnbGuestsEnabled = true,
+}: ResidentFormProps) {
     const t = useTranslations("Residents");
     const emergency = (initialData?.emergencyContact as any) || {};
 
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm<any>({
         resolver: zodResolver(residentSchema),
@@ -30,15 +47,42 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
             userId: initialData?.userId || "",
             unitId: initialData?.unitId || "",
             type: (initialData?.type as any) || "TENANT",
-            startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : undefined,
+            startDate: initialData?.startDate
+                ? new Date(initialData.startDate).toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0],
+            endDate: toDateInput(initialData?.endDate as Date | undefined),
             emergencyContact: {
                 name: emergency.name || "",
                 phone: emergency.phone || "",
                 relation: emergency.relation || "",
             },
+            isAirbnb: initialData?.isAirbnb ?? false,
+            airbnbStartDate: toDateInput(initialData?.airbnbStartDate as Date | undefined),
+            airbnbEndDate: toDateInput(initialData?.airbnbEndDate as Date | undefined),
+            airbnbGuestName: initialData?.airbnbGuestName ?? "",
+            airbnbReservationCode: initialData?.airbnbReservationCode ?? "",
+            airbnbGuestPhone: initialData?.airbnbGuestPhone ?? "",
+            airbnbGuestIdentification: initialData?.airbnbGuestIdentification ?? "",
         },
     });
+
+    const isAirbnb = watch("isAirbnb");
+
+    const clearAirbnbFields = () => {
+        setValue("airbnbStartDate", "");
+        setValue("airbnbEndDate", "");
+        setValue("airbnbGuestName", "");
+        setValue("airbnbReservationCode", "");
+        setValue("airbnbGuestPhone", "");
+        setValue("airbnbGuestIdentification", "");
+    };
+
+    useEffect(() => {
+        if (!airbnbGuestsEnabled) {
+            setValue("isAirbnb", false);
+            clearAirbnbFields();
+        }
+    }, [airbnbGuestsEnabled, setValue]);
 
     const onFormSubmit = async (data: any) => {
         await onSubmit(data as ResidentInput);
@@ -61,7 +105,9 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                         >
                             <option value="">{t("form.selectUser")}</option>
                             {users?.map((u) => (
-                                <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                                <option key={u.id} value={u.id}>
+                                    {u.name} ({u.email})
+                                </option>
                             ))}
                         </select>
                         {errors.userId && (
@@ -78,7 +124,9 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                         >
                             <option value="">{t("form.selectUnit")}</option>
                             {units?.map((u) => (
-                                <option key={u.id} value={u.id}>{t("form.unitOption", { number: u.number, complex: u.complex.name })}</option>
+                                <option key={u.id} value={u.id}>
+                                    {t("form.unitOption", { number: u.number, complex: u.complex.name })}
+                                </option>
                             ))}
                         </select>
                         {errors.unitId && (
@@ -108,6 +156,67 @@ export function ResidentForm({ initialData, onSubmit, isLoading, users, units }:
                     />
                 </div>
             </div>
+
+            {airbnbGuestsEnabled && (
+                <div className="space-y-6">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+                        {t("form.airbnbSection")}
+                    </h3>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            className="mt-1 rounded border-slate-300 dark:border-slate-600"
+                            {...register("isAirbnb", {
+                                onChange: (e) => {
+                                    if (!e.target.checked) clearAirbnbFields();
+                                },
+                            })}
+                        />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{t("form.airbnbCheckbox")}</span>
+                    </label>
+
+                    {isAirbnb && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <Input
+                                label={t("form.airbnbStartDate")}
+                                type="date"
+                                {...register("airbnbStartDate")}
+                                error={errors.airbnbStartDate?.message as string}
+                            />
+                            <Input
+                                label={t("form.airbnbEndDate")}
+                                type="date"
+                                {...register("airbnbEndDate")}
+                                error={errors.airbnbEndDate?.message as string}
+                            />
+                            <Input
+                                label={t("form.airbnbGuestName")}
+                                placeholder={t("form.airbnbGuestNamePlaceholder")}
+                                {...register("airbnbGuestName")}
+                                error={errors.airbnbGuestName?.message as string}
+                            />
+                            <Input
+                                label={t("form.airbnbGuestIdentification")}
+                                placeholder={t("form.airbnbGuestIdentificationPlaceholder")}
+                                {...register("airbnbGuestIdentification")}
+                                error={errors.airbnbGuestIdentification?.message as string}
+                            />
+                            <Input
+                                label={t("form.airbnbReservationCode")}
+                                placeholder={t("form.airbnbReservationCodePlaceholder")}
+                                {...register("airbnbReservationCode")}
+                                error={errors.airbnbReservationCode?.message as string}
+                            />
+                            <Input
+                                label={t("form.airbnbGuestPhone")}
+                                placeholder={t("form.airbnbGuestPhonePlaceholder")}
+                                {...register("airbnbGuestPhone")}
+                                error={errors.airbnbGuestPhone?.message as string}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="space-y-6">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">

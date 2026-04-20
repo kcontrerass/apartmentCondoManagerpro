@@ -8,6 +8,7 @@ const routeLabels: Record<string, string> = {
     complexes: "Complejos",
     units: "Unidades",
     residents: "Residentes",
+    "airbnb-guests": "Huéspedes Airbnb",
     amenities: "Amenidades",
     services: "Servicios",
     billing: "Facturación",
@@ -19,6 +20,9 @@ const routeLabels: Record<string, string> = {
     new: "Nuevo",
     edit: "Editar",
     profile: "Perfil",
+    "platform-subscription": "Suscripción",
+    "platform-payments": "Pagos plataforma",
+    "platform-recurrente": "Recurrente plataforma",
 };
 
 export function Breadcrumbs() {

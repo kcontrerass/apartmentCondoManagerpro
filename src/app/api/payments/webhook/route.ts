@@ -1,8 +1,11 @@
 import { headers } from "next/headers";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { recurrente } from "@/lib/recurrente";
 import { apiError, apiOk } from "@/lib/api-response";
 import { notifyInvoicePaidToUnitResidents } from "@/lib/notifications";
+import { fulfillPlatformFeePayment } from "@/lib/platform-fee-fulfill";
+import { getPlatformRecurrenteKeys } from "@/lib/platform-billing";
 
 function pickString(values: unknown[]): string | null {
     for (const value of values) {
@@ -36,6 +39,10 @@ function extractAmenityId(payload: Record<string, unknown>): string | null {
     return extractMetadataValue(payload, "amenityId");
 }
 
+function extractPlatformFeePaymentId(payload: Record<string, unknown>): string | null {
+    return extractMetadataValue(payload, "platformFeePaymentId");
+}
+
 function isSuccessfulPaymentEvent(payload: Record<string, unknown>): boolean {
     const data = payload.data as Record<string, unknown> | undefined;
     const object = data?.object as Record<string, unknown> | undefined;
@@ -64,24 +71,25 @@ export async function POST(request: Request) {
             );
         }
 
-        // Find complex and get webhook secret
-        let webhookSecret: string | undefined = undefined;
-
         const invokeType = extractMetadataValue(body, "type");
         const invoiceId = extractInvoiceId(body);
         const amenityId = extractAmenityId(body);
+        const platformFeePaymentId = extractPlatformFeePaymentId(body);
 
-        if (invokeType === 'RESERVATION' && amenityId) {
+        let webhookSecret: string | undefined = undefined;
+
+        if (platformFeePaymentId) {
+            webhookSecret = (await getPlatformRecurrenteKeys())?.webhookSecret;
+        } else if (invokeType === "RESERVATION" && amenityId) {
             const amenity = await prisma.amenity.findUnique({
                 where: { id: amenityId },
-                include: { complex: true }
+                include: { complex: true },
             });
             webhookSecret = (amenity?.complex?.settings as any)?.recurrente?.webhookSecret;
         } else if (invoiceId) {
-            // Wait, we need to bypass typescript types if necessary, using `any`
             const invoice = await (prisma as any).invoice.findUnique({
                 where: { id: invoiceId },
-                include: { unit: { include: { complex: true } } }
+                include: { unit: { include: { complex: true } } },
             });
             webhookSecret = (invoice?.unit?.complex?.settings as any)?.recurrente?.webhookSecret;
         }
@@ -94,18 +102,31 @@ export async function POST(request: Request) {
             rawBody,
             signatureHeader: signature,
             timestampHeader: timestamp,
-            keys: webhookSecret ? { webhookSecret, publicKey: '', secretKey: '' } : undefined
+            keys: webhookSecret ? { webhookSecret, publicKey: "", secretKey: "" } : undefined,
         });
 
         if (!isSignatureValid) {
             return apiError(
-                { code: "INVALID_SIGNATURE", message: "Firma de webhook inválida o clave no configurada en el complejo" },
+                {
+                    code: "INVALID_SIGNATURE",
+                    message: "Firma de webhook inválida o clave no configurada",
+                },
                 401
             );
         }
 
         if (!isSuccessfulPaymentEvent(body)) {
             return apiOk({ received: true, processed: false, reason: "event_ignored" });
+        }
+
+        if (platformFeePaymentId) {
+            const result = await fulfillPlatformFeePayment(platformFeePaymentId);
+            return apiOk({
+                received: true,
+                processed: result.ok,
+                platformFeePaymentId,
+                reason: result.reason,
+            });
         }
 
         if (!invoiceId) {
@@ -116,6 +137,7 @@ export async function POST(request: Request) {
             where: {
                 id: invoiceId,
                 status: { not: "PAID" },
+                category: InvoiceCategory.UNIT_BILLING,
             },
             data: {
                 status: "PAID",

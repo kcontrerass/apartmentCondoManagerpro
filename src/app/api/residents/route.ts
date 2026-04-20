@@ -1,17 +1,43 @@
 import { NextResponse } from "next/server";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { residentSchema } from "@/lib/validations/resident";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
-import { sendUserNotification } from "@/lib/notifications";
+import { sendUserNotification, notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
+import { findResidentIdsByTextSearch } from "@/lib/residents-search-raw";
+import {
+    roleCanAccessAirbnbStaffRoutes,
+    roleCanStaffManageResidentAirbnbFields,
+} from "@/lib/complex-airbnb-guests";
 
 export const dynamic = "force-dynamic";
+
+const residentInclude = {
+    user: {
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+        },
+    },
+    unit: {
+        include: {
+            complex: {
+                select: {
+                    name: true,
+                },
+            },
+        },
+    },
+} as const;
 
 export async function GET(request: Request) {
     try {
         const session = await auth();
-        if (!session) {
+        if (!session?.user) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
@@ -20,9 +46,10 @@ export async function GET(request: Request) {
         const userIdFilter = searchParams.get("userId");
         let complexId = searchParams.get("complexId");
         const searchQ = searchParams.get("search")?.trim() ?? "";
+        const isAirbnbOnly = searchParams.get("isAirbnb") === "true";
 
-        // Only apply RBAC if complexId is not already provided (e.g., from search)
-        if (!complexId) {
+        // Scope by complex: admins/junta/guardia se limitan a su complejo. SUPER_ADMIN solo filtra si envía ?complexId=.
+        if (!complexId && session.user.role !== Role.SUPER_ADMIN) {
             if (session.user.role === Role.ADMIN) {
                 const adminComplex = await prisma.complex.findFirst({
                     where: { adminId: session.user.id }
@@ -43,44 +70,48 @@ export async function GET(request: Request) {
             }
         }
 
+        if (isAirbnbOnly && session.user.role !== Role.SUPER_ADMIN) {
+            if (!complexId) {
+                return NextResponse.json([]);
+            }
+            const complexForAirbnb = await prisma.complex.findUnique({
+                where: { id: complexId },
+                select: { settings: true },
+            });
+            if (!roleCanAccessAirbnbStaffRoutes(complexForAirbnb?.settings, session.user.role as Role)) {
+                return NextResponse.json([]);
+            }
+        }
+
+        if (searchQ) {
+            const ids = await findResidentIdsByTextSearch({
+                search: searchQ,
+                isAirbnbOnly,
+                complexId,
+                unitId,
+                userIdFilter,
+            });
+            if (ids.length === 0) {
+                return NextResponse.json([]);
+            }
+            const residents = await prisma.resident.findMany({
+                where: { id: { in: ids } },
+                include: residentInclude,
+            });
+            const orderMap = new Map(ids.map((id, i) => [id, i]));
+            residents.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+            return NextResponse.json(residents);
+        }
+
         const andFilters: Record<string, unknown>[] = [];
         if (unitId) andFilters.push({ unitId });
         if (userIdFilter) andFilters.push({ userId: userIdFilter });
         if (complexId) andFilters.push({ unit: { complexId } } as any);
-        if (searchQ) {
-            // MySQL: no mode: "insensitive" (not supported); default collation is usually CI.
-            andFilters.push({
-                OR: [
-                    { user: { name: { contains: searchQ } } },
-                    { user: { email: { contains: searchQ } } },
-                    { user: { phone: { contains: searchQ } } },
-                    { unit: { number: { contains: searchQ } } },
-                    { unit: { complex: { name: { contains: searchQ } } } },
-                ],
-            });
-        }
+        if (isAirbnbOnly) andFilters.push({ isAirbnb: true });
 
         const residents = await prisma.resident.findMany({
             where: andFilters.length > 0 ? { AND: andFilters } : {},
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        phone: true,
-                    },
-                },
-                unit: {
-                    include: {
-                        complex: {
-                            select: {
-                                name: true,
-                            },
-                        },
-                    },
-                },
-            },
+            include: residentInclude,
             orderBy: {
                 createdAt: "desc",
             },
@@ -142,6 +173,16 @@ export async function POST(request: Request) {
             }
         }
 
+        if (
+            validatedData.isAirbnb &&
+            !roleCanStaffManageResidentAirbnbFields(unitExists.complex.settings, session.user.role as Role)
+        ) {
+            return NextResponse.json(
+                { error: "No tienes permiso para registrar huéspedes o la función está desactivada para tu rol" },
+                { status: 403 }
+            );
+        }
+
         // Check if user is already a resident
         const existingResident = await prisma.resident.findUnique({
             where: { userId: validatedData.userId }
@@ -160,6 +201,19 @@ export async function POST(request: Request) {
                     emergencyContact: (validatedData.emergencyContact as any) || {},
                     userId: validatedData.userId,
                     unitId: validatedData.unitId,
+                    isAirbnb: validatedData.isAirbnb,
+                    airbnbStartDate: validatedData.isAirbnb ? validatedData.airbnbStartDate : null,
+                    airbnbEndDate: validatedData.isAirbnb ? validatedData.airbnbEndDate : null,
+                    airbnbGuestName: validatedData.isAirbnb ? validatedData.airbnbGuestName?.trim() || null : null,
+                    airbnbReservationCode: validatedData.isAirbnb
+                        ? validatedData.airbnbReservationCode?.trim() || null
+                        : null,
+                    airbnbGuestPhone: validatedData.isAirbnb
+                        ? validatedData.airbnbGuestPhone?.trim() || null
+                        : null,
+                    airbnbGuestIdentification: validatedData.isAirbnb
+                        ? validatedData.airbnbGuestIdentification?.trim() || null
+                        : null,
                 },
             });
 
@@ -178,7 +232,8 @@ export async function POST(request: Request) {
                 where: {
                     complexId: unitExists.complexId,
                     month,
-                    year
+                    year,
+                    category: InvoiceCategory.UNIT_BILLING,
                 }
             });
 
@@ -197,6 +252,20 @@ export async function POST(request: Request) {
             body: `Te asignaron a la unidad ${unitExists.number} en ${unitExists.complex.name}.`,
             url: "/dashboard",
         });
+
+        if (validatedData.isAirbnb) {
+            const host = await prisma.user.findUnique({
+                where: { id: validatedData.userId },
+                select: { name: true },
+            });
+            await notifyStaffOfAirbnbGuestRegistration({
+                complexId: unitExists.complexId,
+                unitNumber: unitExists.number,
+                residentName: host?.name ?? "Residente",
+                guestName: validatedData.airbnbGuestName?.trim() ?? "",
+                guestIdentification: validatedData.airbnbGuestIdentification?.trim() ?? "",
+            });
+        }
 
         return NextResponse.json(resident, { status: 201 });
     } catch (error: any) {

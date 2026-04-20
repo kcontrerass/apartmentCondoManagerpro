@@ -20,7 +20,7 @@ export function PageHeader({ title, subtitle, actions }: PageHeaderProps) {
                 )}
             </div>
             {actions && (
-                <div className="flex items-center gap-3 shrink-0 self-start md:self-auto overflow-x-auto max-w-full pb-1 md:pb-0">
+                <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:shrink-0 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
                     {actions}
                 </div>
             )}

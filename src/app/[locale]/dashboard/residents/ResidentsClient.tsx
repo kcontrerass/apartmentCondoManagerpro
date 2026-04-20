@@ -12,6 +12,7 @@ import { ResidentForm } from "@/components/residents/ResidentForm";
 import { ResidentInput } from "@/lib/validations/resident";
 import { Resident, Unit, User } from "@prisma/client";
 import { Role } from "@/types/roles";
+import { roleCanStaffManageResidentAirbnbFields } from "@/lib/complex-airbnb-guests";
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { toast } from "sonner";
@@ -59,6 +60,30 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [searchInput, setSearchInput] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [airbnbGuestsEnabled, setAirbnbGuestsEnabled] = useState(true);
+
+    useEffect(() => {
+        const id = complexIdFromQuery || complexId;
+        if (!id) return;
+        let cancelled = false;
+        (async () => {
+            try {
+                const r = await fetch(`/api/complexes/${id}`);
+                if (!r.ok) return;
+                const d = await r.json();
+                if (!cancelled) {
+                    setAirbnbGuestsEnabled(
+                        roleCanStaffManageResidentAirbnbFields(d.settings, userRole)
+                    );
+                }
+            } catch {
+                /* keep default */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [complexIdFromQuery, complexId, userRole]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -265,6 +290,7 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
                     isLoading={isSubmitting}
                     users={users}
                     units={units}
+                    airbnbGuestsEnabled={airbnbGuestsEnabled}
                 />
             </Modal>
 

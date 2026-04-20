@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { serviceSchema } from "@/lib/validations/service";
@@ -203,7 +204,8 @@ export async function POST(request: Request) {
                     where: {
                         complexId: validatedData.complexId,
                         month: currentMonth,
-                        year: currentYear
+                        year: currentYear,
+                        category: InvoiceCategory.UNIT_BILLING,
                     }
                 });
 

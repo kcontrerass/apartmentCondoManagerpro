@@ -40,17 +40,18 @@ model User {
 }
 
 model Complex {
-  id            String         @id @default(cuid())
-  name          String
-  address       String         @db.Text
-  type          ComplexType    @default(BUILDING)
-  logoUrl       String?        @map("logo_url")
-  bankAccount   String?        @map("bank_account")
-  phone         String?
-  settings      Json?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  adminId       String?        @unique
+  id                 String                @id @default(cuid())
+  name               String
+  address            String                @db.Text
+  type               ComplexType           @default(BUILDING)
+  logoUrl            String?               @map("logo_url")
+  bankAccount        String?               @map("bank_account")
+  phone              String?
+  settings           Json?
+  platformPaidUntil  DateTime?             @map("platform_paid_until")
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  adminId            String?               @unique
   amenities     Amenity[]
   announcements Announcement[]
   admin         User?          @relation(fields: [adminId], references: [id])
@@ -62,10 +63,56 @@ model Complex {
   staff         User[]         @relation("StaffComplex")
   visitorLogs   VisitorLog[]
   documents     Document[]
-  polls         Poll[]
+  polls                Poll[]
+  platformFeePayments  PlatformFeePayment[]
 
 
   @@map("complexes")
+}
+
+model PlatformFeePayment {
+  id                   String                  @id @default(cuid())
+  complexId            String                  @map("complex_id")
+  amountCents          Int                     @map("amount_cents")
+  currency             String                  @default("GTQ")
+  status               PlatformFeeStatus       @default(PENDING)
+  paymentMethod        PlatformFeePaymentMethod @default(CARD) @map("payment_method")
+  recurrenteCheckoutId String?                 @map("recurrente_checkout_id")
+  paidAt               DateTime?               @map("paid_at")
+  periodMonths         Int                     @default(1) @map("period_months")
+  invoiceId            String?                 @unique @map("invoice_id")
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedAt            DateTime                @updatedAt @map("updated_at")
+  complex              Complex                 @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  invoice              Invoice?                @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([complexId], map: "platform_fee_payments_complex_id_idx")
+  @@map("platform_fee_payments")
+}
+
+enum PlatformFeePaymentMethod {
+  CARD
+  BANK_TRANSFER
+}
+
+enum PlatformFeeStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+/// Claves Recurrente del operador de la plataforma (cobros de suscripción). Editables por súper admin; el .env actúa como respaldo si faltan en BD.
+model PlatformRecurrenteSettings {
+  id                       String    @id @default("default")
+  publicKey                String?   @map("public_key") @db.Text
+  secretKey                String?   @map("secret_key") @db.Text
+  webhookSecret            String?   @map("webhook_secret") @db.Text
+  bankTransferInstructions String?   @map("bank_transfer_instructions") @db.Text
+  subscriptionPriceGtq     Decimal?  @map("subscription_price_gtq") @db.Decimal(10, 2)
+  subscriptionPeriodMonths Int?    @map("subscription_period_months")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@map("platform_recurrente_settings")
 }
 
 model Unit {
@@ -92,17 +139,24 @@ model Unit {
 }
 
 model Resident {
-  id               String       @id @default(cuid())
-  type             ResidentType @default(TENANT)
-  startDate        DateTime     @map("start_date")
-  endDate          DateTime?    @map("end_date")
-  emergencyContact Json?        @map("emergency_contact")
-  userId           String       @unique @map("user_id")
-  unitId           String       @map("unit_id")
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  unit             Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String       @id @default(cuid())
+  type                    ResidentType @default(TENANT)
+  startDate               DateTime     @map("start_date")
+  endDate                 DateTime?    @map("end_date")
+  emergencyContact        Json?        @map("emergency_contact")
+  isAirbnb                Boolean      @default(false) @map("is_airbnb")
+  airbnbStartDate         DateTime?    @map("airbnb_start_date")
+  airbnbEndDate           DateTime?    @map("airbnb_end_date")
+  airbnbGuestName         String?      @map("airbnb_guest_name")
+  airbnbReservationCode   String?      @map("airbnb_reservation_code")
+  airbnbGuestPhone        String?      @map("airbnb_guest_phone")
+  airbnbGuestIdentification String?    @map("airbnb_guest_identification")
+  userId                  String       @unique @map("user_id")
+  unitId                  String       @map("unit_id")
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+  unit                    Unit         @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  user                    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([unitId], map: "residents_unit_id_fkey")
   @@map("residents")
@@ -200,22 +254,24 @@ model UnitService {
 }
 
 model Invoice {
-  id            String         @id @default(cuid())
-  number        String         @unique
+  id            String          @id @default(cuid())
+  number        String          @unique
   month         Int
   year          Int
-  dueDate       DateTime       @map("due_date")
-  totalAmount   Decimal        @map("total_amount") @db.Decimal(10, 2)
-  status        InvoiceStatus  @default(PENDING)
-  unitId        String         @map("unit_id")
-  complexId     String         @map("complex_id")
+  dueDate       DateTime        @map("due_date")
+  totalAmount   Decimal         @map("total_amount") @db.Decimal(10, 2)
+  status        InvoiceStatus   @default(PENDING)
+  category      InvoiceCategory @default(UNIT_BILLING) @map("category")
+  unitId        String?         @map("unit_id")
+  complexId     String          @map("complex_id")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   paymentMethod PaymentMethod? @map("payment_method")
-  items         InvoiceItem[]
-  complex       Complex        @relation(fields: [complexId], references: [id], onDelete: Cascade)
-  unit          Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  reservation   Reservation?
+  items                InvoiceItem[]
+  complex              Complex             @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  unit                 Unit?               @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  reservation          Reservation?
+  platformFeePayment   PlatformFeePayment?
 
   @@index([complexId], map: "invoices_complex_id_fkey")
   @@index([unitId], map: "invoices_unit_id_fkey")
@@ -437,6 +493,11 @@ enum ServiceFrequency {
 enum UnitServiceStatus {
   ACTIVE
   INACTIVE
+}
+
+enum InvoiceCategory {
+  UNIT_BILLING
+  PLATFORM_SUBSCRIPTION
 }
 
 enum InvoiceStatus {

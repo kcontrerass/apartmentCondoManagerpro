@@ -53,22 +53,22 @@ export default function SettingsClient({ user }: { user: any }) {
         {
             id: Role.ADMIN,
             label: "Administradores",
-            allowedModules: ["units", "residents", "amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "staff", "documents", "reports", "polls"]
+            allowedModules: ["units", "residents", "airbnbGuests", "amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "staff", "documents", "reports", "polls"]
         },
         {
             id: Role.BOARD_OF_DIRECTORS,
             label: "Junta Directiva",
-            allowedModules: ["units", "residents", "amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "documents", "staff", "reports", "polls"]
+            allowedModules: ["units", "residents", "airbnbGuests", "amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "documents", "staff", "reports", "polls"]
         },
         {
             id: Role.RESIDENT,
             label: "Residentes",
-            allowedModules: ["amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "documents", "polls"]
+            allowedModules: ["amenities", "reservations", "services", "invoices", "accessControl", "announcements", "events", "communications", "incidents", "documents", "polls", "airbnbGuests"]
         },
         {
             id: Role.GUARD,
             label: "Seguridad / Guardias",
-            allowedModules: ["units", "residents", "amenities", "services", "accessControl", "announcements", "events", "communications", "incidents", "documents"]
+            allowedModules: ["units", "residents", "airbnbGuests", "amenities", "services", "accessControl", "announcements", "events", "communications", "incidents", "documents"]
         }
     ];
 
@@ -87,6 +87,7 @@ export default function SettingsClient({ user }: { user: any }) {
     const availableModules = [
         { id: "units", label: "Unidades" },
         { id: "residents", label: "Residentes" },
+        { id: "airbnbGuests", label: t("moduleAirbnbGuests") },
         { id: "amenities", label: "Amenidades (Áreas Comunes)" },
         { id: "reservations", label: "Reservaciones" },
         { id: "services", label: "Servicios (Mantenimiento, etc)" },
@@ -108,7 +109,9 @@ export default function SettingsClient({ user }: { user: any }) {
             const complexRes = await fetch(`/api/complexes/${id}`);
             if (complexRes.ok) {
                 const complexData = await complexRes.json();
-                const existingSettings = complexData.settings?.permissions || {};
+                const fullSettings = complexData.settings || {};
+                const existingPerRole = fullSettings.permissions || {};
+                const legacyAirbnbOff = fullSettings.airbnbGuestsEnabled === false;
 
                 const mergedPermissions: PermissionSettings = {
                     [Role.ADMIN]: {},
@@ -121,17 +124,20 @@ export default function SettingsClient({ user }: { user: any }) {
 
                 rolesToPopulate.forEach(roleId => {
                     availableModules.forEach(mod => {
-                        mergedPermissions[roleId][mod.id] =
-                            existingSettings[roleId]?.[mod.id] !== false; // Only explicitly false is off
+                        let on = existingPerRole[roleId]?.[mod.id] !== false;
+                        if (mod.id === "airbnbGuests" && legacyAirbnbOff) {
+                            on = false;
+                        }
+                        mergedPermissions[roleId][mod.id] = on;
                     });
                 });
 
                 setPermissions(mergedPermissions);
                 setBankAccount(complexData.bankAccount || "");
                 setPhone(complexData.phone || "");
-                setRecurrentePublicKey(existingSettings.recurrente?.publicKey || complexData.settings?.recurrente?.publicKey || "");
-                setRecurrenteSecretKey(existingSettings.recurrente?.secretKey || complexData.settings?.recurrente?.secretKey || "");
-                setRecurrenteWebhookSecret(existingSettings.recurrente?.webhookSecret || complexData.settings?.recurrente?.webhookSecret || "");
+                setRecurrentePublicKey(fullSettings.recurrente?.publicKey || "");
+                setRecurrenteSecretKey(fullSettings.recurrente?.secretKey || "");
+                setRecurrenteWebhookSecret(fullSettings.recurrente?.webhookSecret || "");
             }
         } catch (error) {
             console.error("Error fetching settings:", error);
@@ -186,6 +192,9 @@ export default function SettingsClient({ user }: { user: any }) {
             // Cascade turn off reservations if amenities are turned off
             if (moduleId === 'amenities' && !newState) {
                 updatedRole['reservations'] = false;
+            }
+            if (moduleId === 'residents' && !newState) {
+                updatedRole['airbnbGuests'] = false;
             }
 
             return {
@@ -245,35 +254,35 @@ export default function SettingsClient({ user }: { user: any }) {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                <PageHeader
-                    title={t('title')}
-                    subtitle={t('subtitle')}
-                />
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full lg:w-auto mt-2 lg:mt-0">
-                    <PWAInstallButton />
-                    {(user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN) && (
-                        <div className="min-w-0 sm:min-w-[200px] flex-1">
-                            <ComplexSelector
-                                value={complexId}
-                                onChange={(id) => setComplexId(id)}
-                                label={t('complexSelectLabel')}
-                            />
-                        </div>
-                    )}
-                    <Button
-                        onClick={handleSave}
-                        disabled={isSaving || isLoading || !complexId}
-                        className="shrink-0 h-[42px]"
-                    >
-                        {isSaving ? (
-                            <><span className="material-symbols-outlined animate-spin mr-2">progress_activity</span> {t('saving')}</>
-                        ) : (
-                            <><span className="material-symbols-outlined mr-2">save</span> {t('save')}</>
+            <PageHeader
+                title={t('title')}
+                subtitle={t('subtitle')}
+                actions={
+                    <>
+                        <PWAInstallButton />
+                        {(user?.role === Role.SUPER_ADMIN || user?.role === Role.ADMIN) && (
+                            <div className="w-full min-w-0 sm:flex-1 sm:min-w-[12rem] sm:max-w-md">
+                                <ComplexSelector
+                                    value={complexId}
+                                    onChange={(id) => setComplexId(id)}
+                                    label={t('complexSelectLabel')}
+                                />
+                            </div>
                         )}
-                    </Button>
-                </div>
-            </div>
+                        <Button
+                            onClick={handleSave}
+                            disabled={isSaving || isLoading || !complexId}
+                            className="h-11 w-full min-h-[44px] justify-center sm:h-[42px] sm:w-auto sm:shrink-0 sm:px-6"
+                        >
+                            {isSaving ? (
+                                <><span className="material-symbols-outlined animate-spin mr-2">progress_activity</span> {t('saving')}</>
+                            ) : (
+                                <><span className="material-symbols-outlined mr-2">save</span> {t('save')}</>
+                            )}
+                        </Button>
+                    </>
+                }
+            />
 
             {isLoading ? (
                 <div className="flex justify-center p-12">
@@ -325,7 +334,10 @@ export default function SettingsClient({ user }: { user: any }) {
                             </div>
 
                             <div className="lg:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">{t('recurrenteConfigTitle', { default: 'Configuración Pasarela de Pagos (Recurrente)' })}</h4>
+                                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">{t('recurrenteConfigTitle', { default: 'Configuración Pasarela de Pagos (Recurrente)' })}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+                                    {t('platformRecurrenteHint')}
+                                </p>
                             </div>
 
                             <div>
@@ -372,7 +384,6 @@ export default function SettingsClient({ user }: { user: any }) {
                         </div>
                     </Card>
 
-
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {configurableRoles.map((role) => (
                             <Card key={role.id} className="p-6">
@@ -384,6 +395,11 @@ export default function SettingsClient({ user }: { user: any }) {
                                         .filter(module => role.allowedModules.includes(module.id))
                                         .map((module) => {
                                             const isReservationsAndAmenitiesOff = module.id === 'reservations' && permissions[role.id]?.['amenities'] === false;
+                                            const isAirbnbAndResidentsOff =
+                                                module.id === 'airbnbGuests' &&
+                                                role.id !== Role.RESIDENT &&
+                                                permissions[role.id]?.['residents'] === false;
+                                            const toggleDisabled = isReservationsAndAmenitiesOff || isAirbnbAndResidentsOff;
 
                                             return (
                                                 <div key={`${role.id}-${module.id}`} className="flex items-center justify-between p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 min-w-0 gap-3">
@@ -394,12 +410,15 @@ export default function SettingsClient({ user }: { user: any }) {
                                                         {isReservationsAndAmenitiesOff && (
                                                             <span className="block text-[10px] text-slate-400 mt-0.5 truncate uppercase tracking-tight">{t('amenitiesRequired')}</span>
                                                         )}
+                                                        {isAirbnbAndResidentsOff && (
+                                                            <span className="block text-[10px] text-slate-400 mt-0.5 truncate uppercase tracking-tight">{t('airbnbGuestsRequiresResidents')}</span>
+                                                        )}
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        disabled={isReservationsAndAmenitiesOff}
-                                                        onClick={() => !isReservationsAndAmenitiesOff && handleToggle(role.id, module.id)}
-                                                        className={`relative inline-flex h-6 w-11 shrink-0 ${isReservationsAndAmenitiesOff ? "cursor-not-allowed opacity-50" : "cursor-pointer"} items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${permissions[role.id]?.[module.id] ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}
+                                                        disabled={toggleDisabled}
+                                                        onClick={() => !toggleDisabled && handleToggle(role.id, module.id)}
+                                                        className={`relative inline-flex h-6 w-11 shrink-0 ${toggleDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"} items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${permissions[role.id]?.[module.id] ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}
                                                     >
                                                         <span className="sr-only">{t('enableModule', { module: module.label })}</span>
                                                         <span

@@ -23,9 +23,20 @@ export function useComplexes() {
             if (type) query.append("type", type);
 
             const response = await fetch(`/api/complexes?${query.toString()}`);
-            if (!response.ok) throw new Error("Failed to fetch complexes");
+            const data = await response.json().catch(() => null);
 
-            const data = await response.json();
+            if (!response.ok) {
+                const msg =
+                    (data && typeof data === "object" && "error" in data && String((data as { error: unknown }).error)) ||
+                    (data && typeof data === "object" && "detail" in data && String((data as { detail: unknown }).detail)) ||
+                    `HTTP ${response.status}`;
+                throw new Error(msg);
+            }
+
+            if (!Array.isArray(data)) {
+                throw new Error("Respuesta inválida del servidor");
+            }
+
             setComplexes(data);
             setError(null);
         } catch (err) {

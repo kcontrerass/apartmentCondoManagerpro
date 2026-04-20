@@ -3,6 +3,23 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { residentSchema } from "@/lib/validations/resident";
 import { Role } from "@/types/roles";
+import type { Prisma } from "@prisma/client";
+import { notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
+import { roleCanStaffManageResidentAirbnbFields } from "@/lib/complex-airbnb-guests";
+
+const AIRBNB_PATCH_KEYS = [
+    "isAirbnb",
+    "airbnbStartDate",
+    "airbnbEndDate",
+    "airbnbGuestName",
+    "airbnbReservationCode",
+    "airbnbGuestPhone",
+    "airbnbGuestIdentification",
+] as const;
+
+function patchTouchesAirbnbFields(body: Record<string, unknown>): boolean {
+    return AIRBNB_PATCH_KEYS.some((k) => body[k] !== undefined);
+}
 
 export async function GET(
     request: Request,
@@ -83,6 +100,41 @@ export async function PATCH(
         const body = await request.json();
         const validatedData = residentSchema.partial().parse(body);
 
+        const airbnbEnabled = roleCanStaffManageResidentAirbnbFields(
+            residentToCheck.unit.complex.settings,
+            session.user.role as Role
+        );
+        if (!airbnbEnabled) {
+            if (validatedData.isAirbnb === true) {
+                return NextResponse.json(
+                    { error: "No tienes permiso para registrar huéspedes o la función está desactivada para tu rol" },
+                    { status: 403 }
+                );
+            }
+            if (validatedData.isAirbnb !== false && patchTouchesAirbnbFields(validatedData as Record<string, unknown>)) {
+                return NextResponse.json(
+                    { error: "No tienes permiso para registrar huéspedes o la función está desactivada para tu rol" },
+                    { status: 403 }
+                );
+            }
+        }
+
+        const {
+            userId,
+            unitId,
+            type,
+            startDate,
+            endDate,
+            emergencyContact,
+            isAirbnb,
+            airbnbStartDate,
+            airbnbEndDate,
+            airbnbGuestName,
+            airbnbReservationCode,
+            airbnbGuestPhone,
+            airbnbGuestIdentification,
+        } = validatedData;
+
         // Verify user exists if provided
         if (validatedData.userId) {
             const userExists = await prisma.user.findUnique({
@@ -111,15 +163,58 @@ export async function PATCH(
             }
         }
 
+        const data: Prisma.ResidentUncheckedUpdateInput = {};
+
+        if (userId !== undefined) data.userId = userId;
+        if (unitId !== undefined) data.unitId = unitId;
+        if (type !== undefined) data.type = type;
+        if (startDate !== undefined) data.startDate = startDate;
+        if (endDate !== undefined) data.endDate = endDate;
+        if (emergencyContact !== undefined) data.emergencyContact = emergencyContact as object;
+
+        if (isAirbnb !== undefined) {
+            data.isAirbnb = isAirbnb;
+            if (isAirbnb === false) {
+                data.airbnbStartDate = null;
+                data.airbnbEndDate = null;
+                data.airbnbGuestName = null;
+                data.airbnbReservationCode = null;
+                data.airbnbGuestPhone = null;
+                data.airbnbGuestIdentification = null;
+            }
+        }
+
+        if (isAirbnb !== false) {
+            if (airbnbStartDate !== undefined) data.airbnbStartDate = airbnbStartDate;
+            if (airbnbEndDate !== undefined) data.airbnbEndDate = airbnbEndDate;
+            if (airbnbGuestName !== undefined) data.airbnbGuestName = airbnbGuestName.trim() || null;
+            if (airbnbReservationCode !== undefined)
+                data.airbnbReservationCode = airbnbReservationCode.trim() || null;
+            if (airbnbGuestPhone !== undefined) data.airbnbGuestPhone = airbnbGuestPhone.trim() || null;
+            if (airbnbGuestIdentification !== undefined)
+                data.airbnbGuestIdentification = airbnbGuestIdentification.trim() || null;
+        }
+
         const resident = await prisma.resident.update({
             where: { id },
-            data: {
-                ...validatedData,
-                // Transformations for dates if they are in the partial data
-                startDate: validatedData.startDate ? new Date(validatedData.startDate) : undefined,
-                endDate: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
-            },
+            data,
         });
+
+        if (resident.isAirbnb) {
+            const ctx = await prisma.resident.findUnique({
+                where: { id: resident.id },
+                include: { unit: true, user: { select: { name: true } } },
+            });
+            if (ctx?.unit?.complexId && ctx.user) {
+                await notifyStaffOfAirbnbGuestRegistration({
+                    complexId: ctx.unit.complexId,
+                    unitNumber: ctx.unit.number,
+                    residentName: ctx.user.name,
+                    guestName: ctx.airbnbGuestName?.trim() ?? "",
+                    guestIdentification: ctx.airbnbGuestIdentification?.trim() ?? "",
+                });
+            }
+        }
 
         return NextResponse.json(resident);
     } catch (error: any) {

@@ -3,11 +3,13 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { ComplexCreateSchema } from "@/lib/validations/complex";
 import { Role } from "@/types/roles";
+import type { ComplexType } from "@prisma/client";
+import { complexListApiSelect } from "@/lib/complex-list-select";
 
 export async function GET(request: Request) {
     try {
         const session = await auth();
-        if (!session) {
+        if (!session?.user) {
             return NextResponse.json({ error: "No autorizado" }, { status: 401 });
         }
 
@@ -16,54 +18,50 @@ export async function GET(request: Request) {
         const type = searchParams.get("type");
         const complexId = searchParams.get("complexId"); // For filtering by specific complex
 
-        let whereClause: any = {
-            AND: [
-                {
-                    OR: [
-                        { name: { contains: search } },
-                        { address: { contains: search } },
-                    ],
-                },
-                type ? { type: type as any } : {},
-            ],
-        };
+        const andConditions: Record<string, unknown>[] = [
+            {
+                OR: [
+                    { name: { contains: search } },
+                    { address: { contains: search } },
+                ],
+            },
+        ];
+        if (type) {
+            andConditions.push({ type: type as ComplexType });
+        }
 
         // If complexId is provided in query, filter by it (for RESIDENT search)
         if (complexId) {
-            whereClause.AND.push({ id: complexId });
+            andConditions.push({ id: complexId });
         } else if (session.user.role === Role.ADMIN) {
             const adminComplex = await prisma.complex.findFirst({
-                where: { adminId: session.user.id }
+                where: { adminId: session.user.id },
+                select: { id: true },
             });
 
             if (!adminComplex) {
                 return NextResponse.json([]);
             }
 
-            whereClause.AND.push({ id: adminComplex.id });
+            andConditions.push({ id: adminComplex.id });
         } else if (session.user.role === Role.BOARD_OF_DIRECTORS || session.user.role === Role.GUARD) {
-            const user = await (prisma as any).user.findUnique({
+            const user = await prisma.user.findUnique({
                 where: { id: session.user.id },
-                select: { complexId: true }
+                select: { complexId: true },
             });
 
             if (!user?.complexId) {
                 return NextResponse.json([]);
             }
 
-            whereClause.AND.push({ id: user.complexId });
+            andConditions.push({ id: user.complexId });
         }
+
+        const whereClause = { AND: andConditions };
 
         const complexes = await prisma.complex.findMany({
             where: whereClause,
-            include: {
-                _count: {
-                    select: {
-                        units: true,
-                        amenities: true,
-                    },
-                },
-            },
+            select: complexListApiSelect,
             orderBy: {
                 createdAt: "desc",
             },
@@ -72,8 +70,12 @@ export async function GET(request: Request) {
         return NextResponse.json(complexes);
     } catch (error) {
         console.error("Error fetching complexes:", error);
+        const detail = error instanceof Error ? error.message : String(error);
         return NextResponse.json(
-            { error: "Error al obtener los complejos" },
+            {
+                error: "Error al obtener los complejos",
+                ...(process.env.NODE_ENV === "development" ? { detail } : {}),
+            },
             { status: 500 }
         );
     }
