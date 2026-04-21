@@ -67,7 +67,7 @@ export function OperatorDashboard({ data }: OperatorDashboardProps) {
                 />
                 <StatCard
                     icon="pie_chart"
-                    label={t("occupancy")}
+                    label={t("occupancyStat")}
                     value={data.occupiedUnits.toString()}
                     subtitle={t("unitsOccupied")}
                     iconBgColor="bg-orange-50 dark:bg-orange-900/20"

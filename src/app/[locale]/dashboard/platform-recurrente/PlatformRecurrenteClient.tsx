@@ -12,6 +12,7 @@ type ConfigPayload = {
     bankTransferInstructions: string;
     subscriptionPriceGtq: string;
     subscriptionPeriodMonths: number | null;
+    subscriptionGraceDays: number | null;
     secretKeyConfigured: boolean;
     webhookSecretConfigured: boolean;
     keysActive: boolean;
@@ -28,6 +29,7 @@ export function PlatformRecurrenteClient() {
     const [bankTransferInstructions, setBankTransferInstructions] = useState("");
     const [subscriptionPriceGtq, setSubscriptionPriceGtq] = useState("");
     const [subscriptionPeriodMonths, setSubscriptionPeriodMonths] = useState("");
+    const [subscriptionGraceDays, setSubscriptionGraceDays] = useState("");
     const [meta, setMeta] = useState<Pick<
         ConfigPayload,
         "secretKeyConfigured" | "webhookSecretConfigured" | "keysActive" | "usingDatabaseKeys"
@@ -48,6 +50,9 @@ export function PlatformRecurrenteClient() {
             setSubscriptionPriceGtq(d.subscriptionPriceGtq ?? "");
             setSubscriptionPeriodMonths(
                 d.subscriptionPeriodMonths != null ? String(d.subscriptionPeriodMonths) : ""
+            );
+            setSubscriptionGraceDays(
+                d.subscriptionGraceDays != null ? String(d.subscriptionGraceDays) : ""
             );
             setSecretKey("");
             setWebhookSecret("");
@@ -99,6 +104,17 @@ export function PlatformRecurrenteClient() {
                     return;
                 }
                 body.subscriptionPeriodMonths = m;
+            }
+
+            if (!subscriptionGraceDays.trim()) {
+                body.subscriptionGraceDays = null;
+            } else {
+                const g = parseInt(subscriptionGraceDays, 10);
+                if (!Number.isInteger(g) || g < 0 || g > 365) {
+                    toast.error(t("subscriptionGraceDaysInvalid"));
+                    return;
+                }
+                body.subscriptionGraceDays = g;
             }
 
             const res = await fetch("/api/platform/recurrente-config", {
@@ -188,6 +204,25 @@ export function PlatformRecurrenteClient() {
                             />
                             <p className="text-xs text-slate-500 mt-1">{t("subscriptionPeriodHelp")}</p>
                         </div>
+                    </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 dark:border-slate-700 p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/20">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t("accessSectionTitle")}</h3>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                            {t("subscriptionGraceDaysLabel")}
+                        </label>
+                        <input
+                            type="number"
+                            min={0}
+                            max={365}
+                            value={subscriptionGraceDays}
+                            onChange={(e) => setSubscriptionGraceDays(e.target.value)}
+                            placeholder={t("subscriptionGraceDaysPlaceholder")}
+                            className="w-full max-w-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
+                        />
+                        <p className="text-xs text-slate-500 mt-1 max-w-2xl">{t("subscriptionGraceDaysHelp")}</p>
                     </div>
                 </div>
 

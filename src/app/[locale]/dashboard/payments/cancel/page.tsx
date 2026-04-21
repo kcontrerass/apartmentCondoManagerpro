@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { PlatformFeePaymentMethod, PlatformFeeStatus } from "@prisma/client";
+import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platform-fee";
 
 export default async function PaymentCancelPage({
     params,
@@ -24,19 +25,17 @@ export default async function PaymentCancelPage({
     if (
         sp.scope === "platform" &&
         sp.platformFeePaymentId &&
-        session?.user?.role === Role.ADMIN
+        session?.user &&
+        (session.user.role === Role.ADMIN || session.user.role === Role.BOARD_OF_DIRECTORS)
     ) {
-        const managed = await prisma.complex.findFirst({
-            where: { adminId: session.user.id },
-            select: { id: true },
-        });
+        const complex = await findComplexForPlatformFeeByUser(session.user.id, session.user.role);
         const payment = await prisma.platformFeePayment.findUnique({
             where: { id: sp.platformFeePaymentId },
         });
         if (
-            managed &&
+            complex &&
             payment &&
-            payment.complexId === managed.id &&
+            payment.complexId === complex.id &&
             payment.status === PlatformFeeStatus.PENDING &&
             payment.paymentMethod === PlatformFeePaymentMethod.CARD
         ) {

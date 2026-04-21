@@ -1,0 +1,1 @@
+ALTER TABLE `platform_recurrente_settings` ADD COLUMN `bank_transfer_proof_phone` VARCHAR(64) NULL;

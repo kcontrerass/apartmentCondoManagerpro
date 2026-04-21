@@ -1,27 +1,30 @@
 "use client";
 
-import { Complex, ComplexType } from "@prisma/client";
+import { ComplexType } from "@prisma/client";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-
-interface ComplexWithCount extends Complex {
-    _count?: {
-        units: number;
-        amenities: number;
-    };
-}
+import { Role } from "@/types/roles";
+import type { ComplexWithCount } from "@/hooks/useComplexes";
 
 interface ComplexTableProps {
     complexes: ComplexWithCount[];
     onDelete?: (id: string) => void;
     userRole?: string;
+    extendingSubscriptionId?: string | null;
+    onReactivateSubscription?: (complex: ComplexWithCount) => void;
 }
 
-export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProps) {
+export function ComplexTable({
+    complexes,
+    onDelete,
+    userRole,
+    extendingSubscriptionId,
+    onReactivateSubscription,
+}: ComplexTableProps) {
     const t = useTranslations("Complexes");
-    const isSuperAdmin = userRole === "SUPER_ADMIN";
+    const isSuperAdmin = userRole === Role.SUPER_ADMIN;
 
     const getTypeBadgeVariant = (type: ComplexType) => {
         switch (type) {
@@ -87,26 +90,50 @@ export function ComplexTable({ complexes, onDelete, userRole }: ComplexTableProp
                                 <td className="px-6 py-4 text-center text-slate-600 dark:text-slate-300">
                                     {complex._count?.amenities || 0}
                                 </td>
-                                <td className="px-6 py-4 text-right space-x-2">
-                                    <Link href={`/dashboard/complexes/${complex.id}`}>
-                                        <Button variant="secondary" size="sm">{t("view")}</Button>
-                                    </Link>
-                                    {isSuperAdmin && (
-                                        <>
-                                            <Link href={`/dashboard/complexes/${complex.id}/edit`}>
-                                                <Button variant="secondary" size="sm">{t("edit")}</Button>
-                                            </Link>
-                                            {onDelete && (
-                                                <Button
-                                                    variant="danger"
-                                                    size="sm"
-                                                    onClick={() => onDelete(complex.id)}
-                                                >
-                                                    {t("delete")}
-                                                </Button>
-                                            )}
-                                        </>
-                                    )}
+                                <td className="px-6 py-4 text-right">
+                                    <div className="flex flex-wrap items-center justify-end gap-2">
+                                        {isSuperAdmin &&
+                                        complex.platformSubscriptionPastDue &&
+                                        onReactivateSubscription ? (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="border-amber-400 text-amber-900 dark:text-amber-200 dark:border-amber-700"
+                                                disabled={extendingSubscriptionId === complex.id}
+                                                onClick={() => onReactivateSubscription(complex)}
+                                            >
+                                                {extendingSubscriptionId === complex.id ? (
+                                                    <span className="material-symbols-outlined animate-spin text-base">
+                                                        progress_activity
+                                                    </span>
+                                                ) : (
+                                                    <span className="material-symbols-outlined text-base">
+                                                        published_with_changes
+                                                    </span>
+                                                )}
+                                                <span className="ml-1">{t("reactivateSubscription")}</span>
+                                            </Button>
+                                        ) : null}
+                                        <Link href={`/dashboard/complexes/${complex.id}`}>
+                                            <Button variant="secondary" size="sm">{t("view")}</Button>
+                                        </Link>
+                                        {isSuperAdmin && (
+                                            <>
+                                                <Link href={`/dashboard/complexes/${complex.id}/edit`}>
+                                                    <Button variant="secondary" size="sm">{t("edit")}</Button>
+                                                </Link>
+                                                {onDelete && (
+                                                    <Button
+                                                        variant="danger"
+                                                        size="sm"
+                                                        onClick={() => onDelete(complex.id)}
+                                                    >
+                                                        {t("delete")}
+                                                    </Button>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))

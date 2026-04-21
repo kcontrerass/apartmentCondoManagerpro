@@ -19,6 +19,7 @@ export async function GET() {
             bankTransferInstructions: string | null;
             subscriptionPriceGtq: Prisma.Decimal | null;
             subscriptionPeriodMonths: number | null;
+            subscriptionGraceDays: number | null;
         } | null = null;
         try {
             row = await prisma.platformRecurrenteSettings.findUnique({
@@ -36,6 +37,7 @@ export async function GET() {
             bankTransferInstructions: row?.bankTransferInstructions?.trim() ?? "",
             subscriptionPriceGtq: row?.subscriptionPriceGtq != null ? String(row.subscriptionPriceGtq) : "",
             subscriptionPeriodMonths: row?.subscriptionPeriodMonths ?? null,
+            subscriptionGraceDays: row?.subscriptionGraceDays ?? null,
             secretKeyConfigured: !!(row?.secretKey && row.secretKey.length > 0),
             webhookSecretConfigured: !!(row?.webhookSecret && row.webhookSecret.length > 0),
             keysActive: !!keys,
@@ -61,6 +63,7 @@ export async function PUT(request: Request) {
             bankTransferInstructions?: string;
             subscriptionPriceGtq?: number | string | null;
             subscriptionPeriodMonths?: number | string | null;
+            subscriptionGraceDays?: number | string | null;
         };
 
         const existing = await prisma.platformRecurrenteSettings.findUnique({
@@ -120,6 +123,25 @@ export async function PUT(request: Request) {
             }
         }
 
+        let subscriptionGraceDaysNext = existing?.subscriptionGraceDays ?? null;
+        if (body.subscriptionGraceDays !== undefined) {
+            if (body.subscriptionGraceDays === null || body.subscriptionGraceDays === "") {
+                subscriptionGraceDaysNext = null;
+            } else {
+                const g =
+                    typeof body.subscriptionGraceDays === "number"
+                        ? body.subscriptionGraceDays
+                        : parseInt(String(body.subscriptionGraceDays), 10);
+                if (!Number.isInteger(g) || g < 0 || g > 365) {
+                    return apiError(
+                        { code: "VALIDATION", message: "Días de gracia inválidos (entero entre 0 y 365)" },
+                        400
+                    );
+                }
+                subscriptionGraceDaysNext = g;
+            }
+        }
+
         await prisma.platformRecurrenteSettings.upsert({
             where: { id: "default" },
             create: {
@@ -130,6 +152,7 @@ export async function PUT(request: Request) {
                 bankTransferInstructions: bankInstructionsNext,
                 subscriptionPriceGtq: subscriptionPriceNext,
                 subscriptionPeriodMonths: subscriptionPeriodNext,
+                subscriptionGraceDays: subscriptionGraceDaysNext,
             },
             update: {
                 publicKey: publicKeyNext,
@@ -138,6 +161,7 @@ export async function PUT(request: Request) {
                 bankTransferInstructions: bankInstructionsNext,
                 subscriptionPriceGtq: subscriptionPriceNext,
                 subscriptionPeriodMonths: subscriptionPeriodNext,
+                subscriptionGraceDays: subscriptionGraceDaysNext,
             },
         });
 

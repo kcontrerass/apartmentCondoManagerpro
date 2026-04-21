@@ -32,57 +32,101 @@ async function getStats(userId: string, role: string) {
         const startYear = startDate.getFullYear();
         const startMonth = startDate.getMonth() + 1;
 
-        const [invoicesRaw, reservationsRaw, incidentsRaw, activePolls] = await Promise.all([
-            prisma.invoice.findMany({
-                where: {
-                    unitId: resident.unitId,
-                    category: InvoiceCategory.UNIT_BILLING,
-                    OR: [
-                        { year: { gt: startYear } },
-                        {
-                            AND: [
-                                { year: startYear },
-                                { month: { gte: startMonth } }
-                            ]
+        let invoicesRaw: Awaited<ReturnType<typeof prisma.invoice.findMany>>;
+        let reservationsRaw: Awaited<ReturnType<typeof prisma.reservation.findMany>>;
+        let incidentsRaw: Awaited<ReturnType<typeof prisma.incident.findMany>>;
+        let activePolls: Awaited<ReturnType<typeof prisma.poll.findMany>>;
+
+        try {
+            [invoicesRaw, reservationsRaw, incidentsRaw, activePolls] = await prisma.$transaction([
+                prisma.invoice.findMany({
+                    where: {
+                        unitId: resident.unitId,
+                        category: InvoiceCategory.UNIT_BILLING,
+                        OR: [
+                            { year: { gt: startYear } },
+                            {
+                                AND: [
+                                    { year: startYear },
+                                    { month: { gte: startMonth } }
+                                ]
+                            }
+                        ]
+                    },
+                    orderBy: { dueDate: 'asc' },
+                    take: 10
+                }),
+                prisma.reservation.findMany({
+                    where: { userId },
+                    include: { amenity: true },
+                    orderBy: { startTime: 'asc' },
+                    take: 10
+                }),
+                prisma.incident.findMany({
+                    where: { reporterId: userId },
+                    take: 5,
+                    orderBy: { createdAt: 'desc' },
+                    include: { complex: true }
+                }),
+                prisma.poll.findMany({
+                    where: {
+                        complexId: resident.unit.complexId,
+                        status: 'OPEN',
+                        OR: [
+                            { expiresAt: null },
+                            { expiresAt: { gt: new Date() } }
+                        ],
+                        votes: {
+                            none: { userId: userId }
                         }
-                    ]
-                },
-                orderBy: { dueDate: 'asc' },
-                take: 10
-            }),
-            prisma.reservation.findMany({
-                where: { userId },
-                include: { amenity: true },
-                orderBy: { startTime: 'asc' },
-                take: 10
-            }),
-            prisma.incident.findMany({
-                where: { reporterId: userId },
-                take: 5,
-                orderBy: { createdAt: 'desc' },
-                include: { complex: true }
-            }),
-            prisma.poll.findMany({
-                where: {
-                    complexId: resident.unit.complexId,
-                    status: 'OPEN',
-                    OR: [
-                        { expiresAt: null },
-                        { expiresAt: { gt: new Date() } }
-                    ],
-                    votes: {
-                        none: { userId: userId } // Only polls where the user hasn't voted
+                    },
+                    take: 2,
+                    include: {
+                        _count: {
+                            select: { votes: true }
+                        }
                     }
-                },
-                take: 2,
-                include: {
-                    _count: {
-                        select: { votes: true }
-                    }
-                }
-            }).catch(async () => {
-                // Fallback to RAW SQL if Prisma client is desynced
-                const polls: any[] = await prisma.$queryRawUnsafe(`
+                }),
+            ]);
+        } catch {
+            const [inv, res, inc] = await prisma.$transaction([
+                prisma.invoice.findMany({
+                    where: {
+                        unitId: resident.unitId,
+                        category: InvoiceCategory.UNIT_BILLING,
+                        OR: [
+                            { year: { gt: startYear } },
+                            {
+                                AND: [
+                                    { year: startYear },
+                                    { month: { gte: startMonth } }
+                                ]
+                            }
+                        ]
+                    },
+                    orderBy: { dueDate: 'asc' },
+                    take: 10
+                }),
+                prisma.reservation.findMany({
+                    where: { userId },
+                    include: { amenity: true },
+                    orderBy: { startTime: 'asc' },
+                    take: 10
+                }),
+                prisma.incident.findMany({
+                    where: { reporterId: userId },
+                    take: 5,
+                    orderBy: { createdAt: 'desc' },
+                    include: { complex: true }
+                }),
+            ]);
+            invoicesRaw = inv;
+            reservationsRaw = res;
+            incidentsRaw = inc;
+            const polls = await prisma.$queryRawUnsafe<
+                Record<string, unknown> & { voteCount: bigint | number }[]
+            >(
+                `
                     SELECT p.*,
                            (SELECT COUNT(*) FROM votes v WHERE v.poll_id = p.id) as voteCount
                     FROM polls p
@@ -91,14 +135,15 @@ async function getStats(userId: string, role: string) {
                       AND (p.expires_at IS NULL OR p.expires_at > NOW())
                       AND NOT EXISTS (SELECT 1 FROM votes v WHERE v.poll_id = p.id AND v.user_id = ?)
                     LIMIT 2
-                `, resident.unit.complexId, userId);
-
-                return polls.map(p => ({
-                    ...p,
-                    _count: { votes: Number(p.voteCount) }
-                }));
-            })
-        ]);
+                `,
+                resident.unit.complexId,
+                userId
+            );
+            activePolls = polls.map((p) => ({
+                ...p,
+                _count: { votes: Number(p.voteCount) }
+            })) as Awaited<ReturnType<typeof prisma.poll.findMany>>;
+        }
 
         const recentInvoicesRaw = [...invoicesRaw].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
@@ -183,38 +228,39 @@ async function getStats(userId: string, role: string) {
             };
         }
 
-        const [unitStats, totalResidents, pendingReservations, recentIncidents, recentInvoicesRaw, recentReservationsRaw] = await Promise.all([
-            prisma.unit.groupBy({
-                by: ['status'],
-                _count: true,
-                where: { complexId: user.complexId }
-            }),
-            prisma.resident.count({ where: { unit: { complexId: user.complexId } } }),
-            prisma.reservation.count({
-                where: {
-                    status: 'PENDING',
-                    amenity: { complexId: user.complexId }
-                }
-            }),
-            prisma.incident.findMany({
-                where: { complexId: user.complexId },
-                take: 5,
-                orderBy: { createdAt: 'desc' },
-                include: { reporter: true, unit: true }
-            }),
-            prisma.invoice.findMany({
-                where: { complexId: user.complexId, category: InvoiceCategory.UNIT_BILLING },
-                take: 3,
-                orderBy: { createdAt: 'desc' },
-                include: { unit: { select: { number: true } } }
-            }),
-            prisma.reservation.findMany({
-                where: { amenity: { complexId: user.complexId } },
-                take: 3,
-                orderBy: { createdAt: 'desc' },
-                include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
-            })
-        ]);
+        const [unitStats, totalResidents, pendingReservations, recentIncidents, recentInvoicesRaw, recentReservationsRaw] =
+            await prisma.$transaction([
+                prisma.unit.groupBy({
+                    by: ['status'],
+                    _count: true,
+                    where: { complexId: user.complexId }
+                }),
+                prisma.resident.count({ where: { unit: { complexId: user.complexId } } }),
+                prisma.reservation.count({
+                    where: {
+                        status: 'PENDING',
+                        amenity: { complexId: user.complexId }
+                    }
+                }),
+                prisma.incident.findMany({
+                    where: { complexId: user.complexId },
+                    take: 5,
+                    orderBy: { createdAt: 'desc' },
+                    include: { reporter: true, unit: true }
+                }),
+                prisma.invoice.findMany({
+                    where: { complexId: user.complexId, category: InvoiceCategory.UNIT_BILLING },
+                    take: 3,
+                    orderBy: { createdAt: 'desc' },
+                    include: { unit: { select: { number: true } } }
+                }),
+                prisma.reservation.findMany({
+                    where: { amenity: { complexId: user.complexId } },
+                    take: 3,
+                    orderBy: { createdAt: 'desc' },
+                    include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
+                })
+            ]);
 
         const totalUnits = unitStats.reduce((acc: number, curr: any) => acc + curr._count, 0);
         const occupiedUnits = unitStats.find((s: any) => s.status === 'OCCUPIED' || s.status === 'RENTED')?._count || 0;
@@ -290,42 +336,43 @@ async function getStats(userId: string, role: string) {
         }
     }
 
-    const [unitStats, residentsRaw, pendingIncidents, recentIncidentsRaw, recentInvoicesRaw, recentReservationsRaw] = await Promise.all([
-        prisma.unit.groupBy({
-            by: ['status'],
-            _count: true,
-            where: { complexId: { in: managedComplexIds } }
-        }),
-        prisma.resident.groupBy({
-            by: ['type'],
-            _count: true,
-            where: { unit: { complexId: { in: managedComplexIds } } }
-        }),
-        prisma.incident.count({
-            where: {
-                complexId: { in: managedComplexIds },
-                status: { in: ['REPORTED', 'IN_PROGRESS'] }
-            }
-        }),
-        prisma.incident.findMany({
-            where: { complexId: { in: managedComplexIds } },
-            take: 3,
-            orderBy: { createdAt: 'desc' },
-            include: { reporter: { select: { name: true } }, unit: { select: { number: true } } }
-        }),
-        prisma.invoice.findMany({
-            where: { complexId: { in: managedComplexIds }, category: InvoiceCategory.UNIT_BILLING },
-            take: 3,
-            orderBy: { createdAt: 'desc' },
-            include: { unit: { select: { number: true } } }
-        }),
-        prisma.reservation.findMany({
-            where: { amenity: { complexId: { in: managedComplexIds } } },
-            take: 3,
-            orderBy: { createdAt: 'desc' },
-            include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
-        })
-    ]);
+    const [unitStats, residentsRaw, pendingIncidents, recentIncidentsRaw, recentInvoicesRaw, recentReservationsRaw] =
+        await prisma.$transaction([
+            prisma.unit.groupBy({
+                by: ['status'],
+                _count: true,
+                where: { complexId: { in: managedComplexIds } }
+            }),
+            prisma.resident.groupBy({
+                by: ['type'],
+                _count: true,
+                where: { unit: { complexId: { in: managedComplexIds } } }
+            }),
+            prisma.incident.count({
+                where: {
+                    complexId: { in: managedComplexIds },
+                    status: { in: ['REPORTED', 'IN_PROGRESS'] }
+                }
+            }),
+            prisma.incident.findMany({
+                where: { complexId: { in: managedComplexIds } },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: { reporter: { select: { name: true } }, unit: { select: { number: true } } }
+            }),
+            prisma.invoice.findMany({
+                where: { complexId: { in: managedComplexIds }, category: InvoiceCategory.UNIT_BILLING },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: { unit: { select: { number: true } } }
+            }),
+            prisma.reservation.findMany({
+                where: { amenity: { complexId: { in: managedComplexIds } } },
+                take: 3,
+                orderBy: { createdAt: 'desc' },
+                include: { user: { select: { name: true } }, amenity: { select: { name: true } } }
+            })
+        ]);
 
     // Derived stats and Activity formatting
     stats.totalUnits = unitStats.reduce((acc: number, curr: any) => acc + curr._count, 0);

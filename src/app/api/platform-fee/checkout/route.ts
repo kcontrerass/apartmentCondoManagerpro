@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
-import { PlatformFeePaymentMethod } from "@prisma/client";
+import { PlatformFeePaymentMethod, PlatformFeeStatus } from "@prisma/client";
 import { recurrente } from "@/lib/recurrente";
 import { apiError, apiOk } from "@/lib/api-response";
 import {
@@ -9,10 +9,12 @@ import {
     getPlatformSubscriptionBankInstructions,
     getPlatformSubscriptionPeriodMonths,
     getPlatformSubscriptionPriceGtq,
+    getPlatformSubscriptionProofPhone,
 } from "@/lib/platform-billing";
-import { findAdminComplexForPlatformFee } from "@/lib/find-admin-complex-platform-fee";
+import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platform-fee";
 import { getPlatformFeePaymentEligibility } from "@/lib/platform-fee-monthly-limit";
 import { isPrismaTableMissingError } from "@/lib/prisma-request-errors";
+import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
 
 export async function POST(request: Request) {
     try {
@@ -21,21 +23,63 @@ export async function POST(request: Request) {
             return apiError({ code: "UNAUTHORIZED", message: "No autorizado" }, 401);
         }
 
-        if (session.user.role !== Role.ADMIN) {
+        if (session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
             return apiError(
-                { code: "FORBIDDEN", message: "Solo el administrador del complejo puede pagar la suscripción" },
+                {
+                    code: "FORBIDDEN",
+                    message: "Solo el administrador o la junta directiva del complejo pueden pagar la suscripción",
+                },
                 403
             );
         }
 
-        const complex = await findAdminComplexForPlatformFee(session.user.id);
+        const complex = await findComplexForPlatformFeeByUser(session.user.id, session.user.role);
 
         if (!complex) {
             return apiError(
-                { code: "NOT_FOUND", message: "No tienes un complejo asignado como administrador" },
+                { code: "NOT_FOUND", message: "No se encontró el complejo para iniciar el pago de suscripción" },
                 404
             );
         }
+
+        let method: PlatformFeePaymentMethod = PlatformFeePaymentMethod.CARD;
+        let body: { method?: string; acceptTerms?: boolean; termsVersion?: string } = {};
+        try {
+            body = (await request.json()) as typeof body;
+            if (body?.method === "BANK_TRANSFER") {
+                method = PlatformFeePaymentMethod.BANK_TRANSFER;
+            }
+        } catch {
+            /* cuerpo vacío → tarjeta */
+        }
+
+        if (
+            body.acceptTerms !== true ||
+            body.termsVersion !== PLATFORM_SUBSCRIPTION_TERMS_VERSION
+        ) {
+            return apiError(
+                {
+                    code: "TERMS_NOT_ACCEPTED",
+                    message:
+                        "Debes marcar la aceptación y tener la versión actual de los términos de uso y aspectos legales para continuar.",
+                },
+                400
+            );
+        }
+
+        const termsAudit = {
+            termsAcceptedAt: new Date(),
+            termsVersion: PLATFORM_SUBSCRIPTION_TERMS_VERSION,
+        };
+
+        await prisma.platformFeePayment.updateMany({
+            where: {
+                complexId: complex.id,
+                status: PlatformFeeStatus.PENDING,
+                paymentMethod: PlatformFeePaymentMethod.CARD,
+            },
+            data: { status: PlatformFeeStatus.CANCELLED },
+        });
 
         const eligibility = await getPlatformFeePaymentEligibility(complex.id);
         if (!eligibility.canPay) {
@@ -44,7 +88,7 @@ export async function POST(request: Request) {
                     {
                         code: "PLATFORM_FEE_PENDING_EXISTS",
                         message:
-                            "Ya hay un pago de suscripción pendiente para tu complejo. Espera la confirmación o completa el pago en curso antes de iniciar otro.",
+                            "Hay una transferencia pendiente de verificación. Espera la confirmación del administrador de la plataforma antes de iniciar otro pago.",
                     },
                     409
                 );
@@ -59,22 +103,13 @@ export async function POST(request: Request) {
             );
         }
 
-        let method: PlatformFeePaymentMethod = PlatformFeePaymentMethod.CARD;
-        try {
-            const body = (await request.json()) as { method?: string };
-            if (body?.method === "BANK_TRANSFER") {
-                method = PlatformFeePaymentMethod.BANK_TRANSFER;
-            }
-        } catch {
-            /* cuerpo vacío → tarjeta */
-        }
-
         const priceGtq = await getPlatformSubscriptionPriceGtq();
         const months = await getPlatformSubscriptionPeriodMonths();
         const amountCents = Math.round(priceGtq * 100);
 
         if (method === PlatformFeePaymentMethod.BANK_TRANSFER) {
             const instructions = await getPlatformSubscriptionBankInstructions();
+            const proofPhone = await getPlatformSubscriptionProofPhone();
             if (!instructions) {
                 return apiError(
                     {
@@ -93,6 +128,7 @@ export async function POST(request: Request) {
                     currency: "GTQ",
                     periodMonths: months,
                     paymentMethod: PlatformFeePaymentMethod.BANK_TRANSFER,
+                    ...termsAudit,
                 },
             });
 
@@ -105,6 +141,7 @@ export async function POST(request: Request) {
                 instructions,
                 reference: payment.id,
                 complexName: complex.name,
+                proofPhone,
             });
         }
 
@@ -127,6 +164,7 @@ export async function POST(request: Request) {
                 currency: "GTQ",
                 periodMonths: months,
                 paymentMethod: PlatformFeePaymentMethod.CARD,
+                ...termsAudit,
             },
         });
 
@@ -144,7 +182,8 @@ export async function POST(request: Request) {
                         quantity: 1,
                     },
                 ],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={checkout_session_id}&scope=platform`,
+                // Un solo placeholder evita query duplicada `checkout_id=ch_…&checkout_id={CHECKOUT_SESSION_ID}`. Recurrente suele añadir `checkout_id` al redirect.
+                success_url: `${appUrl}/${locale}/dashboard/payments/success?scope=platform&platformFeePaymentId=${encodeURIComponent(payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: cancelReturnUrl,
                 back_url: cancelReturnUrl,
                 return_url: cancelReturnUrl,

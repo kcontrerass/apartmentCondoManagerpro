@@ -4,6 +4,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
+  /** Evita copias duplicadas del cliente Prisma en chunks SSR; reduce picos de conexiones MySQL en dev (Turbopack). */
+  serverExternalPackages: ["@prisma/client"],
   images: {
     remotePatterns: [
       {

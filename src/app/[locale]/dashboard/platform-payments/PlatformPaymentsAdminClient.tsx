@@ -35,10 +35,10 @@ export function PlatformPaymentsAdminClient({
     const [rows, setRows] = useState<Row[]>([]);
     const [loading, setLoading] = useState(mode !== "super");
     const [confirmingId, setConfirmingId] = useState<string | null>(null);
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [pdfInvoiceId, setPdfInvoiceId] = useState<string | null>(null);
-    const [reconciling, setReconciling] = useState(false);
     /** Súper admin: "" = aún no eligió; "*" = todos los complejos; id = un complejo */
     const [superComplexFilter, setSuperComplexFilter] = useState("");
     const [complexOptions, setComplexOptions] = useState<{ id: string; name: string }[]>([]);
@@ -156,21 +156,22 @@ export function PlatformPaymentsAdminClient({
         }
     };
 
-    const handleReconcileDuplicates = async () => {
-        setReconciling(true);
+    const handleReject = async (id: string) => {
+        if (!window.confirm(t("rejectTransferConfirm"))) return;
+        setRejectingId(id);
         try {
-            const res = await fetch("/api/platform-fee/admin/reconcile-duplicates", { method: "POST" });
+            const res = await fetch(`/api/platform-fee/admin/payments/${id}/reject`, { method: "POST" });
             const json = await res.json();
-            if (res.ok && json?.data) {
-                toast.success(t("reconcileSuccess", { count: json.data.cancelled }));
-                await load(debouncedSearch);
-            } else {
-                toast.error(json?.error?.message || t("reconcileError"));
+            if (!res.ok) {
+                toast.error(json?.error?.message || t("rejectError"));
+                return;
             }
+            toast.success(t("rejectSuccess"));
+            await load(debouncedSearch);
         } catch {
-            toast.error(t("reconcileError"));
+            toast.error(t("rejectError"));
         } finally {
-            setReconciling(false);
+            setRejectingId(null);
         }
     };
 
@@ -188,7 +189,6 @@ export function PlatformPaymentsAdminClient({
 
     const filteredEmpty = !loading && rows.length === 0;
     const superNeedsPick = mode === "super" && superComplexFilter === "";
-
     return (
         <div className="space-y-6">
             <PageHeader
@@ -197,26 +197,7 @@ export function PlatformPaymentsAdminClient({
             />
 
             {mode === "super" ? (
-                <div className="space-y-3 max-w-3xl">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">{t("keysHint")}</p>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="min-h-[40px] text-sm"
-                            disabled={reconciling}
-                            onClick={() => void handleReconcileDuplicates()}
-                        >
-                            {reconciling ? (
-                                <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
-                            ) : (
-                                <span className="material-symbols-outlined text-xl">cleaning_services</span>
-                            )}
-                            <span className="ml-2">{t("reconcileButton")}</span>
-                        </Button>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{t("reconcileHint")}</p>
-                    </div>
-                </div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">{t("keysHint")}</p>
             ) : (
                 <p className="text-sm text-slate-600 dark:text-slate-400 max-w-3xl">{t("keysHintComplex")}</p>
             )}
@@ -282,10 +263,7 @@ export function PlatformPaymentsAdminClient({
                                 <th className="p-4 font-medium">{t("amount")}</th>
                                 <th className="p-4 font-medium">{t("method")}</th>
                                 <th className="p-4 font-medium">{t("status")}</th>
-                                <th className="p-4 font-medium w-[1%] whitespace-nowrap">{t("receiptPdf")}</th>
-                                {canConfirmTransfers ? (
-                                    <th className="p-4 font-medium w-[1%]">{t("actions")}</th>
-                                ) : null}
+                                <th className="p-4 font-medium w-[1%] text-right whitespace-nowrap">{t("actions")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -305,47 +283,65 @@ export function PlatformPaymentsAdminClient({
                                     </td>
                                     <td className="p-4 text-slate-600 dark:text-slate-400">{methodLabel(r.paymentMethod)}</td>
                                     <td className="p-4">{statusLabel(r.status)}</td>
-                                    <td className="p-4">
-                                        {r.invoice && r.status === "PAID" ? (
-                                            <Button
-                                                variant="outline"
-                                                className="min-h-[36px] text-xs whitespace-nowrap gap-1"
-                                                disabled={pdfInvoiceId === r.invoice.id}
-                                                onClick={() => handleDownloadPdf(r.invoice!.id)}
-                                            >
-                                                {pdfInvoiceId === r.invoice.id ? (
-                                                    <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
-                                                ) : (
-                                                    <>
-                                                        <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
-                                                        {t("downloadPdf")}
-                                                    </>
-                                                )}
-                                            </Button>
-                                        ) : (
-                                            <span className="text-slate-400">—</span>
-                                        )}
-                                    </td>
-                                    {canConfirmTransfers ? (
-                                        <td className="p-4">
-                                            {r.status === "PENDING" && r.paymentMethod === "BANK_TRANSFER" ? (
+                                    <td className="p-4 text-right">
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                            {r.invoice && r.status === "PAID" ? (
                                                 <Button
                                                     variant="outline"
-                                                    className="min-h-[36px] text-xs whitespace-nowrap"
-                                                    disabled={confirmingId === r.id}
-                                                    onClick={() => handleConfirm(r.id)}
+                                                    className="min-h-[36px] text-xs whitespace-nowrap gap-1"
+                                                    disabled={pdfInvoiceId === r.invoice.id}
+                                                    onClick={() => handleDownloadPdf(r.invoice!.id)}
                                                 >
-                                                    {confirmingId === r.id ? (
+                                                    {pdfInvoiceId === r.invoice.id ? (
                                                         <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
                                                     ) : (
-                                                        t("confirmTransfer")
+                                                        <>
+                                                            <span className="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                                                            {t("downloadPdf")}
+                                                        </>
                                                     )}
                                                 </Button>
-                                            ) : (
-                                                <span className="text-slate-400">—</span>
-                                            )}
-                                        </td>
-                                    ) : null}
+                                            ) : null}
+                                            {canConfirmTransfers &&
+                                            r.status === "PENDING" &&
+                                            r.paymentMethod === "BANK_TRANSFER" ? (
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        className="min-h-[36px] text-xs whitespace-nowrap"
+                                                        disabled={confirmingId === r.id || rejectingId === r.id}
+                                                        onClick={() => handleConfirm(r.id)}
+                                                    >
+                                                        {confirmingId === r.id ? (
+                                                            <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                                                        ) : (
+                                                            t("confirmTransfer")
+                                                        )}
+                                                    </Button>
+                                                    <Button
+                                                        variant="danger"
+                                                        className="min-h-[36px] text-xs whitespace-nowrap"
+                                                        disabled={confirmingId === r.id || rejectingId === r.id}
+                                                        onClick={() => handleReject(r.id)}
+                                                    >
+                                                        {rejectingId === r.id ? (
+                                                            <span className="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+                                                        ) : (
+                                                            t("rejectTransfer")
+                                                        )}
+                                                    </Button>
+                                                </>
+                                            ) : null}
+                                            {!(
+                                                (r.invoice && r.status === "PAID") ||
+                                                (canConfirmTransfers &&
+                                                    r.status === "PENDING" &&
+                                                    r.paymentMethod === "BANK_TRANSFER")
+                                            ) ? (
+                                                <span className="text-slate-400 inline-flex min-h-[36px] items-center">—</span>
+                                            ) : null}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

@@ -9,8 +9,9 @@ export type PlatformFeePaymentBlockReason = "PENDING" | "PAID_THIS_MONTH";
 export { getUtcMonthBounds } from "@/lib/platform-fee-utc-bounds";
 
 /**
- * Un complejo puede iniciar como máximo un cobro de suscripción a la plataforma por mes calendario (UTC)
- * y no puede abrir otro si ya hay uno pendiente.
+ * Un complejo puede iniciar como máximo un cobro de suscripción a la plataforma por mes calendario (UTC).
+ * Solo una transferencia bancaria pendiente de verificación bloquea un nuevo cobro; la tarjeta se confirma
+ * en la pasarela y no usa «pendiente» como bloqueo (ver checkout: se reemplaza el intento anterior).
  */
 export async function getPlatformFeePaymentEligibility(
     complexId: string,
@@ -26,15 +27,19 @@ export async function getPlatformFeePaymentEligibility(
     await syncPlatformCardPaymentFromRecurrenteForComplex(complexId);
     await reconcilePlatformFeePaymentsForUtcMonth(complexId, now);
 
-    const pending = await prisma.platformFeePayment.findFirst({
-        where: { complexId, status: PlatformFeeStatus.PENDING },
+    const pendingBank = await prisma.platformFeePayment.findFirst({
+        where: {
+            complexId,
+            status: PlatformFeeStatus.PENDING,
+            paymentMethod: PlatformFeePaymentMethod.BANK_TRANSFER,
+        },
         select: { id: true, paymentMethod: true },
     });
-    if (pending) {
+    if (pendingBank) {
         return {
             canPay: false,
             reason: "PENDING",
-            pendingPaymentMethod: pending.paymentMethod,
+            pendingPaymentMethod: pendingBank.paymentMethod,
         };
     }
 

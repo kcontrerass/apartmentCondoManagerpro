@@ -13,7 +13,10 @@ export default async function PlatformSubscriptionPage({
     const session = await auth();
     if (!session?.user) return null;
 
-    if (session.user.role !== Role.ADMIN) {
+    if (
+        session.user.role !== Role.ADMIN &&
+        session.user.role !== Role.BOARD_OF_DIRECTORS
+    ) {
         redirect(`/${locale}/dashboard`);
     }
 

@@ -9,19 +9,61 @@ import { useState } from "react";
 import { ComplexType } from "@prisma/client";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
+import { useTranslations } from "next-intl";
+import { Role } from "@/types/roles";
+import type { ComplexWithCount } from "@/hooks/useComplexes";
 
 interface ComplexesClientProps {
     userRole?: string;
 }
 
 export function ComplexesClient({ userRole }: ComplexesClientProps) {
+    const t = useTranslations("Complexes");
     const { complexes, loading, deleteComplex, fetchComplexes } = useComplexes();
     const [search, setSearch] = useState("");
     const [type, setType] = useState("");
+    const [extendingSubscriptionId, setExtendingSubscriptionId] = useState<string | null>(null);
 
     const [complexToDelete, setComplexToDelete] = useState<string | null>(null);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const handleReactivateSubscription = async (complex: ComplexWithCount) => {
+        if (userRole !== Role.SUPER_ADMIN) return;
+        if (
+            !window.confirm(
+                t("reactivateSubscriptionConfirm", { name: complex.name })
+            )
+        ) {
+            return;
+        }
+        setExtendingSubscriptionId(complex.id);
+        try {
+            const res = await fetch("/api/platform-fee/admin/manual-extend-subscription", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ complexId: complex.id }),
+            });
+            const json = await res.json();
+            if (!res.ok) {
+                const errMsg =
+                    json?.error &&
+                    typeof json.error === "object" &&
+                    "message" in json.error &&
+                    typeof (json.error as { message: unknown }).message === "string"
+                        ? (json.error as { message: string }).message
+                        : t("reactivateSubscriptionError");
+                toast.error(errMsg);
+                return;
+            }
+            toast.success(t("reactivateSubscriptionSuccess"));
+            await fetchComplexes(search, type);
+        } catch {
+            toast.error(t("reactivateSubscriptionError"));
+        } finally {
+            setExtendingSubscriptionId(null);
+        }
+    };
 
     const handleDelete = async () => {
         if (!complexToDelete) return;
@@ -78,10 +120,18 @@ export function ComplexesClient({ userRole }: ComplexesClientProps) {
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
             ) : (
-                <ComplexTable complexes={complexes} onDelete={(id) => {
-                    setComplexToDelete(id);
-                    setIsDeleteModalOpen(true);
-                }} userRole={userRole} />
+                <ComplexTable
+                    complexes={complexes}
+                    onDelete={(id) => {
+                        setComplexToDelete(id);
+                        setIsDeleteModalOpen(true);
+                    }}
+                    userRole={userRole}
+                    extendingSubscriptionId={extendingSubscriptionId}
+                    onReactivateSubscription={
+                        userRole === Role.SUPER_ADMIN ? handleReactivateSubscription : undefined
+                    }
+                />
             )}
 
             <Modal

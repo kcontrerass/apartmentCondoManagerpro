@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { PlatformFeePaymentMethod, PlatformFeeStatus } from "@prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
-import { findAdminComplexForPlatformFee } from "@/lib/find-admin-complex-platform-fee";
+import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platform-fee";
 
 /**
  * Libera un intento de pago con tarjeta abandonado (sigue en PENDING) para poder abrir otro checkout.
@@ -12,11 +12,14 @@ import { findAdminComplexForPlatformFee } from "@/lib/find-admin-complex-platfor
 export async function POST() {
     try {
         const session = await auth();
-        if (!session?.user || session.user.role !== Role.ADMIN) {
+        if (
+            !session?.user ||
+            (session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS)
+        ) {
             return apiError({ code: "FORBIDDEN", message: "No autorizado" }, 403);
         }
 
-        const complex = await findAdminComplexForPlatformFee(session.user.id);
+        const complex = await findComplexForPlatformFeeByUser(session.user.id, session.user.role);
         if (!complex) {
             return apiError({ code: "NOT_FOUND", message: "Sin complejo asignado" }, 404);
         }

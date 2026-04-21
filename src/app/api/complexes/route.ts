@@ -3,8 +3,10 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { ComplexCreateSchema } from "@/lib/validations/complex";
 import { Role } from "@/types/roles";
-import type { ComplexType } from "@prisma/client";
+import type { ComplexType, Prisma } from "@prisma/client";
 import { complexListApiSelect } from "@/lib/complex-list-select";
+import { getPlatformSubscriptionGraceDays } from "@/lib/platform-subscription-access";
+import { evaluatePlatformSubscriptionAccess } from "@/lib/platform-subscription-rules";
 
 export async function GET(request: Request) {
     try {
@@ -59,13 +61,33 @@ export async function GET(request: Request) {
 
         const whereClause = { AND: andConditions };
 
+        const superSelect = {
+            ...complexListApiSelect,
+            platformPaidUntil: true,
+        } satisfies Prisma.ComplexSelect;
+
         const complexes = await prisma.complex.findMany({
             where: whereClause,
-            select: complexListApiSelect,
+            select:
+                session.user.role === Role.SUPER_ADMIN ? superSelect : complexListApiSelect,
             orderBy: {
                 createdAt: "desc",
             },
         });
+
+        if (session.user.role === Role.SUPER_ADMIN) {
+            const graceDays = await getPlatformSubscriptionGraceDays();
+            type SuperRow = Prisma.ComplexGetPayload<{ select: typeof superSelect }>;
+            const payload = (complexes as SuperRow[]).map((c) => {
+                const pastDue = !evaluatePlatformSubscriptionAccess({
+                    platformPaidUntil: c.platformPaidUntil ?? null,
+                    complexCreatedAt: c.createdAt,
+                    graceDays,
+                }).allowed;
+                return { ...c, platformSubscriptionPastDue: pastDue };
+            });
+            return NextResponse.json(payload);
+        }
 
         return NextResponse.json(complexes);
     } catch (error) {

@@ -1,11 +1,13 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
-import { PlatformFeeStatus } from "@prisma/client";
+import { PlatformFeePaymentMethod, PlatformFeeStatus } from "@prisma/client";
 import { apiError, apiOk } from "@/lib/api-response";
 import { isPrismaTableMissingError } from "@/lib/prisma-request-errors";
 import { getUtcMonthBounds } from "@/lib/platform-fee-utc-bounds";
 import { syncPlatformFeeInvoiceForPaidPayment } from "@/lib/platform-fee-fulfill";
+import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platform-fee";
+import { syncPlatformCardPaymentFromRecurrenteForComplex } from "@/lib/platform-fee-recurrente-sync";
 
 const invoiceSelect = {
     id: true,
@@ -17,7 +19,8 @@ const invoiceSelect = {
 
 /**
  * Historial de pagos de suscripción a la plataforma del complejo del administrador.
- * Incluye todos los intentos recientes (no solo el mes en curso).
+ * No incluye intentos PENDING con tarjeta: esos solo existen en Recurrente hasta que se confirma
+ * el cobro (entonces pasan a PAID automáticamente). Sí se listan transferencias PENDING (verificación manual).
  */
 export async function GET() {
     try {
@@ -25,17 +28,16 @@ export async function GET() {
         if (!session?.user) {
             return apiError({ code: "UNAUTHORIZED", message: "No autorizado" }, 401);
         }
-        if (session.user.role !== Role.ADMIN) {
-            return apiError({ code: "FORBIDDEN", message: "Solo administrador de complejo" }, 403);
+        if (session.user.role !== Role.ADMIN && session.user.role !== Role.BOARD_OF_DIRECTORS) {
+            return apiError({ code: "FORBIDDEN", message: "Solo administrador o junta directiva" }, 403);
         }
 
-        const complex = await prisma.complex.findFirst({
-            where: { adminId: session.user.id },
-            select: { id: true },
-        });
+        const complex = await findComplexForPlatformFeeByUser(session.user.id, session.user.role);
         if (!complex) {
             return apiError({ code: "NOT_FOUND", message: "Sin complejo asignado" }, 404);
         }
+
+        await syncPlatformCardPaymentFromRecurrenteForComplex(complex.id);
 
         const { start, end } = getUtcMonthBounds();
         const latestPaidThisMonth = await prisma.platformFeePayment.findFirst({
@@ -55,6 +57,10 @@ export async function GET() {
             where: {
                 complexId: complex.id,
                 status: { not: PlatformFeeStatus.CANCELLED },
+                OR: [
+                    { status: { not: PlatformFeeStatus.PENDING } },
+                    { paymentMethod: { not: PlatformFeePaymentMethod.CARD } },
+                ],
             },
             orderBy: { createdAt: "desc" },
             take: 200,

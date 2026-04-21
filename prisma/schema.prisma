@@ -81,6 +81,9 @@ model PlatformFeePayment {
   paidAt               DateTime?               @map("paid_at")
   periodMonths         Int                     @default(1) @map("period_months")
   invoiceId            String?                 @unique @map("invoice_id")
+  /// Aceptación de términos legales al iniciar este cobro (auditoría).
+  termsAcceptedAt      DateTime?               @map("terms_accepted_at")
+  termsVersion         String?                 @map("terms_version")
   createdAt            DateTime                @default(now()) @map("created_at")
   updatedAt            DateTime                @updatedAt @map("updated_at")
   complex              Complex                 @relation(fields: [complexId], references: [id], onDelete: Cascade)
@@ -110,6 +113,8 @@ model PlatformRecurrenteSettings {
   bankTransferInstructions String?   @map("bank_transfer_instructions") @db.Text
   subscriptionPriceGtq     Decimal?  @map("subscription_price_gtq") @db.Decimal(10, 2)
   subscriptionPeriodMonths Int?    @map("subscription_period_months")
+  /// Días de gracia tras vencer platform_paid_until antes de bloquear el complejo (0 = mismo día).
+  subscriptionGraceDays    Int?      @map("subscription_grace_days")
   updatedAt                DateTime  @updatedAt @map("updated_at")
 
   @@map("platform_recurrente_settings")

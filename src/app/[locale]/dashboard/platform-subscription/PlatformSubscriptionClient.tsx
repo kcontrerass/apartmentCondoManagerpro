@@ -1,12 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { downloadPlatformSubscriptionReceiptPdf } from "@/lib/download-platform-subscription-pdf";
+import { PLATFORM_CARD_CHECKOUT_SESSION_KEY } from "@/lib/platform-card-checkout-session";
+import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
+import { canPayPlatformSubscriptionRole } from "@/lib/platform-subscription-rules";
 import { toast } from "sonner";
+
+type PendingBankTransferPayload = {
+    paymentId: string;
+    reference: string;
+    instructions: string;
+    amountGtq: number;
+    currency: string;
+    periodMonths: number;
+    proofPhone: string | null;
+};
 
 type StatusPayload = {
     role: string;
@@ -16,9 +30,12 @@ type StatusPayload = {
     periodMonths: number;
     keysConfigured: boolean;
     bankTransferConfigured?: boolean;
+    subscriptionProofPhone?: string | null;
     canInitiatePayment?: boolean;
     paymentBlockReason?: "PENDING" | "PAID_THIS_MONTH" | null;
     pendingPaymentMethod?: string | null;
+    pendingBankTransfer?: PendingBankTransferPayload | null;
+    subscriptionTermsVersion?: string;
 };
 
 type TransferPayload = {
@@ -28,6 +45,7 @@ type TransferPayload = {
     currency: string;
     periodMonths: number;
     reference: string;
+    proofPhone?: string | null;
 };
 
 type HistoryInvoice = {
@@ -52,7 +70,9 @@ type HistoryRow = {
 
 export function PlatformSubscriptionClient() {
     const t = useTranslations("PlatformSubscription");
+    const locale = useLocale();
     const [data, setData] = useState<StatusPayload | null | undefined>(undefined);
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const [loading, setLoading] = useState(true);
     const [payingCard, setPayingCard] = useState(false);
     const [creatingTransfer, setCreatingTransfer] = useState(false);
@@ -120,10 +140,76 @@ export function PlatformSubscriptionClient() {
         }
     }, [t]);
 
+    /**
+     * Tras «atrás» desde Recurrente, la misma pestaña vuelve aquí; Recurrente suele dejar el checkout abierto.
+     * El flag en sessionStorage prueba que el usuario salió del flujo iniciado aquí (no polling agresivo en servidor).
+     */
     useEffect(() => {
-        if (data?.role !== "ADMIN") return;
+        const syncAfterHostedCheckoutReturn = () => {
+            if (typeof window === "undefined") return;
+            if (!sessionStorage.getItem(PLATFORM_CARD_CHECKOUT_SESSION_KEY)) return;
+            return (async () => {
+                try {
+                    const res = await fetch("/api/platform-fee/sync-after-card-return", { method: "POST" });
+                    if (res.ok) {
+                        await reloadStatus();
+                        void loadHistory();
+                    }
+                } finally {
+                    try {
+                        sessionStorage.removeItem(PLATFORM_CARD_CHECKOUT_SESSION_KEY);
+                    } catch {
+                        /* ignore */
+                    }
+                }
+            })();
+        };
+
+        void syncAfterHostedCheckoutReturn();
+
+        const onPageShow = (e: PageTransitionEvent) => {
+            if (e.persisted) void syncAfterHostedCheckoutReturn();
+        };
+        window.addEventListener("pageshow", onPageShow);
+        return () => window.removeEventListener("pageshow", onPageShow);
+    }, [reloadStatus, loadHistory]);
+
+    useEffect(() => {
+        if (!canPayPlatformSubscriptionRole(data?.role)) return;
         void loadHistory();
     }, [data?.role, loadHistory]);
+
+    useEffect(() => {
+        setTermsAccepted(false);
+    }, [data?.subscriptionTermsVersion]);
+
+    /** Mantener visibles monto e instrucciones bancarias con transferencia pendiente (p. ej. tras recargar la página). */
+    useEffect(() => {
+        if (!data) return;
+        const pb = data.pendingBankTransfer;
+        if (pb) {
+            setTransferDetails({
+                paymentId: pb.paymentId,
+                instructions: pb.instructions,
+                amountGtq: pb.amountGtq,
+                currency: pb.currency,
+                periodMonths: pb.periodMonths,
+                reference: pb.reference,
+                proofPhone: pb.proofPhone,
+            });
+            return;
+        }
+        if (data.paymentBlockReason === "PENDING" && data.pendingPaymentMethod === "BANK_TRANSFER") {
+            return;
+        }
+        if (
+            data.canInitiatePayment ||
+            data.paymentBlockReason === "PAID_THIS_MONTH" ||
+            (data.paymentBlockReason === "PENDING" && data.pendingPaymentMethod === "CARD")
+        ) {
+            setTransferDetails(null);
+        }
+    }, [data]);
 
     const handleReleaseCardAttempt = async () => {
         setReleasingCard(true);
@@ -159,15 +245,26 @@ export function PlatformSubscriptionClient() {
     const handlePayCard = async () => {
         setPayingCard(true);
         try {
+            const termsVersion =
+                data?.subscriptionTermsVersion ?? PLATFORM_SUBSCRIPTION_TERMS_VERSION;
             const res = await fetch("/api/platform-fee/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ method: "CARD" }),
+                body: JSON.stringify({
+                    method: "CARD",
+                    acceptTerms: true,
+                    termsVersion,
+                }),
             });
             const json = await res.json();
             if (!res.ok || !json?.data?.url) {
                 toast.error(json?.error?.message || t("errorCheckout"));
                 return;
+            }
+            try {
+                sessionStorage.setItem(PLATFORM_CARD_CHECKOUT_SESSION_KEY, "1");
+            } catch {
+                /* modo privado / cuota */
             }
             window.location.href = json.data.url as string;
         } catch {
@@ -181,10 +278,16 @@ export function PlatformSubscriptionClient() {
         setCreatingTransfer(true);
         setTransferDetails(null);
         try {
+            const termsVersion =
+                data?.subscriptionTermsVersion ?? PLATFORM_SUBSCRIPTION_TERMS_VERSION;
             const res = await fetch("/api/platform-fee/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ method: "BANK_TRANSFER" }),
+                body: JSON.stringify({
+                    method: "BANK_TRANSFER",
+                    acceptTerms: true,
+                    termsVersion,
+                }),
             });
             const json = await res.json();
             if (!res.ok || !json?.data || json.data.mode !== "BANK_TRANSFER") {
@@ -199,9 +302,11 @@ export function PlatformSubscriptionClient() {
                 currency: d.currency,
                 periodMonths: d.periodMonths,
                 reference: d.reference,
+                proofPhone: d.proofPhone ?? null,
             });
             toast.success(t("transferCreatedToast"));
             void loadHistory();
+            await reloadStatus();
         } catch {
             toast.error(t("errorCheckout"));
         } finally {
@@ -228,7 +333,7 @@ export function PlatformSubscriptionClient() {
         );
     }
 
-    if (!data || data.role !== "ADMIN") {
+    if (!data || !canPayPlatformSubscriptionRole(data.role)) {
         return (
             <div className="space-y-6">
                 <PageHeader title={t("title")} subtitle={t("subtitle")} />
@@ -242,9 +347,20 @@ export function PlatformSubscriptionClient() {
     const bankOk = !!data.bankTransferConfigured;
     const cardOk = data.keysConfigured;
     const canInitiatePayment = data.canInitiatePayment !== false;
+    const blockedByTransferPending =
+        data.paymentBlockReason === "PENDING" &&
+        data.pendingPaymentMethod === "BANK_TRANSFER";
+    const blockedByPaidThisMonth = data.paymentBlockReason === "PAID_THIS_MONTH";
+    const payActionsDisabled =
+        !canInitiatePayment ||
+        !termsAccepted ||
+        blockedByTransferPending ||
+        blockedByPaidThisMonth;
     const blockMessage =
         data.paymentBlockReason === "PENDING"
-            ? t("blockPending")
+            ? data.pendingPaymentMethod === "CARD"
+                ? t("blockPendingCard")
+                : t("blockPendingTransfer")
             : data.paymentBlockReason === "PAID_THIS_MONTH"
               ? t("blockPaidThisMonth")
               : null;
@@ -398,6 +514,42 @@ export function PlatformSubscriptionClient() {
                     <p className="text-xs text-slate-500 leading-relaxed">{t("renewHint")}</p>
                     <p className="text-xs text-slate-500 leading-relaxed">{t("onePaymentPerMonthNote")}</p>
 
+                    <label className="flex gap-3 items-start rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            aria-describedby="platform-subscription-terms-hint"
+                        />
+                        <span id="platform-subscription-terms-hint" className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                            {t("termsAcceptIntro")}{" "}
+                            <Link
+                                href={`/${locale}/legal/terms`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary font-medium underline underline-offset-2"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {t("termsLink")}
+                            </Link>{" "}
+                            {t("termsAcceptMiddle")}{" "}
+                            <Link
+                                href={`/${locale}/legal/legal-notice`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary font-medium underline underline-offset-2"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {t("legalLink")}
+                            </Link>{" "}
+                            {t("termsAcceptOutro")}
+                        </span>
+                    </label>
+                    {!termsAccepted && (cardOk || bankOk) ? (
+                        <p className="text-xs text-amber-700 dark:text-amber-300/90">{t("termsCheckboxHint")}</p>
+                    ) : null}
+
                     {!canInitiatePayment && blockMessage && (
                         <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/80 dark:bg-amber-950/25 px-4 py-3 space-y-3 text-sm text-amber-900 dark:text-amber-100">
                             <p>{blockMessage}</p>
@@ -433,7 +585,7 @@ export function PlatformSubscriptionClient() {
                                 variant="primary"
                                 className="w-full sm:w-auto min-h-[44px]"
                                 onClick={handlePayCard}
-                                disabled={!canInitiatePayment || payingCard || creatingTransfer}
+                                disabled={payActionsDisabled || payingCard || creatingTransfer}
                             >
                                 {payingCard ? (
                                     <>
@@ -453,7 +605,7 @@ export function PlatformSubscriptionClient() {
                                 variant="secondary"
                                 className="w-full sm:w-auto min-h-[44px]"
                                 onClick={handlePayTransfer}
-                                disabled={!canInitiatePayment || payingCard || creatingTransfer}
+                                disabled={payActionsDisabled || payingCard || creatingTransfer}
                             >
                                 {creatingTransfer ? (
                                     <>
@@ -472,18 +624,38 @@ export function PlatformSubscriptionClient() {
                 </Card>
             )}
 
-            {transferDetails && (
+            {transferDetails && (() => {
+                const proofPhone = (transferDetails.proofPhone ?? data.subscriptionProofPhone ?? "").trim();
+                const waDigits = proofPhone.replace(/\D/g, "");
+                return (
                 <Card className="p-6 space-y-4 border-slate-200 dark:border-slate-700">
                     <h3 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                         <span className="material-symbols-outlined text-primary">receipt_long</span>
                         {t("transferTitle")}
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">{t("transferPendingExplainer")}</p>
-                    <div>
-                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">{t("referenceLabel")}</p>
-                        <code className="block text-sm bg-slate-100 dark:bg-slate-900 px-3 py-2 rounded-lg font-mono text-slate-900 dark:text-slate-100 break-all">
-                            {transferDetails.reference}
-                        </code>
+                    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-4 py-3 space-y-2">
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{t("referenceProofTitle")}</p>
+                        {proofPhone ? (
+                            <>
+                                <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+                                    {t("referenceProofBody", { phone: proofPhone })}
+                                </p>
+                                {waDigits.length >= 8 ? (
+                                    <a
+                                        href={`https://wa.me/${waDigits}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-400 hover:underline"
+                                    >
+                                        <span className="material-symbols-outlined text-[18px]">chat</span>
+                                        {t("proofWhatsappLink")}
+                                    </a>
+                                ) : null}
+                            </>
+                        ) : (
+                            <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed">{t("referenceProofBodyNoPhone")}</p>
+                        )}
                     </div>
                     <div>
                         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">{t("transferAmountHint")}</p>
@@ -496,7 +668,8 @@ export function PlatformSubscriptionClient() {
                         <pre className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-sans">{transferDetails.instructions}</pre>
                     </div>
                 </Card>
-            )}
+                );
+            })()}
         </div>
     );
 }

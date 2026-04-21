@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { getAuthHeroImageUrl } from "@/lib/auth-hero";
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { useState, useEffect } from 'react';
@@ -33,10 +33,10 @@ export default function AuthLayout({
         <div className="min-h-screen flex font-sans selection:bg-primary/20 transition-colors duration-500 bg-[#FDFDFD] dark:bg-slate-950">
             {/* Left Panel - Hero/Image */}
             <div className="hidden lg:flex relative w-[45%] xl:w-1/2 bg-slate-900 overflow-hidden items-end">
-                {/* Background Image (Unsplash premium building) */}
-                <div 
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[2s] hover:scale-105 opacity-50 mix-blend-luminosity"
-                    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop')" }}
+                {/* Hero: condominio / edificio residencial (sustituir vía NEXT_PUBLIC_AUTH_HERO_IMAGE_URL o landing) */}
+                <div
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-[2s] hover:scale-105 opacity-55 mix-blend-luminosity"
+                    style={{ backgroundImage: `url('${getAuthHeroImageUrl()}')` }}
                 />
                 
                 {/* Gradient overlay for text readability */}
@@ -61,6 +61,9 @@ export default function AuthLayout({
 
                     <p className="text-lg xl:text-xl font-medium text-slate-300 leading-relaxed max-w-md drop-shadow">
                         {t("tagline")}
+                    </p>
+                    <p className="mt-4 text-sm text-slate-400/90 leading-relaxed max-w-md drop-shadow">
+                        {t("heroCaption")}
                     </p>
                 </motion.div>
             </div>

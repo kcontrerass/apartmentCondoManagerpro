@@ -111,3 +111,43 @@ export async function fulfillPlatformFeePayment(paymentId: string): Promise<{
 
     return { ok: true };
 }
+
+/**
+ * Extiende `platform_paid_until` sin fila de pago (p. ej. transferencia verificada manualmente por el operador).
+ * Misma regla de fechas que al completar un pago PAID.
+ */
+export async function extendComplexPlatformSubscriptionManually(
+    complexId: string,
+    periodMonths: number
+): Promise<{ ok: boolean; platformPaidUntil?: Date; reason?: string }> {
+    const months = Math.max(1, Math.min(120, Math.floor(periodMonths)));
+    try {
+        const complex = await prisma.complex.findUnique({
+            where: { id: complexId },
+            select: { id: true, platformPaidUntil: true },
+        });
+        if (!complex) {
+            return { ok: false, reason: "complex_not_found" };
+        }
+
+        const now = new Date();
+        const base =
+            complex.platformPaidUntil && complex.platformPaidUntil > now
+                ? complex.platformPaidUntil
+                : now;
+        const until = new Date(base);
+        until.setMonth(until.getMonth() + months);
+
+        await prisma.complex.update({
+            where: { id: complexId },
+            data: { platformPaidUntil: until },
+        });
+
+        await reconcilePlatformFeePaymentsForUtcMonth(complexId, new Date());
+
+        return { ok: true, platformPaidUntil: until };
+    } catch (e) {
+        console.error("[EXTEND_PLATFORM_SUBSCRIPTION_MANUAL]", e);
+        return { ok: false, reason: "update_failed" };
+    }
+}

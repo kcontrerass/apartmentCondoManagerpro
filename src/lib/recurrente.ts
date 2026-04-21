@@ -6,6 +6,15 @@ export interface RecurrenteKeys {
     webhookSecret?: string;
 }
 
+/**
+ * Cliente HTTP a Recurrente (misma URL en test y live; distinguen las llaves).
+ *
+ * Sandbox (llaves TEST): el link de pago muestra “PRUEBA”, `live_mode === false`, sin movimiento
+ * real ni balance. En ese modo Recurrente no envía webhooks: en desarrollo el cobro de suscripción
+ * a la plataforma debe confirmarse por la página de éxito (`/payments/success`) y/o el sync
+ * (`syncPlatformCardPaymentFromRecurrenteForComplex`), no depender solo de `/api/payments/webhook`.
+ * Tarjeta de prueba típica: 4242 4242 4242 4242.
+ */
 const BASE_URL = 'https://app.recurrente.com/api';
 
 export const recurrente = {
@@ -79,7 +88,33 @@ export const recurrente = {
                 console.error('Error retrieving Recurrente checkout:', error);
                 throw error;
             }
-        }
+        },
+        /** Tras el redirect de pago la API a veces responde vacío o falla la red; reintenta antes de dar por perdido el checkout. */
+        retrieveWithRetry: async (
+            id: string,
+            keys?: RecurrenteKeys,
+            options?: { maxAttempts?: number; baseDelayMs?: number }
+        ): Promise<unknown | null> => {
+            const maxAttempts = Math.max(1, options?.maxAttempts ?? 5);
+            const baseDelayMs = options?.baseDelayMs ?? 400;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                if (attempt > 0) {
+                    await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
+                }
+                try {
+                    const c = await recurrente.checkouts.retrieve(id, keys);
+                    if (c) {
+                        return c;
+                    }
+                } catch (err: unknown) {
+                    console.error(
+                        `[Recurrente] retrieveWithRetry intento ${attempt + 1}/${maxAttempts}`,
+                        err
+                    );
+                }
+            }
+            return null;
+        },
     },
     webhooks: {
         verifySignature: (params: {

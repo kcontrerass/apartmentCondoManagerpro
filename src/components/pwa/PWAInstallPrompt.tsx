@@ -2,8 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+
+/** Strings resolved in a Server Component via `getTranslations` so this client tree does not depend on `NextIntlClientProvider` during SSR/recovery. */
+export type PWAInstallCopy = {
+    title: string;
+    subtitle: string;
+    benefit1: string;
+    benefit2: string;
+    benefit3: string;
+    install: string;
+    installing: string;
+    later: string;
+    dismiss: string;
+    waitingPrompt: string;
+};
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -12,8 +25,8 @@ interface BeforeInstallPromptEvent extends Event {
 
 const STORAGE_KEY = "pwa-install-dismissed";
 
-export function PWAInstallPrompt() {
-  const t = useTranslations("PWAInstall");
+export function PWAInstallPrompt({ copy }: { copy: PWAInstallCopy }) {
+  const t = (key: keyof PWAInstallCopy) => copy[key];
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isStandalone, setIsStandalone] = useState(true);
   const [supportsInstall, setSupportsInstall] = useState(false);

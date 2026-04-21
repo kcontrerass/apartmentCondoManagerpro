@@ -1,5 +1,6 @@
 import type { RecurrenteKeys } from "@/lib/recurrente";
 import { prisma } from "@/lib/db";
+import { Role } from "@prisma/client";
 
 /**
  * Claves Recurrente de la plataforma (suscripción / cuenta del operador).
@@ -109,4 +110,27 @@ export async function getPlatformSubscriptionBankInstructions(): Promise<string 
     }
     const fromEnv = process.env.PLATFORM_SUBSCRIPTION_BANK_INSTRUCTIONS?.trim() || null;
     return fromDb || fromEnv || null;
+}
+
+/**
+ * Teléfono del súper administrador para enviar el comprobante de suscripción por transferencia.
+ * Orden: primer usuario SUPER_ADMIN con `phone` en BD → PLATFORM_SUBSCRIPTION_PROOF_PHONE (.env).
+ */
+export async function getPlatformSubscriptionProofPhone(): Promise<string | null> {
+    try {
+        const superAdmins = await prisma.user.findMany({
+            where: { role: Role.SUPER_ADMIN, phone: { not: null } },
+            select: { phone: true },
+            orderBy: { updatedAt: "desc" },
+            take: 20,
+        });
+        const fromProfile =
+            superAdmins
+                .map((u) => u.phone?.trim().replace(/\s+/g, "") || "")
+                .find((p) => p.length > 0) || null;
+        if (fromProfile) return fromProfile;
+    } catch {
+        /* BD */
+    }
+    return process.env.PLATFORM_SUBSCRIPTION_PROOF_PHONE?.trim().replace(/\s+/g, "") || null;
 }
