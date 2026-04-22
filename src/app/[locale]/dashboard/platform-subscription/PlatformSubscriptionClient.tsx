@@ -26,6 +26,9 @@ type StatusPayload = {
     role: string;
     complexName?: string;
     platformPaidUntil?: string | null;
+    accessDeadline?: string;
+    subscriptionGraceDays?: number;
+    platformAccessAllowed?: boolean;
     priceGtq: number;
     periodMonths: number;
     keysConfigured: boolean;
@@ -366,7 +369,12 @@ export function PlatformSubscriptionClient() {
               : null;
 
     const until = data.platformPaidUntil ? new Date(data.platformPaidUntil) : null;
+    const accessEnd = data.accessDeadline ? new Date(data.accessDeadline) : null;
+    const hasPaidServicePeriod = !!(until && !Number.isNaN(until.getTime()));
     const canPay = bankOk || cardOk;
+
+    const formatLocaleDate = (d: Date) =>
+        d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 
     const historyStatusLabel = (s: string) => {
         if (s === "PAID") return t("statusPaidShort");
@@ -488,16 +496,29 @@ export function PlatformSubscriptionClient() {
             ) : (
                 <Card className="p-6 space-y-6">
                     <div>
-                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t("paidUntil")}</p>
-                        <p className="text-lg font-semibold text-slate-900 dark:text-white">
-                            {until && !Number.isNaN(until.getTime())
-                                ? until.toLocaleDateString(undefined, {
-                                      year: "numeric",
-                                      month: "long",
-                                      day: "numeric",
-                                  })
-                                : t("none")}
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">
+                            {hasPaidServicePeriod ? t("paidUntil") : t("accessUntilGraceLabel")}
                         </p>
+                        <p className="text-lg font-semibold text-slate-900 dark:text-white">
+                            {hasPaidServicePeriod
+                                ? formatLocaleDate(until!)
+                                : accessEnd && !Number.isNaN(accessEnd.getTime())
+                                  ? formatLocaleDate(accessEnd)
+                                  : t("none")}
+                        </p>
+                        {!hasPaidServicePeriod && accessEnd && !Number.isNaN(accessEnd.getTime()) ? (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                {t("accessUntilGraceHint", { days: data.subscriptionGraceDays ?? 0 })}
+                            </p>
+                        ) : null}
+                        {hasPaidServicePeriod &&
+                        (data.subscriptionGraceDays ?? 0) > 0 &&
+                        accessEnd &&
+                        !Number.isNaN(accessEnd.getTime()) ? (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                {t("accessIncludesGrace", { date: formatLocaleDate(accessEnd) })}
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200 dark:border-slate-800">

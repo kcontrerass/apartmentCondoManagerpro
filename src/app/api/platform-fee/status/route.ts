@@ -11,6 +11,7 @@ import {
 } from "@/lib/platform-billing";
 import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platform-fee";
 import { getPlatformFeePaymentEligibility } from "@/lib/platform-fee-monthly-limit";
+import { getPlatformSubscriptionAccessForComplex } from "@/lib/platform-subscription-access";
 import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
 import { PlatformFeePaymentMethod, PlatformFeeStatus } from "@prisma/client";
 
@@ -45,6 +46,7 @@ export async function GET() {
         const bank = await getPlatformSubscriptionBankInstructions();
         const proofPhone = await getPlatformSubscriptionProofPhone();
         const eligibility = await getPlatformFeePaymentEligibility(complex.id);
+        const access = await getPlatformSubscriptionAccessForComplex(complex.id);
 
         let pendingBankTransfer: {
             paymentId: string;
@@ -94,6 +96,9 @@ export async function GET() {
             complexId: complex.id,
             complexName: complex.name,
             platformPaidUntil: complex.platformPaidUntil,
+            accessDeadline: access.accessDeadline.toISOString(),
+            subscriptionGraceDays: access.graceDays,
+            platformAccessAllowed: access.allowed,
             priceGtq: await getPlatformSubscriptionPriceGtq(),
             periodMonths: await getPlatformSubscriptionPeriodMonths(),
             keysConfigured: !!(await getPlatformRecurrenteKeys()),
