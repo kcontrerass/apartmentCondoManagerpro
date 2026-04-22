@@ -316,6 +316,7 @@
         "allServices": "All registered services",
         "deleteConfirm": "Are you sure you want to delete this service?",
         "errorSaving": "An error occurred while saving the service",
+        "errorNoUnit": "You do not have an assigned unit to subscribe to services.",
         "assignService": "Assign Service",
         "unitServices": "Unit Services",
         "customPrice": "Custom Price",

@@ -141,8 +141,8 @@ async function getStats(userId: string, role: string) {
             );
             activePolls = polls.map((p) => ({
                 ...p,
-                _count: { votes: Number(p.voteCount) }
-            })) as Awaited<ReturnType<typeof prisma.poll.findMany>>;
+                _count: { votes: Number(p.voteCount) },
+            })) as unknown as Awaited<ReturnType<typeof prisma.poll.findMany>>;
         }
 
         const recentInvoicesRaw = [...invoicesRaw].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
@@ -232,8 +232,9 @@ async function getStats(userId: string, role: string) {
             await prisma.$transaction([
                 prisma.unit.groupBy({
                     by: ['status'],
+                    orderBy: { status: "asc" },
                     _count: true,
-                    where: { complexId: user.complexId }
+                    where: { complexId: user.complexId },
                 }),
                 prisma.resident.count({ where: { unit: { complexId: user.complexId } } }),
                 prisma.reservation.count({
@@ -339,14 +340,16 @@ async function getStats(userId: string, role: string) {
     const [unitStats, residentsRaw, pendingIncidents, recentIncidentsRaw, recentInvoicesRaw, recentReservationsRaw] =
         await prisma.$transaction([
             prisma.unit.groupBy({
-                by: ['status'],
+                by: ["status"],
+                orderBy: { status: "asc" },
                 _count: true,
-                where: { complexId: { in: managedComplexIds } }
+                where: { complexId: { in: managedComplexIds } },
             }),
             prisma.resident.groupBy({
-                by: ['type'],
+                by: ["type"],
+                orderBy: { type: "asc" },
                 _count: true,
-                where: { unit: { complexId: { in: managedComplexIds } } }
+                where: { unit: { complexId: { in: managedComplexIds } } },
             }),
             prisma.incident.count({
                 where: {
