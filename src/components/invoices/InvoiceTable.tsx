@@ -241,20 +241,6 @@ export function InvoiceTable({
                                             </Button>
                                         )}
 
-                                    {canPayRow(invoice.status) && onPay && !requirePaymentMethodBeforePay && (
-                                        <Button
-                                            variant="primary"
-                                            size="sm"
-                                            onClick={() => onPay(invoice)}
-                                            disabled={staffBlocked}
-                                            title={intentGateTitle ?? t("actions.pay")}
-                                        >
-                                            <span className="material-symbols-outlined text-[18px]">
-                                                payments
-                                            </span>
-                                        </Button>
-                                    )}
-
                                     {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && isAdmin && (
                                         <>
                                             <Button

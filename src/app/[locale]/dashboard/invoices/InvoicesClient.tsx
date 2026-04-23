@@ -52,8 +52,8 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
     const userRole = user?.role as Role;
     const isResident = userRole === Role.RESIDENT;
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
-    /** Residente y administrador del complejo pueden iniciar cobro; súper admin y junta no. */
-    const canOpenInvoicePay = isResident || userRole === Role.ADMIN;
+    /** Solo el residente inicia cobro (modal de método de pago). Staff no tiene botón Pagar. */
+    const canOpenInvoicePay = isResident;
 
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
@@ -539,53 +539,38 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                         </div>
                     ) : (
                         <>
-                            {!isResident && paymentInvoice?.paymentMethodIntent ? (
-                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-4 text-sm text-slate-700 dark:text-slate-300">
-                                    <p>
-                                        {t("table.residentChoseMethod" as any)}:{" "}
-                                        <span className="font-semibold text-slate-900 dark:text-white">
-                                            {t(
-                                                `paymentMethod.${paymentInvoice.paymentMethodIntent}` as any
-                                            )}
-                                        </span>
-                                    </p>
+                            <div
+                                onClick={() => setSelectedMethod('CARD')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CARD')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CARD_desc' as any) || 'Pago instantáneo seguro'}</p>
                                 </div>
-                            ) : (
-                                <>
-                                    <div
-                                        onClick={() => setSelectedMethod('CARD')}
-                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                                    >
-                                        <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
-                                        <div>
-                                            <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CARD')}</p>
-                                            <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CARD_desc' as any) || 'Pago instantáneo seguro'}</p>
-                                        </div>
-                                    </div>
+                            </div>
 
-                                    <div
-                                        onClick={() => setSelectedMethod('CASH')}
-                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                                    >
-                                        <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
-                                        <div>
-                                            <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CASH')}</p>
-                                            <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CASH_desc' as any) || 'Paga en la administración'}</p>
-                                        </div>
-                                    </div>
+                            <div
+                                onClick={() => setSelectedMethod('CASH')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CASH')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CASH_desc' as any) || 'Paga en la administración'}</p>
+                                </div>
+                            </div>
 
-                                    <div
-                                        onClick={() => setSelectedMethod('TRANSFER')}
-                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                                    >
-                                        <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
-                                        <div>
-                                            <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('TRANSFER')}</p>
-                                            <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
+                            <div
+                                onClick={() => setSelectedMethod('TRANSFER')}
+                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                            >
+                                <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
+                                <div>
+                                    <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('TRANSFER')}</p>
+                                    <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
+                                </div>
+                            </div>
 
                             <Button
                                 onClick={handleConfirmPayment}
