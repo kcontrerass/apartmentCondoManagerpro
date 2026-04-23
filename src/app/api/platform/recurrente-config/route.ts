@@ -2,8 +2,18 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { apiError, apiOk } from "@/lib/api-response";
-import { getPlatformRecurrenteKeys, hasPlatformRecurrenteKeysInDb } from "@/lib/platform-billing";
+import {
+    getPlatformRecurrenteKeys,
+    getPlatformRecurrentePublicKeyForDisplay,
+    getPlatformRecurrentePublicKeyFromEnv,
+    hasPlatformRecurrenteKeysInDb,
+    hasPlatformRecurrenteSecretInEnv,
+    hasPlatformRecurrenteWebhookInEnv,
+} from "@/lib/platform-billing";
 import { Prisma } from "@prisma/client";
+
+/** Nunca servir caché: la configuración debe reflejarse al instante. */
+export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
@@ -32,14 +42,20 @@ export async function GET() {
         const keys = await getPlatformRecurrenteKeys();
         const inDb = await hasPlatformRecurrenteKeysInDb();
 
+        const secretKeyConfigured =
+            !!(row?.secretKey && row.secretKey.length > 0) || hasPlatformRecurrenteSecretInEnv();
+        const webhookSecretConfigured =
+            !!(row?.webhookSecret && row.webhookSecret.length > 0) ||
+            hasPlatformRecurrenteWebhookInEnv();
+
         return apiOk({
-            publicKey: row?.publicKey?.trim() ?? "",
+            publicKey: getPlatformRecurrentePublicKeyForDisplay(row?.publicKey),
             bankTransferInstructions: row?.bankTransferInstructions?.trim() ?? "",
             subscriptionPriceGtq: row?.subscriptionPriceGtq != null ? String(row.subscriptionPriceGtq) : "",
             subscriptionPeriodMonths: row?.subscriptionPeriodMonths ?? null,
             subscriptionGraceDays: row?.subscriptionGraceDays ?? null,
-            secretKeyConfigured: !!(row?.secretKey && row.secretKey.length > 0),
-            webhookSecretConfigured: !!(row?.webhookSecret && row.webhookSecret.length > 0),
+            secretKeyConfigured,
+            webhookSecretConfigured,
             keysActive: !!keys,
             usingDatabaseKeys: inDb,
         });
@@ -70,8 +86,19 @@ export async function PUT(request: Request) {
             where: { id: "default" },
         });
 
-        const publicKeyNext =
-            typeof body.publicKey === "string" ? body.publicKey.trim() || null : existing?.publicKey ?? null;
+        // Evitar borrar claves en BD si el formulario se envió vacío pero el origen real es .env
+        // (o la petición previa no rellenó el campo) — misma resolución que al leer.
+        let publicKeyNext: string | null;
+        if (typeof body.publicKey === "string") {
+            const t = body.publicKey.trim();
+            if (t) {
+                publicKeyNext = t;
+            } else {
+                publicKeyNext = existing?.publicKey?.trim() || getPlatformRecurrentePublicKeyFromEnv() || null;
+            }
+        } else {
+            publicKeyNext = existing?.publicKey?.trim() || getPlatformRecurrentePublicKeyFromEnv() || null;
+        }
 
         let secretKeyNext = existing?.secretKey ?? null;
         if (typeof body.secretKey === "string" && body.secretKey.trim() !== "") {

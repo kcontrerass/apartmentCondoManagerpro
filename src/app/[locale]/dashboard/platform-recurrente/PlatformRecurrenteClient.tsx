@@ -38,7 +38,7 @@ export function PlatformRecurrenteClient() {
     const load = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/platform/recurrente-config");
+            const res = await fetch("/api/platform/recurrente-config", { cache: "no-store" });
             const json = await res.json();
             if (!res.ok || !json?.data) {
                 toast.error(json?.error?.message || t("loadError"));
@@ -121,6 +121,7 @@ export function PlatformRecurrenteClient() {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
+                cache: "no-store",
             });
             const json = await res.json();
             if (!res.ok) {

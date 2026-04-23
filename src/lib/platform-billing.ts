@@ -2,6 +2,36 @@ import type { RecurrenteKeys } from "@/lib/recurrente";
 import { prisma } from "@/lib/db";
 import { Role } from "@prisma/client";
 
+/** Solo lectura de .env: misma resolución que en `getPlatformRecurrenteKeys` (sin tocar BD). */
+export function getPlatformRecurrentePublicKeyFromEnv(): string {
+    return (
+        process.env.PLATFORM_RECURRENTE_PUBLIC_KEY?.trim() ||
+        process.env.RECURRENTE_PUBLIC_KEY?.trim() ||
+        ""
+    );
+}
+
+export function hasPlatformRecurrenteSecretInEnv(): boolean {
+    return !!(
+        process.env.PLATFORM_RECURRENTE_SECRET_KEY?.trim() ||
+        process.env.RECURRENTE_SECRET_KEY?.trim()
+    );
+}
+
+export function hasPlatformRecurrenteWebhookInEnv(): boolean {
+    return !!(
+        process.env.PLATFORM_RECURRENTE_WEBHOOK_SECRET?.trim() ||
+        process.env.RECURRENTE_WEBHOOK_SECRET?.trim()
+    );
+}
+
+/**
+ * Clave pública mostrada en el formulario: BD primero, luego .env (comportamiento al guardar/activar claves).
+ */
+export function getPlatformRecurrentePublicKeyForDisplay(rowPublic: string | null | undefined): string {
+    return rowPublic?.trim() || getPlatformRecurrentePublicKeyFromEnv();
+}
+
 /**
  * Claves Recurrente de la plataforma (suscripción / cuenta del operador).
  * Orden: registro en BD (`PlatformRecurrenteSettings`) → variables PLATFORM_* → RECURRENTE_* del .env
@@ -20,18 +50,17 @@ export async function getPlatformRecurrenteKeys(): Promise<RecurrenteKeys | null
 
     const publicKey =
         row?.publicKey?.trim() ||
-        process.env.PLATFORM_RECURRENTE_PUBLIC_KEY ||
-        process.env.RECURRENTE_PUBLIC_KEY ||
+        getPlatformRecurrentePublicKeyFromEnv() ||
         "";
     const secretKey =
         row?.secretKey?.trim() ||
-        process.env.PLATFORM_RECURRENTE_SECRET_KEY ||
-        process.env.RECURRENTE_SECRET_KEY ||
+        process.env.PLATFORM_RECURRENTE_SECRET_KEY?.trim() ||
+        process.env.RECURRENTE_SECRET_KEY?.trim() ||
         "";
     const webhookSecret =
         row?.webhookSecret?.trim() ||
-        process.env.PLATFORM_RECURRENTE_WEBHOOK_SECRET ||
-        process.env.RECURRENTE_WEBHOOK_SECRET ||
+        process.env.PLATFORM_RECURRENTE_WEBHOOK_SECRET?.trim() ||
+        process.env.RECURRENTE_WEBHOOK_SECRET?.trim() ||
         undefined;
 
     if (!publicKey || !secretKey) return null;

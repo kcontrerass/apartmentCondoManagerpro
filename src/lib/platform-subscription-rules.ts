@@ -53,6 +53,8 @@ const EXEMPT_API_PATH_PREFIXES = [
     "/api/platform-fee/my-payments",
     "/api/platform-fee/release-pending-card",
     "/api/platform-fee/sync-after-card-return",
+    /// Config. Recurrente (súper admin); no depende de suscripción a la plataforma
+    "/api/platform/recurrente-config",
     "/api/users/profile",
     "/api/users/change-password",
     "/api/notifications/subscribe",
