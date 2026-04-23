@@ -204,7 +204,7 @@ export async function POST(request: Request) {
         const site = visitorStaffSiteLabel(staffCtx);
 
         // Notify guards and admins of the complex
-        await sendComplexNotification(validatedData.complexId, ['GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
+        await sendComplexNotification(validatedData.complexId, ["GUARD", "ADMIN", "BOARD_OF_DIRECTORS"], {
             title: 'Nueva Visita Programada',
             body: `Se ha registrado una visita en ${site}: ${validatedData.visitorName}.`,
             url: pushDashboardUrl.accessControl

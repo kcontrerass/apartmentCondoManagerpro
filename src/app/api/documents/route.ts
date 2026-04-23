@@ -131,7 +131,7 @@ export async function POST(req: Request) {
 
         await sendComplexNotification(
             finalComplexId,
-            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN", "SUPER_ADMIN"],
+            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN"],
             {
                 title: "Nuevo documento",
                 body: document.title,

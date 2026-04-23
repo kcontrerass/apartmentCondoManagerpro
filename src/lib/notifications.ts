@@ -45,17 +45,33 @@ export function pushPayloadJson(payload: NotificationPayload): string {
     return JSON.stringify(normalizePayload(payload));
 }
 
+export type SendUserNotificationOptions = {
+    /**
+     * Por defecto los súper administradores no reciben push (solo pagos de suscripción plataforma).
+     */
+    allowSuperAdmin?: boolean;
+};
+
 /**
  * Send a push notification to a specific user
  */
-export async function sendUserNotification(userId: string, payload: NotificationPayload) {
+export async function sendUserNotification(
+    userId: string,
+    payload: NotificationPayload,
+    options?: SendUserNotificationOptions
+) {
     try {
         const user = await (prisma as any).user.findUnique({
             where: { id: userId },
-            select: { settings: true },
+            select: { settings: true, role: true },
         });
 
-        const settings = (user?.settings as Record<string, unknown> | null) || {};
+        if (!user) return;
+        if (user.role === Role.SUPER_ADMIN && !options?.allowSuperAdmin) {
+            return;
+        }
+
+        const settings = (user.settings as Record<string, unknown> | null) || {};
         const subscription = settings.pushSubscription as any;
 
         if (!subscription) return;
@@ -69,28 +85,90 @@ export async function sendUserNotification(userId: string, payload: Notification
 }
 
 /**
- * Send a push notification to all users in a complex with specific roles
+ * Push solo para súper administradores: un condominio pagó la suscripción a la plataforma.
+ */
+export async function notifySuperAdminsPlatformCondoPayment(opts: {
+    complexName: string;
+    amountCents: number;
+    currency: string;
+    paymentMethod: string;
+}) {
+    try {
+        const amount = (opts.amountCents / 100).toFixed(2);
+        const methodLabel =
+            opts.paymentMethod === "CARD"
+                ? "tarjeta"
+                : opts.paymentMethod === "BANK_TRANSFER"
+                  ? "transferencia"
+                  : opts.paymentMethod;
+        const superAdmins = await (prisma as any).user.findMany({
+            where: { role: Role.SUPER_ADMIN },
+            select: { id: true },
+        });
+        const payload: NotificationPayload = {
+            title: "Pago de suscripción (condominio)",
+            body: `${opts.complexName} · ${amount} ${opts.currency} (${methodLabel}).`,
+            url: pushDashboardUrl.platformPayments,
+        };
+        for (const u of superAdmins) {
+            await sendUserNotification(u.id, payload, { allowSuperAdmin: true });
+        }
+    } catch (e) {
+        console.error("[notifySuperAdminsPlatformCondoPayment]", e);
+    }
+}
+
+/**
+ * Notificación al usuario marcado como administrador del complejo (`Complex.adminId`).
+ * Si no hay `adminId`, hace fallback a usuarios con rol ADMIN en ese complejo.
+ * `exceptUserId`: no envía si el administrador es ese usuario (p. ej. quien creó el incidente).
+ */
+export async function notifyComplexPrimaryAdmin(
+    complexId: string,
+    payload: NotificationPayload,
+    opts?: { exceptUserId?: string }
+) {
+    try {
+        const cx = await prisma.complex.findUnique({
+            where: { id: complexId },
+            select: { adminId: true },
+        });
+        if (cx?.adminId && cx.adminId !== opts?.exceptUserId) {
+            await sendUserNotification(cx.adminId, payload);
+            return;
+        }
+        if (!cx?.adminId) {
+            await sendComplexNotification(complexId, [Role.ADMIN], payload);
+        }
+    } catch (e) {
+        console.error("[notifyComplexPrimaryAdmin]", e);
+    }
+}
+
+/**
+ * Envía push a usuarios del **mismo complejo** con los roles indicados.
+ * No incluye SUPER_ADMIN salvo que tenga vínculo con el complejo (misma regla de filtro).
  */
 export async function sendComplexNotification(complexId: string, roles: string[], payload: NotificationPayload) {
     try {
-        console.log(`📣 Searching for users in complex ${complexId} with roles: ${roles.join(', ')}`);
+        const rolesFiltered = roles.filter((r) => r !== Role.SUPER_ADMIN);
+        if (rolesFiltered.length === 0) {
+            return;
+        }
+
+        console.log(`📣 Searching for users in complex ${complexId} with roles: ${rolesFiltered.join(", ")}`);
 
         const users = await (prisma as any).user.findMany({
             where: {
-                OR: [
+                AND: [
+                    { role: { in: rolesFiltered as any } },
                     {
-                        AND: [
-                            { role: { in: roles as any } },
-                            {
-                                OR: [
-                                    { complexId: complexId },
-                                    { managedComplexes: { id: complexId } },
-                                    { residentProfile: { unit: { complexId: complexId } } },
-                                ],
-                            },
+                        OR: [
+                            { complexId: complexId },
+                            { managedComplexes: { id: complexId } },
+                            { residentProfile: { unit: { complexId: complexId } } },
                         ],
                     },
-                    { role: 'SUPER_ADMIN' },
                 ],
             },
             select: { id: true, settings: true, role: true, name: true },

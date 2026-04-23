@@ -15,6 +15,8 @@ export const pushDashboardUrl = {
     profile: "/dashboard/profile",
     eventsList: "/dashboard/events",
     login: "/login",
+    /** Pagos de suscripción a la plataforma (vista súper admin). */
+    platformPayments: "/dashboard/platform-payments",
     incident: (id: string) => `/dashboard/incidents/${id}`,
     event: (id: string) => `/dashboard/events/${id}`,
     announcement: (id: string) => `/dashboard/announcements/${id}`,

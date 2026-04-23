@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
         };
 
         // Notify residents about new poll
-        await sendComplexNotification(complexId, ['RESIDENT', 'GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
+            await sendComplexNotification(complexId, ["RESIDENT", "GUARD", "ADMIN", "BOARD_OF_DIRECTORS"], {
             title: `Nueva Encuesta: ${title}`,
             body: `Tu opinión es importante. Participa en nuestra nueva encuesta.`,
             url: pushDashboardUrl.polls

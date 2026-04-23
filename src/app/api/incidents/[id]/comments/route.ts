@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
-import { sendUserNotification, sendComplexNotification } from '@/lib/notifications';
+import { sendUserNotification } from '@/lib/notifications';
 import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
@@ -27,7 +27,7 @@ export async function POST(
         // Verify incident existence and access
         const incident = await prisma.incident.findUnique({
             where: { id },
-            select: { complexId: true, reporterId: true, unitId: true }
+            select: { complexId: true, reporterId: true, resolverId: true, unitId: true },
         });
 
         if (!incident) return NextResponse.json({ success: false, error: { code: 'NOT_FOUND' } }, { status: 404 });
@@ -78,30 +78,41 @@ export async function POST(
                 author
             };
 
-            // Notify parties
-            if (userRole === 'RESIDENT') {
-                // If resident comments, notify staff
-                await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
-                    title: `Nuevo comentario en Incidente`,
-                    body: `${author?.name || 'Un residente'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-                    url: pushDashboardUrl.incident(id)
+            const snippet =
+                `${content.trim().substring(0, 50)}${content.length > 50 ? "…" : ""}`;
+
+            if (userRole === Role.RESIDENT) {
+                const complex = await prisma.complex.findUnique({
+                    where: { id: incident.complexId },
+                    select: { adminId: true },
                 });
-            } else {
-                // If staff comments, notify reporter
-                if (incident.reporterId) {
-                    await sendUserNotification(incident.reporterId, {
-                        title: `Actualización en tu Incidente`,
-                        body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-                        url: pushDashboardUrl.incident(id)
+                const recipients = new Set<string>();
+                if (complex?.adminId && complex.adminId !== userId) recipients.add(complex.adminId);
+                if (incident.resolverId && incident.resolverId !== userId) {
+                    recipients.add(incident.resolverId);
+                }
+                for (const uid of recipients) {
+                    await sendUserNotification(uid, {
+                        title: "Nuevo comentario en incidente",
+                        body: `${author?.name || "Un residente"}: ${snippet}`,
+                        url: pushDashboardUrl.incident(id),
                     });
                 }
-
-                // Also notify other staff members (except the author)
-                await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
-                    title: `Comentario administrativo - Incidente`,
-                    body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}...`,
-                    url: pushDashboardUrl.incident(id)
-                });
+            } else {
+                const recipients = new Set<string>();
+                if (incident.reporterId && incident.reporterId !== userId) {
+                    recipients.add(incident.reporterId);
+                }
+                if (incident.resolverId && incident.resolverId !== userId) {
+                    recipients.add(incident.resolverId);
+                }
+                for (const uid of recipients) {
+                    await sendUserNotification(uid, {
+                        title: "Actualización en tu incidente",
+                        body: `${author?.name || "Administración"}: ${snippet}`,
+                        url: pushDashboardUrl.incident(id),
+                    });
+                }
             }
 
             return NextResponse.json({ success: true, data: newComment });

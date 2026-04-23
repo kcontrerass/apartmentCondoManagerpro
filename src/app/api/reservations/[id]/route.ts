@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { ReservationStatus } from "@prisma/client";
 import { Role } from "@/types/roles";
 import { reservationSchema, updateReservationSchema } from "@/lib/validations/reservation";
-import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
+import { sendUserNotification, notifyComplexPrimaryAdmin } from "@/lib/notifications";
 import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(
@@ -228,12 +228,15 @@ export async function PATCH(
                 url: pushDashboardUrl.reservations
             });
         } else if (validatedData.status === ReservationStatus.CANCELLED && isOwner) {
-            // Notify administrative staff if resident cancelled
-            await sendComplexNotification(existing.amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
-                title: 'Reservación Cancelada',
-                body: `El residente ha cancelado su reserva para ${existing.amenity.name}.`,
-                url: pushDashboardUrl.reservations
-            });
+            await notifyComplexPrimaryAdmin(
+                existing.amenity.complexId,
+                {
+                    title: "Reservación cancelada",
+                    body: `El residente ha cancelado su reserva para ${existing.amenity.name}.`,
+                    url: pushDashboardUrl.reservations,
+                },
+                { exceptUserId: session.user.id ?? undefined }
+            );
         }
 
         // --- CANCEL ASSOCIATED INVOICE IF RESERVATION IS CANCELLED ---

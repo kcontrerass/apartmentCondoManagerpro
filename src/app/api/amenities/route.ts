@@ -133,7 +133,7 @@ export async function POST(request: Request) {
 
         await sendComplexNotification(
             validatedData.complexId,
-            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN", "SUPER_ADMIN"],
+            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN"],
             {
                 title: "Nueva amenidad",
                 body: amenity.name,

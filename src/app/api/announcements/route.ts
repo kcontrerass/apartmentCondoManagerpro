@@ -195,12 +195,13 @@ export async function POST(request: NextRequest) {
         // Notify target roles
         let targetRoles = data.targetRoles as string[];
         if (!targetRoles || targetRoles.length === 0) {
-            targetRoles = ['RESIDENT', 'GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'];
+            targetRoles = ["RESIDENT", "GUARD", "ADMIN", "BOARD_OF_DIRECTORS"];
         }
+        targetRoles = targetRoles.filter((r) => r !== "SUPER_ADMIN");
 
         const notificationComplexId = data.complexId;
 
-        if (notificationComplexId) {
+        if (notificationComplexId && targetRoles.length > 0) {
             await sendComplexNotification(notificationComplexId, targetRoles, {
                 title: `Aviso: ${announcement.title}`,
                 body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { PlatformFeeStatus } from "@prisma/client";
 import { createPlatformSubscriptionInvoice } from "@/lib/platform-fee-invoice";
 import { reconcilePlatformFeePaymentsForUtcMonth } from "@/lib/platform-fee-dedupe";
+import { notifySuperAdminsPlatformCondoPayment } from "@/lib/notifications";
 
 /**
  * Si el pago ya está PAID y no tiene factura vinculada, crea o reutiliza INV-PLAT-* y actualiza invoiceId.
@@ -108,6 +109,13 @@ export async function fulfillPlatformFeePayment(paymentId: string): Promise<{
     });
 
     await reconcilePlatformFeePaymentsForUtcMonth(payment.complexId, new Date());
+
+    await notifySuperAdminsPlatformCondoPayment({
+        complexName: payment.complex.name,
+        amountCents: payment.amountCents,
+        currency: payment.currency,
+        paymentMethod: payment.paymentMethod,
+    });
 
     return { ok: true };
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { reservationSchema } from "@/lib/validations/reservation";
-import { sendComplexNotification } from "@/lib/notifications";
+import { notifyComplexPrimaryAdmin } from "@/lib/notifications";
 import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 // Local Constants to avoid Prisma enum import issues in some environments
@@ -336,12 +336,15 @@ export async function POST(request: Request) {
             }
         }
 
-        // Notify administrative staff
-        await sendComplexNotification(amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
-            title: 'Nueva Reservación',
-            body: `Se ha solicitado la amenidad: ${amenity.name}.`,
-            url: pushDashboardUrl.reservations
-        });
+        await notifyComplexPrimaryAdmin(
+            amenity.complexId,
+            {
+                title: "Nueva reservación",
+                body: `Se ha solicitado la amenidad: ${amenity.name}.`,
+                url: pushDashboardUrl.reservations,
+            },
+            { exceptUserId: session.user.id ?? undefined }
+        );
 
         return NextResponse.json({ ...reservation, invoiceId }, { status: 201 });
     } catch (error: any) {
