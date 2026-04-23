@@ -194,7 +194,7 @@ export async function POST(request: Request) {
                 await sendUserNotification(resident.userId, {
                     title: 'Visitante Programado',
                     body: `Se ha programado una visita para: ${validatedData.visitorName}`,
-                    url: '/dashboard/visitors'
+                    url: '/dashboard/access-control'
                 });
             }
         }
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
         await sendComplexNotification(validatedData.complexId, ['GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
             title: 'Nueva Visita Programada',
             body: `Se ha registrado una visita en ${site}: ${validatedData.visitorName}.`,
-            url: '/dashboard/visitors'
+            url: '/dashboard/access-control'
         });
 
         return apiOk(responseLog, 201);

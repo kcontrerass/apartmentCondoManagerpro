@@ -57,7 +57,13 @@ self.addEventListener('push', function (event) {
 
 self.addEventListener('notificationclick', function (event) {
     event.notification.close();
-    event.waitUntil(
-        clients.openWindow(event.notification.data.url)
-    );
+    const raw = event.notification.data && event.notification.data.url;
+    const path =
+        typeof raw === 'string' && raw.trim().length > 0 ? raw.trim() : '/es/';
+    const url =
+        path.startsWith('http://') || path.startsWith('https://')
+            ? path
+            : new URL(path, self.location.origin).href;
+
+    event.waitUntil(clients.openWindow(url));
 });
