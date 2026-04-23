@@ -7,6 +7,7 @@ import { useRouter, usePathname } from '@/i18n/routing';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import { Toaster } from 'sonner';
 
 export default function AuthLayout({
     children,
@@ -31,6 +32,7 @@ export default function AuthLayout({
 
     return (
         <div className="min-h-screen flex font-sans selection:bg-primary/20 transition-colors duration-500 bg-[#FDFDFD] dark:bg-slate-950">
+            <Toaster position="top-center" richColors closeButton />
             {/* Left Panel - Hero/Image */}
             <div className="hidden lg:flex relative w-[45%] xl:w-1/2 bg-slate-900 overflow-hidden items-end">
                 {/* Hero: condominio / edificio residencial (sustituir vía NEXT_PUBLIC_AUTH_HERO_IMAGE_URL o landing) */}

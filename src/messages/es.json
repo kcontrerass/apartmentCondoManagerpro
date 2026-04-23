@@ -77,7 +77,8 @@
         "alreadyHaveAccount": "¿Ya tienes una cuenta?",
         "signIn": "Inicia sesión",
         "heroCaption": "Solución para conjuntos en Ciudad de Guatemala: condominios, edificios y centros comerciales.",
-        "authorizedPoint": "Punto de Acceso Autorizado"
+        "authorizedPoint": "Punto de Acceso Autorizado",
+        "logoutPwaNotificationHint": "Usas la app instalada (PWA). Al volver a entrar, activa las notificaciones en Perfil para seguir recibiendo avisos importantes."
     },
     "Dashboard": {
         "title": "Panel de Control",

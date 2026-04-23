@@ -1,6 +1,10 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import {
+    isStandaloneDisplayMode,
+    PWA_LOGOUT_NOTIFY_SESSION_KEY,
+} from "@/lib/pwa-standalone-client";
 
 /**
  * Al cerrar sesión: quita la suscripción guardada **solo para este usuario** en el servidor.
@@ -24,5 +28,12 @@ export async function signOutAndDetachPush(
     options?: Parameters<typeof signOut>[0]
 ): Promise<void> {
     await detachPushBeforeSignOut();
+    if (typeof window !== "undefined" && isStandaloneDisplayMode()) {
+        try {
+            sessionStorage.setItem(PWA_LOGOUT_NOTIFY_SESSION_KEY, "1");
+        } catch {
+            /* modo privado / storage lleno */
+        }
+    }
     await signOut(options);
 }

@@ -77,7 +77,8 @@
         "alreadyHaveAccount": "Already have an account?",
         "signIn": "Sign in",
         "heroCaption": "Solution for communities in Guatemala City: condominiums, towers, and shopping centers.",
-        "authorizedPoint": "Authorized Access Point"
+        "authorizedPoint": "Authorized Access Point",
+        "logoutPwaNotificationHint": "You're using the installed app (PWA). After you sign in again, turn on notifications in Profile to keep receiving important alerts."
     },
     "Dashboard": {
         "title": "Control Panel",
