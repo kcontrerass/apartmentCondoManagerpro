@@ -149,6 +149,7 @@ export async function POST(request: Request) {
             data: {
                 status: "PAID",
                 paymentMethod: "CARD",
+                paymentMethodIntent: null,
                 updatedAt: new Date(),
             },
         });

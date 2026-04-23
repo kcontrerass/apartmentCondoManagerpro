@@ -370,7 +370,8 @@
         "subtitle": "Gestión de cobros y facturas",
         "subtitleResident": "Consulta y paga tus facturas mensuales",
         "subtitleAdmin": "Gestión de cobros y facturas del complejo",
-        "searchPlaceholder": "Buscar por unidad o número...",
+        "searchPlaceholder": "Buscar por unidad, factura o residente…",
+        "searchInputPlaceholder": "Ej. A-101, INV-001 o Juan Pérez",
         "filterAll": "Todos los estados",
         "generate": "Generar Facturas",
         "billingScope": {
@@ -387,7 +388,12 @@
             "status": "Estado",
             "payment": "Método de Pago",
             "dueDate": "Vencimiento",
-            "actions": "Acciones"
+            "actions": "Acciones",
+            "choosePaymentMethod": "Cómo quieres pagar",
+            "choosePaymentMethodPlaceholder": "Elige método de pago…",
+            "actionsNeedResidentMethod": "Esperando a que el residente elija un método de pago",
+            "residentChoseMethod": "El residente eligió",
+            "intentPending": "Elegido — pendiente"
         },
         "paymentMethod": {
             "CARD": "Tarjeta",
@@ -413,7 +419,9 @@
             "selectYear": "Año",
             "dueDate": "Fecha de Vencimiento",
             "generateButton": "Generar Ahora",
-            "generating": "Generando..."
+            "generating": "Generando...",
+            "confirmPayment": "Continuar con el pago",
+            "confirmRequiresMethod": "Selecciona un método de pago para continuar"
         },
         "detail": {
             "title": "Detalle de Factura",
@@ -427,6 +435,7 @@
             "total": "Total Facturado"
         },
         "loadError": "No se pudieron cargar las facturas. Si acabas de actualizar, ejecuta las migraciones de la base de datos.",
+        "paymentIntentSaveError": "No se pudo guardar el método de pago. Intenta de nuevo.",
         "noInvoices": "No se encontraron facturas.",
         "form": {
             "success": "Pago registrado con éxito"

@@ -16,9 +16,19 @@ interface InvoiceTableProps {
     onPay?: (invoice: any) => void;
     userRole?: Role;
     isLoading?: boolean;
+    /** Residente: método solo en el modal; staff paga cuando el residente ya guardó intención en servidor. */
+    requirePaymentMethodBeforePay?: boolean;
 }
 
-export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, userRole, isLoading }: InvoiceTableProps) {
+export function InvoiceTable({
+    invoices,
+    onViewDetail,
+    onUpdateStatus,
+    onPay,
+    userRole,
+    isLoading,
+    requirePaymentMethodBeforePay = false,
+}: InvoiceTableProps) {
     const t = useTranslations('Invoices');
     const locale = useLocale();
     const dateLocale = locale === 'es' ? es : enUS;
@@ -35,6 +45,20 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
     };
 
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+    const staffWaitsForResidentIntent =
+        userRole === Role.ADMIN ||
+        userRole === Role.SUPER_ADMIN ||
+        userRole === Role.BOARD_OF_DIRECTORS;
+    const canPayRow = (status: string) =>
+        status === "PENDING" || status === "PROCESSING" || status === "OVERDUE";
+
+    const hasServerPaymentIntent = (invoice: any) => !!invoice.paymentMethodIntent;
+
+    /** Solo staff espera a que el residente guarde método en servidor. */
+    const staffIntentBlocked = (invoice: any) =>
+        canPayRow(invoice.status) &&
+        staffWaitsForResidentIntent &&
+        !hasServerPaymentIntent(invoice);
 
     const handleDownload = (invoice: any) => {
         generateInvoicePDF({
@@ -90,7 +114,13 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                    {invoices.map((invoice) => (
+                    {invoices.map((invoice) => {
+                        const staffBlocked = staffIntentBlocked(invoice);
+                        const intentGateTitle = staffBlocked
+                            ? t("table.actionsNeedResidentMethod" as any)
+                            : undefined;
+
+                        return (
                         <tr key={invoice.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                             <td className="py-4 px-4 text-sm font-medium text-slate-900 dark:text-white">
                                 {invoice.number}
@@ -127,23 +157,44 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                             </td>
                             <td className="py-4 px-4 text-sm">
                                 {(() => {
-                                    const method = invoice.paymentMethod || invoice.reservation?.paymentMethod;
+                                    const method =
+                                        invoice.paymentMethod ||
+                                        invoice.reservation?.paymentMethod;
+                                    const intent = invoice.paymentMethodIntent as
+                                        | "CARD"
+                                        | "CASH"
+                                        | "TRANSFER"
+                                        | null
+                                        | undefined;
                                     const isPaid = invoice.status === 'PAID';
                                     const isCancelled = invoice.status === 'CANCELLED';
+                                    const display =
+                                        method ||
+                                        (!isPaid && !isCancelled ? intent : null);
 
-                                    if (method && !isCancelled) {
-                                        // Specific rule for CARD: hide entirely if not paid
-                                        if (method === 'CARD' && !isPaid) {
+                                    if (display && !isCancelled) {
+                                        // Ocultar tarjeta solo cuando ya hay método registrado en factura y aún no está pagada
+                                        if (
+                                            invoice.paymentMethod === 'CARD' &&
+                                            !isPaid
+                                        ) {
                                             return <span className="text-slate-400 dark:text-slate-500">-</span>;
                                         }
 
                                         return (
                                             <div className="flex items-center gap-2">
                                                 <span className="material-symbols-outlined text-sm text-slate-500">
-                                                    {method === 'CARD' ? 'credit_card' : method === 'CASH' ? 'payments' : 'account_balance'}
+                                                    {display === 'CARD' ? 'credit_card' : display === 'CASH' ? 'payments' : 'account_balance'}
                                                 </span>
                                                 <span className="text-slate-600 dark:text-slate-400">
-                                                    {t(`paymentMethod.${method}` as any)}
+                                                    {t(`paymentMethod.${display}` as any)}
+                                                    {!method &&
+                                                    intent &&
+                                                    !requirePaymentMethodBeforePay ? (
+                                                        <span className="block text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                                                            {t("table.intentPending" as any)}
+                                                        </span>
+                                                    ) : null}
                                                 </span>
                                             </div>
                                         );
@@ -155,7 +206,7 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                 {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: dateLocale })}
                             </td>
                             <td className="py-4 px-4 text-right">
-                                <div className="flex justify-end gap-2">
+                                <div className="flex flex-col items-end sm:flex-row sm:justify-end gap-2">
                                     {invoice.status === "PAID" && (
                                         <Button
                                             variant="secondary"
@@ -175,14 +226,32 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                         <span className="material-symbols-outlined text-[18px]">visibility</span>
                                     </Button>
 
-                                    {(invoice.status === "PENDING" || invoice.status === "PROCESSING" || invoice.status === "OVERDUE") && onPay && (
+                                    {canPayRow(invoice.status) &&
+                                        onPay &&
+                                        requirePaymentMethodBeforePay && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => onPay(invoice)}
+                                                title={t("actions.pay")}
+                                            >
+                                                <span className="material-symbols-outlined text-[18px]">
+                                                    payments
+                                                </span>
+                                            </Button>
+                                        )}
+
+                                    {canPayRow(invoice.status) && onPay && !requirePaymentMethodBeforePay && (
                                         <Button
                                             variant="primary"
                                             size="sm"
                                             onClick={() => onPay(invoice)}
-                                            title={t('actions.pay')}
+                                            disabled={staffBlocked}
+                                            title={intentGateTitle ?? t("actions.pay")}
                                         >
-                                            <span className="material-symbols-outlined text-[18px]">payments</span>
+                                            <span className="material-symbols-outlined text-[18px]">
+                                                payments
+                                            </span>
                                         </Button>
                                     )}
 
@@ -192,7 +261,8 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                                 variant="primary"
                                                 size="sm"
                                                 onClick={() => onUpdateStatus(invoice.id, "PAID")}
-                                                title={t('actions.markPaid')}
+                                                disabled={staffBlocked}
+                                                title={intentGateTitle ?? t('actions.markPaid')}
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">check_circle</span>
                                             </Button>
@@ -200,7 +270,8 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                                 variant="danger"
                                                 size="sm"
                                                 onClick={() => onUpdateStatus(invoice.id, "OVERDUE")}
-                                                title={t('actions.markOverdue')}
+                                                disabled={staffBlocked}
+                                                title={intentGateTitle ?? t('actions.markOverdue')}
                                             >
                                                 <span className="material-symbols-outlined text-[18px]">cancel</span>
                                             </Button>
@@ -209,7 +280,8 @@ export function InvoiceTable({ invoices, onViewDetail, onUpdateStatus, onPay, us
                                 </div>
                             </td>
                         </tr>
-                    ))}
+                        );
+                    })}
                 </tbody>
             </table>
             {invoices.length === 0 && (

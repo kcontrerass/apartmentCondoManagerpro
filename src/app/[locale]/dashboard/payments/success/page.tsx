@@ -299,6 +299,7 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                                     data: {
                                         status: "PAID",
                                         paymentMethod: "CARD",
+                                        paymentMethodIntent: null,
                                         updatedAt: new Date(),
                                     },
                                 });

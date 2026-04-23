@@ -272,6 +272,8 @@ model Invoice {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   paymentMethod PaymentMethod? @map("payment_method")
+  /// Método elegido por el residente antes de que staff o el mismo residente ejecuten el pago.
+  paymentMethodIntent PaymentMethod? @map("payment_method_intent")
   items                InvoiceItem[]
   complex              Complex             @relation(fields: [complexId], references: [id], onDelete: Cascade)
   unit                 Unit?               @relation(fields: [unitId], references: [id], onDelete: Cascade)

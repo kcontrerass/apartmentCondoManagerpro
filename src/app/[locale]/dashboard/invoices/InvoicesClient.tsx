@@ -40,7 +40,7 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isPaymentMethodModalOpen, setIsPaymentMethodModalOpen] = useState(false);
     const [paymentInvoice, setPaymentInvoice] = useState<any | null>(null);
-    const [selectedMethod, setSelectedMethod] = useState<'CARD' | 'CASH' | 'TRANSFER'>('CARD');
+    const [selectedMethod, setSelectedMethod] = useState<'CARD' | 'CASH' | 'TRANSFER' | null>(null);
     const [showInstructions, setShowInstructions] = useState(false);
 
     // Filters state
@@ -52,6 +52,8 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
     const userRole = user?.role as Role;
     const isResident = userRole === Role.RESIDENT;
     const isAdmin = userRole === Role.ADMIN || userRole === Role.SUPER_ADMIN;
+    /** Residente y administrador del complejo pueden iniciar cobro; súper admin y junta no. */
+    const canOpenInvoicePay = isResident || userRole === Role.ADMIN;
 
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
@@ -201,14 +203,47 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
 
     const handlePay = (invoice: any) => {
         setPaymentInvoice(invoice);
+        setSelectedMethod(invoice.paymentMethodIntent ?? null);
+        setShowInstructions(false);
         setIsPaymentMethodModalOpen(true);
     };
 
     const handleConfirmPayment = async () => {
-        if (!paymentInvoice) return;
+        if (!paymentInvoice || !selectedMethod) return;
 
         setIsSubmitting(true);
         try {
+            if (
+                isResident &&
+                selectedMethod !== paymentInvoice.paymentMethodIntent
+            ) {
+                const syncRes = await fetch(
+                    `/api/invoices/${paymentInvoice.id}/payment-intent`,
+                    {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ method: selectedMethod }),
+                    }
+                );
+                const syncData = await syncRes.json();
+                if (!syncRes.ok) {
+                    const msg =
+                        typeof syncData?.error === "string"
+                            ? syncData.error
+                            : t("paymentIntentSaveError");
+                    toast.error(msg);
+                    return;
+                }
+                setPaymentInvoice((prev: any) =>
+                    prev ? { ...prev, ...syncData } : prev
+                );
+                setInvoices((prev) =>
+                    prev.map((i) =>
+                        i.id === paymentInvoice.id ? { ...i, ...syncData } : i
+                    )
+                );
+            }
+
             const response = await fetch("/api/payments/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -284,7 +319,9 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
         <div className="space-y-8">
             <PageHeader
                 title={t('title')}
-                subtitle={isResident ? t('subtitleResident') : t('subtitleAdmin')}
+                subtitle={
+                    isResident ? t("subtitleResident") : t("subtitleAdmin")
+                }
                 actions={
                     isAdmin && (
                         <div className="flex gap-2">
@@ -309,11 +346,15 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
             <Card className="p-4 flex flex-col sm:flex-row gap-4 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                     <Input
-                        name="search"
-                        label={t('searchPlaceholder') || "Buscar por unidad o número..."}
+                        type="search"
+                        name="invoice-list-query"
+                        id="invoice-list-search"
+                        label={t("searchPlaceholder")}
+                        placeholder={t("searchInputPlaceholder")}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Ej. A-101, INV-001 o Juan Perez"
+                        autoComplete="search"
+                        inputMode="search"
                     />
                 </div>
                 <div className="w-full sm:w-auto min-w-[150px]">
@@ -392,9 +433,10 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                         invoices={filteredInvoices}
                         onViewDetail={handleViewDetail}
                         onUpdateStatus={handleUpdateStatus}
-                        onPay={isResident ? handlePay : undefined}
+                        onPay={canOpenInvoicePay ? handlePay : undefined}
                         userRole={userRole}
                         isLoading={isLoading}
+                        requirePaymentMethodBeforePay={isResident}
                     />
                 )}
             </Card>
@@ -427,6 +469,7 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                 onClose={() => {
                     setIsPaymentMethodModalOpen(false);
                     setShowInstructions(false);
+                    setSelectedMethod(null);
                 }}
                 title={showInstructions ? t('form.success' as any) : tMethods('select')}
             >
@@ -496,46 +539,70 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                         </div>
                     ) : (
                         <>
-                            <div
-                                onClick={() => setSelectedMethod('CARD')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                            >
-                                <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
-                                <div>
-                                    <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CARD')}</p>
-                                    <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CARD_desc' as any) || 'Pago instantáneo seguro'}</p>
+                            {!isResident && paymentInvoice?.paymentMethodIntent ? (
+                                <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 p-4 text-sm text-slate-700 dark:text-slate-300">
+                                    <p>
+                                        {t("table.residentChoseMethod" as any)}:{" "}
+                                        <span className="font-semibold text-slate-900 dark:text-white">
+                                            {t(
+                                                `paymentMethod.${paymentInvoice.paymentMethodIntent}` as any
+                                            )}
+                                        </span>
+                                    </p>
                                 </div>
-                            </div>
+                            ) : (
+                                <>
+                                    <div
+                                        onClick={() => setSelectedMethod('CARD')}
+                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CARD' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                                    >
+                                        <span className={`material-symbols-outlined ${selectedMethod === 'CARD' ? 'text-white' : 'text-primary'}`}>credit_card</span>
+                                        <div>
+                                            <p className={`font-semibold ${selectedMethod === 'CARD' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CARD')}</p>
+                                            <p className={`text-xs ${selectedMethod === 'CARD' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CARD_desc' as any) || 'Pago instantáneo seguro'}</p>
+                                        </div>
+                                    </div>
 
-                            <div
-                                onClick={() => setSelectedMethod('CASH')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                            >
-                                <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
-                                <div>
-                                    <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CASH')}</p>
-                                    <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CASH_desc' as any) || 'Paga en la administración'}</p>
-                                </div>
-                            </div>
+                                    <div
+                                        onClick={() => setSelectedMethod('CASH')}
+                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'CASH' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                                    >
+                                        <span className={`material-symbols-outlined ${selectedMethod === 'CASH' ? 'text-white' : 'text-primary'}`}>payments</span>
+                                        <div>
+                                            <p className={`font-semibold ${selectedMethod === 'CASH' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('CASH')}</p>
+                                            <p className={`text-xs ${selectedMethod === 'CASH' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('CASH_desc' as any) || 'Paga en la administración'}</p>
+                                        </div>
+                                    </div>
 
-                            <div
-                                onClick={() => setSelectedMethod('TRANSFER')}
-                                className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
-                            >
-                                <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
-                                <div>
-                                    <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('TRANSFER')}</p>
-                                    <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
-                                </div>
-                            </div>
+                                    <div
+                                        onClick={() => setSelectedMethod('TRANSFER')}
+                                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${selectedMethod === 'TRANSFER' ? 'border-primary bg-primary text-white' : 'border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-background-dark shadow-sm'}`}
+                                    >
+                                        <span className={`material-symbols-outlined ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-primary'}`}>account_balance</span>
+                                        <div>
+                                            <p className={`font-semibold ${selectedMethod === 'TRANSFER' ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{tMethods('TRANSFER')}</p>
+                                            <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
 
                             <Button
                                 onClick={handleConfirmPayment}
                                 isLoading={isSubmitting}
+                                disabled={!selectedMethod}
+                                title={
+                                    !selectedMethod ? t("modal.confirmRequiresMethod") : undefined
+                                }
                                 className="w-full"
                             >
-                                Confirmar Selección
+                                {t("modal.confirmPayment")}
                             </Button>
+                            {!selectedMethod && (
+                                <p className="text-center text-xs text-slate-500">
+                                    {t("modal.confirmRequiresMethod")}
+                                </p>
+                            )}
                         </>
                     )}
                 </div>

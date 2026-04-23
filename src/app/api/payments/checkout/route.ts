@@ -178,12 +178,53 @@ export async function POST(request: Request) {
             );
         }
 
+        if (
+            !method ||
+            (method !== "CARD" && method !== "CASH" && method !== "TRANSFER")
+        ) {
+            return apiError(
+                { code: "INVALID_METHOD", message: "Método de pago requerido" },
+                400
+            );
+        }
+
+        if (!invoice.paymentMethodIntent) {
+            return apiError(
+                {
+                    code: "PAYMENT_INTENT_REQUIRED",
+                    message: "El residente debe elegir un método de pago antes de continuar",
+                },
+                400
+            );
+        }
+
+        if (method !== invoice.paymentMethodIntent) {
+            return apiError(
+                {
+                    code: "PAYMENT_INTENT_MISMATCH",
+                    message: "El método no coincide con el elegido para esta factura",
+                },
+                400
+            );
+        }
+
         // RBAC: Only the resident of the unit or an admin can pay
         if (session.user.role === Role.RESIDENT) {
             const resident = await prisma.resident.findUnique({
                 where: { userId: session.user.id }
             });
             if (!resident || resident.unitId !== invoice.unitId) {
+                return apiError(
+                    { code: "FORBIDDEN", message: "No tienes permiso para pagar esta factura" },
+                    403
+                );
+            }
+        } else if (session.user.role === Role.BOARD_OF_DIRECTORS) {
+            const boardUser = await prisma.user.findUnique({
+                where: { id: session.user.id },
+                select: { complexId: true },
+            });
+            if (!boardUser?.complexId || boardUser.complexId !== invoice.unit.complexId) {
                 return apiError(
                     { code: "FORBIDDEN", message: "No tienes permiso para pagar esta factura" },
                     403
@@ -196,7 +237,7 @@ export async function POST(request: Request) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
-        if (method === "CARD" || !method) {
+        if (method === "CARD") {
             const recurrenteKeys = (invoice.unit.complex.settings as any)?.recurrente;
 
             const invoiceSuccessUrl = `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}&invoiceId=${encodeURIComponent(invoice.id)}&complexId=${encodeURIComponent(invoice.unit.complexId)}`;

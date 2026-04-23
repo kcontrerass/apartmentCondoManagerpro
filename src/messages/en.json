@@ -370,7 +370,8 @@
         "subtitle": "Invoice management",
         "subtitleResident": "View and pay your monthly invoices",
         "subtitleAdmin": "Management of complex billing and invoices",
-        "searchPlaceholder": "Search by unit or number...",
+        "searchPlaceholder": "Search by unit, invoice or resident…",
+        "searchInputPlaceholder": "e.g. A-101, INV-001 or Jane Doe",
         "filterAll": "All statuses",
         "generate": "Generate Invoices",
         "billingScope": {
@@ -388,7 +389,12 @@
             "status": "Status",
             "payment": "Payment Method",
             "dueDate": "Due Date",
-            "actions": "Actions"
+            "actions": "Actions",
+            "choosePaymentMethod": "How you’ll pay",
+            "choosePaymentMethodPlaceholder": "Choose payment method…",
+            "actionsNeedResidentMethod": "Waiting for the resident to choose a payment method",
+            "residentChoseMethod": "Resident selected",
+            "intentPending": "Chosen — pending"
         },
         "paymentMethod": {
             "CARD": "Card",
@@ -410,6 +416,8 @@
         },
         "modal": {
             "generateTitle": "Generate Monthly Invoices",
+            "confirmPayment": "Continue to payment",
+            "confirmRequiresMethod": "Select a payment method to continue",
             "selectMonth": "Month",
             "selectYear": "Year",
             "dueDate": "Due Date",
@@ -428,6 +436,7 @@
             "total": "Total Billed"
         },
         "loadError": "Could not load invoices. If you just updated the app, run database migrations.",
+        "paymentIntentSaveError": "Could not save the payment method. Try again.",
         "noInvoices": "No invoices found.",
         "form": {
             "success": "Payment registered successfully"

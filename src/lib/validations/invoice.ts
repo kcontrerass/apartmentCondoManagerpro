@@ -6,6 +6,10 @@ export const updateInvoiceSchema = z.object({
     status: invoiceStatusSchema,
 });
 
+export const invoicePaymentIntentSchema = z.object({
+    method: z.enum(["CARD", "CASH", "TRANSFER"]).nullable(),
+});
+
 export const generateInvoicesSchema = z.object({
     complexId: z.string().min(1, "Complex ID is required"),
     month: z.number().min(1).max(12),

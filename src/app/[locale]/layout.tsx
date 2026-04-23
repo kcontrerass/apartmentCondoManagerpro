@@ -28,6 +28,7 @@ export const viewport = {
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ComplexProvider } from "@/components/providers/ComplexProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { PushSubscriptionSessionSync } from "@/components/pwa/PushSubscriptionSessionSync";
 
 export default async function LocaleLayout({
   children,
@@ -77,6 +78,7 @@ export default async function LocaleLayout({
           <AuthProvider>
             <NextIntlClientProvider messages={messages} locale={locale}>
               <ComplexProvider>
+                <PushSubscriptionSessionSync />
                 {children}
               </ComplexProvider>
             </NextIntlClientProvider>

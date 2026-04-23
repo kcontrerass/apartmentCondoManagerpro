@@ -115,10 +115,13 @@ export async function PATCH(
             return NextResponse.json({ error: "No tienes permiso para marcar facturas como pagadas" }, { status: 403 });
         }
 
+        const terminal = validatedData.status === "PAID" || validatedData.status === "CANCELLED";
+
         const updatedInvoice = await (prisma as any).invoice.update({
             where: { id },
             data: {
-                status: validatedData.status
+                status: validatedData.status,
+                ...(terminal ? { paymentMethodIntent: null } : {}),
             }
         });
 

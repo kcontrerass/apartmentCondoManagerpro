@@ -248,7 +248,7 @@ export async function PATCH(
             if (invoice && (invoice.status === 'PENDING' || invoice.status === 'PROCESSING')) {
                 await (prisma as any).invoice.update({
                     where: { id: invoice.id },
-                    data: { status: 'CANCELLED' }
+                    data: { status: 'CANCELLED', paymentMethodIntent: null }
                 });
                 console.log(`Associated invoice ${invoice.id} cancelled due to reservation ${id} cancellation.`);
             }
@@ -265,6 +265,7 @@ export async function PATCH(
                     where: { id: invoice.id },
                     data: {
                         status: 'PAID',
+                        paymentMethodIntent: null,
                         updatedAt: new Date()
                     }
                 });
