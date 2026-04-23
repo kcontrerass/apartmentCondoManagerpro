@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
 import { pollSchema } from '@/lib/validations/poll';
 import { sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * GET /api/polls
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
         await sendComplexNotification(complexId, ['RESIDENT', 'GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
             title: `Nueva Encuesta: ${title}`,
             body: `Tu opinión es importante. Participa en nuestra nueva encuesta.`,
-            url: `/dashboard/polls`
+            url: pushDashboardUrl.polls
         });
 
         return NextResponse.json({ success: true, data: fullPoll }, { status: 201 });

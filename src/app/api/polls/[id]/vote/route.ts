@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
 import { sendUserNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * POST /api/polls/[id]/vote
@@ -72,7 +73,7 @@ export async function POST(
             await sendUserNotification(pollMeta.authorId, {
                 title: 'Nuevo voto en encuesta',
                 body: `Alguien votó en: ${pollMeta.title}`,
-                url: '/dashboard/polls',
+                url: pushDashboardUrl.polls,
             });
         }
 

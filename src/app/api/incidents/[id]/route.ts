@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { updateIncidentSchema } from '@/lib/validations/incident';
 import { sendUserNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * GET /api/incidents/[id]
@@ -155,7 +156,7 @@ export async function PATCH(
             await sendUserNotification(currentIncident.reporterId, {
                 title: `Incidente Actualizado: ${currentIncident.title}`,
                 body: `El estado ha cambiado a: ${incident.status}`,
-                url: `/dashboard/incidents/${id}`
+                url: pushDashboardUrl.incident(id)
             });
         }
 

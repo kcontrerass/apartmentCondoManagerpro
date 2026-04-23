@@ -6,6 +6,7 @@ import { visitorLogSchema } from "@/lib/validations/visitor";
 import { Role } from "@/types/roles";
 import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
 import { loadVisitorNotifyContext, visitorStaffSiteLabel } from "@/lib/visitor-notification-text";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 import { ZodError } from "zod";
 
 const VEHICLE_MARKER = "[VEHICLE_PLATE]";
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
                 await sendUserNotification(resident.userId, {
                     title: 'Visitante Programado',
                     body: `Se ha programado una visita para: ${validatedData.visitorName}`,
-                    url: '/dashboard/access-control'
+                    url: pushDashboardUrl.accessControl
                 });
             }
         }
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
         await sendComplexNotification(validatedData.complexId, ['GUARD', 'ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
             title: 'Nueva Visita Programada',
             body: `Se ha registrado una visita en ${site}: ${validatedData.visitorName}.`,
-            url: '/dashboard/access-control'
+            url: pushDashboardUrl.accessControl
         });
 
         return apiOk(responseLog, 201);

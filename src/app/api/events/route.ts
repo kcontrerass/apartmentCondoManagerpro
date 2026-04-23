@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { eventCreateSchema } from '@/lib/validations/event';
 import { sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * GET /api/events
@@ -161,7 +162,7 @@ export async function POST(request: NextRequest) {
         await sendComplexNotification(data.complexId, ['RESIDENT', 'ADMIN', 'BOARD_OF_DIRECTORS', 'GUARD', 'SUPER_ADMIN'], {
             title: `Nuevo Evento: ${event.title}`,
             body: `Te invitamos el ${new Date(event.eventDate).toLocaleDateString()} en ${event.location || 'el complejo'}.`,
-            url: `/dashboard/events`
+            url: pushDashboardUrl.eventsList
         });
 
         return NextResponse.json(

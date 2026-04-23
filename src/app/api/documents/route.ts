@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
 import { Role } from "@/types/roles";
 import { sendComplexNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(request: Request) {
     try {
@@ -134,7 +135,7 @@ export async function POST(req: Request) {
             {
                 title: "Nuevo documento",
                 body: document.title,
-                url: "/dashboard/documents",
+                url: pushDashboardUrl.documents,
             }
         );
 

@@ -5,6 +5,7 @@ import { Role } from "@/types/roles";
 import { staffCreateSchema } from "@/lib/validations/staff";
 import bcrypt from "bcrypt";
 import { sendUserNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(request: Request) {
     try {
@@ -181,7 +182,7 @@ export async function POST(request: Request) {
         await sendUserNotification(newUser.id, {
             title: "Cuenta creada",
             body: `Se creó tu usuario en el portal (${newUser.role}). Inicia sesión con el correo indicado por administración.`,
-            url: "/login",
+            url: pushDashboardUrl.login,
         });
 
         return NextResponse.json(userWithoutPassword, { status: 201 });

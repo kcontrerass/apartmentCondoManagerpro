@@ -6,6 +6,7 @@ import { residentSchema } from "@/lib/validations/resident";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 import { sendUserNotification, notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 import { findResidentIdsByTextSearch } from "@/lib/residents-search-raw";
 import {
     roleCanAccessAirbnbStaffRoutes,
@@ -250,7 +251,7 @@ export async function POST(request: Request) {
         await sendUserNotification(validatedData.userId, {
             title: "Asignación de residente",
             body: `Te asignaron a la unidad ${unitExists.number} en ${unitExists.complex.name}.`,
-            url: "/dashboard",
+            url: pushDashboardUrl.home,
         });
 
         if (validatedData.isAirbnb) {

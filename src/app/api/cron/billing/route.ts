@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { sendUserNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 import { apiError, apiOk } from "@/lib/api-response";
 
 // This endpoint is designed to be called by a CRON job (e.g., daily)
@@ -124,7 +125,7 @@ export async function GET(request: Request) {
                     await sendUserNotification(resident.userId, {
                         title: 'Servicio Renovado',
                         body: `Se ha generado una factura por la renovación de ${us.service.name}.`,
-                        url: '/dashboard/invoices'
+                        url: pushDashboardUrl.invoices
                     });
                 }
 

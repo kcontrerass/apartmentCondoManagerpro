@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { Role } from "@/types/roles";
 import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
 import { loadVisitorNotifyContext, visitorStaffSiteLabel } from "@/lib/visitor-notification-text";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 import { apiError, apiOk } from "@/lib/api-response";
 import { resolveUserScope } from "@/lib/user-scope";
 
@@ -94,7 +95,7 @@ export async function PATCH(
                 await sendUserNotification(resident.userId, {
                     title: 'Visitante en Portería',
                     body: `${log.visitorName} ha llegado al complejo.`,
-                    url: '/dashboard/access-control'
+                    url: pushDashboardUrl.accessControl
                 });
             }
 
@@ -105,7 +106,7 @@ export async function PATCH(
             await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                 title: 'Check-in de Visitante',
                 body: `${log.visitorName} ha ingresado (${siteArr}).`,
-                url: '/dashboard/access-control'
+                url: pushDashboardUrl.accessControl
             });
         } else if (status === "DEPARTED" && log.unitId) {
             const resident = await prisma.resident.findFirst({
@@ -118,7 +119,7 @@ export async function PATCH(
                 await sendUserNotification(resident.userId, {
                     title: 'Salida de Visitante',
                     body: `${log.visitorName} ha salido del complejo.`,
-                    url: '/dashboard/access-control'
+                    url: pushDashboardUrl.accessControl
                 });
             }
 
@@ -129,7 +130,7 @@ export async function PATCH(
             await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                 title: 'Check-out de Visitante',
                 body: `${log.visitorName} ha salido del complejo (${siteDep}).`,
-                url: '/dashboard/access-control'
+                url: pushDashboardUrl.accessControl
             });
         }
 

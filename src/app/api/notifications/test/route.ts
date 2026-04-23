@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import webpush from 'web-push';
+import { pushPayloadJson } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 export async function POST() {
     try {
@@ -33,10 +35,10 @@ export async function POST() {
             process.env.VAPID_PRIVATE_KEY!
         );
 
-        const payload = JSON.stringify({
+        const payload = pushPayloadJson({
             title: '¡Prueba Exitosa!',
             body: 'Tus notificaciones están configuradas correctamente.',
-            url: '/dashboard/profile'
+            url: pushDashboardUrl.profile,
         });
 
         await webpush.sendNotification(subscription, payload);

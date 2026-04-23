@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { createAmenitySchema } from "@/lib/validations/amenity";
 import { Role } from "@/types/roles";
 import { sendComplexNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(request: Request) {
     try {
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
             {
                 title: "Nueva amenidad",
                 body: amenity.name,
-                url: "/dashboard/amenities",
+                url: pushDashboardUrl.amenities,
             }
         );
 

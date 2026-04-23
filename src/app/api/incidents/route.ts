@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { incidentSchema } from '@/lib/validations/incident';
 import { sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * GET /api/incidents
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
         await sendComplexNotification(data.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
             title: `Nuevo Incidente: ${incident.title}`,
             body: `Reportado por ${incident.reporter.name}. Prioridad: ${incident.priority}`,
-            url: `/dashboard/incidents/${incident.id}`
+            url: pushDashboardUrl.incident(incident.id)
         });
 
         return NextResponse.json(

@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { announcementCreateSchema } from '@/lib/validations/announcement';
 import { sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 import { resolveUserScope } from '@/lib/user-scope';
 
 /**
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest) {
             await sendComplexNotification(notificationComplexId, targetRoles, {
                 title: `Aviso: ${announcement.title}`,
                 body: announcement.content.substring(0, 100) + (announcement.content.length > 100 ? '...' : ''),
-                url: `/dashboard/announcements/${announcement.id}`
+                url: pushDashboardUrl.announcement(announcement.id)
             });
         }
 

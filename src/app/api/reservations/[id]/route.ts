@@ -5,6 +5,7 @@ import { ReservationStatus } from "@prisma/client";
 import { Role } from "@/types/roles";
 import { reservationSchema, updateReservationSchema } from "@/lib/validations/reservation";
 import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(
     request: Request,
@@ -224,14 +225,14 @@ export async function PATCH(
             await sendUserNotification(reservation.userId, {
                 title: `Reservación ${statusText}`,
                 body: `Tu reservación para ${existing.amenity.name} ha sido ${statusText.toLowerCase()}.`,
-                url: `/dashboard/reservations`
+                url: pushDashboardUrl.reservations
             });
         } else if (validatedData.status === ReservationStatus.CANCELLED && isOwner) {
             // Notify administrative staff if resident cancelled
             await sendComplexNotification(existing.amenity.complexId, [Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.SUPER_ADMIN], {
                 title: 'Reservación Cancelada',
                 body: `El residente ha cancelado su reserva para ${existing.amenity.name}.`,
-                url: `/dashboard/reservations`
+                url: pushDashboardUrl.reservations
             });
         }
 

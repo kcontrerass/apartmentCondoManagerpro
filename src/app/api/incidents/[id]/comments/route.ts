@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { Role } from '@/types/roles';
 import { sendUserNotification, sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * POST /api/incidents/[id]/comments
@@ -83,7 +84,7 @@ export async function POST(
                 await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                     title: `Nuevo comentario en Incidente`,
                     body: `${author?.name || 'Un residente'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-                    url: `/dashboard/incidents/${id}`
+                    url: pushDashboardUrl.incident(id)
                 });
             } else {
                 // If staff comments, notify reporter
@@ -91,7 +92,7 @@ export async function POST(
                     await sendUserNotification(incident.reporterId, {
                         title: `Actualización en tu Incidente`,
                         body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}${content.length > 50 ? '...' : ''}`,
-                        url: `/dashboard/incidents/${id}`
+                        url: pushDashboardUrl.incident(id)
                     });
                 }
 
@@ -99,7 +100,7 @@ export async function POST(
                 await sendComplexNotification(incident.complexId, ['ADMIN', 'GUARD', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                     title: `Comentario administrativo - Incidente`,
                     body: `${author?.name || 'Administración'}: ${content.trim().substring(0, 50)}...`,
-                    url: `/dashboard/incidents/${id}`
+                    url: pushDashboardUrl.incident(id)
                 });
             }
 

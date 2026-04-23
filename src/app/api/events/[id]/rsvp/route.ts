@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { rsvpSchema } from '@/lib/validations/event';
 import { sendComplexNotification } from '@/lib/notifications';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
  * POST /api/events/[id]/rsvp
@@ -133,7 +134,7 @@ export async function POST(
             {
                 title: 'Respuesta a evento',
                 body: `${session.user.name || 'Un usuario'} ${rsvpLabel}: ${event.title}`,
-                url: `/dashboard/events/${eventId}`,
+                url: pushDashboardUrl.event(eventId),
             }
         );
 

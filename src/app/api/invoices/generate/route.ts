@@ -5,6 +5,7 @@ import { generateInvoicesSchema } from "@/lib/validations/invoice";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 import { sendComplexNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function POST(request: Request) {
     try {
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
             await sendComplexNotification(complexId, ['RESIDENT'], {
                 title: 'Nueva Factura Generada',
                 body: `Se han generado las facturas correspondientes a ${month}/${year}.`,
-                url: '/dashboard/invoices'
+                url: pushDashboardUrl.invoices
             });
         }
 

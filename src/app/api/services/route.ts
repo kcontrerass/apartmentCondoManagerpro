@@ -6,6 +6,7 @@ import { serviceSchema } from "@/lib/validations/service";
 import { Role } from "@/types/roles";
 import { generateInvoicesForComplex } from "@/lib/services/invoice-generation";
 import { sendComplexNotification } from "@/lib/notifications";
+import { pushDashboardUrl } from "@/lib/push-dashboard-paths";
 
 export async function GET(request: Request) {
     try {
@@ -226,7 +227,7 @@ export async function POST(request: Request) {
             {
                 title: "Nuevo servicio en el complejo",
                 body: service.name,
-                url: "/dashboard/services",
+                url: pushDashboardUrl.services,
             }
         );
 

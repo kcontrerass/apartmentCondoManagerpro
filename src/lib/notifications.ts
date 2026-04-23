@@ -2,6 +2,7 @@ import webpush from 'web-push';
 import { InvoiceCategory } from '@prisma/client';
 import { prisma } from './db';
 import { routing } from '@/i18n/routing';
+import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 import { Role } from '@/types/roles';
 
 // Configure web-push
@@ -37,6 +38,11 @@ function normalizePayload(payload: NotificationPayload): NotificationPayload {
         return payload;
     }
     return { ...payload, url: withLocalePath(payload.url) };
+}
+
+/** Cuerpo JSON para `web-push` (misma normalización de `url` que en envíos internos). */
+export function pushPayloadJson(payload: NotificationPayload): string {
+    return JSON.stringify(normalizePayload(payload));
 }
 
 /**
@@ -129,7 +135,7 @@ export async function notifyStaffOfAirbnbGuestRegistration(opts: {
     await sendComplexNotification(complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS], {
         title: 'Huésped Airbnb registrado',
         body: `${residentName} · Unidad ${unitNumber}: ${guestName} (ID: ${guestIdentification}).`,
-        url: '/dashboard/residents',
+        url: pushDashboardUrl.residents,
     });
 }
 
@@ -153,7 +159,7 @@ export async function notifyInvoicePaidToUnitResidents(invoiceId: string) {
             await sendUserNotification(r.userId, {
                 title: 'Factura pagada',
                 body: `Se registró el pago de la factura ${invoice.number}.`,
-                url: '/dashboard/invoices',
+                url: pushDashboardUrl.invoices,
             });
         }
     } catch (e) {
