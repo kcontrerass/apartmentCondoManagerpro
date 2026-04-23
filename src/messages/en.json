@@ -1145,10 +1145,11 @@
     "PlatformSubscription": {
         "title": "Platform subscription",
         "subtitle": "Pay for your complex's software use by card (Recurrente) or bank transfer.",
-        "paidUntil": "Active through",
+        "paidUntil": "System access & service active through",
         "accessUntilGraceLabel": "System access through",
         "accessUntilGraceHint": "Includes your complex signup date and {days} grace day(s). After you subscribe, this shows your paid coverage period.",
         "accessIncludesGrace": "With grace days enabled, system access may continue through {date}.",
+        "graceBreakdownNote": "Includes {days} day(s) of grace. The paid subscription period itself ends {paidThrough}.",
         "none": "No active paid period on file",
         "notConfigured": "No payment method is configured (card or bank transfer). Contact support.",
         "noComplex": "You are not assigned as a complex administrator.",

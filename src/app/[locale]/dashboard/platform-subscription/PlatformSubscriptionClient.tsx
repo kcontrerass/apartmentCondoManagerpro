@@ -371,6 +371,13 @@ export function PlatformSubscriptionClient() {
     const until = data.platformPaidUntil ? new Date(data.platformPaidUntil) : null;
     const accessEnd = data.accessDeadline ? new Date(data.accessDeadline) : null;
     const hasPaidServicePeriod = !!(until && !Number.isNaN(until.getTime()));
+    const graceDays = data.subscriptionGraceDays ?? 0;
+    /** Con gracia, la API ya devuelve `accessDeadline` = fin del periodo abonada + días de gracia; mostramos esa fecha como “vigente hasta”. */
+    const mainActiveThrough: Date | null = hasPaidServicePeriod
+        ? graceDays > 0 && accessEnd && !Number.isNaN(accessEnd.getTime())
+            ? accessEnd
+            : until
+        : null;
     const canPay = bankOk || cardOk;
 
     const formatLocaleDate = (d: Date) =>
@@ -501,22 +508,24 @@ export function PlatformSubscriptionClient() {
                         </p>
                         <p className="text-lg font-semibold text-slate-900 dark:text-white">
                             {hasPaidServicePeriod
-                                ? formatLocaleDate(until!)
+                                ? mainActiveThrough
+                                    ? formatLocaleDate(mainActiveThrough)
+                                    : t("none")
                                 : accessEnd && !Number.isNaN(accessEnd.getTime())
                                   ? formatLocaleDate(accessEnd)
                                   : t("none")}
                         </p>
                         {!hasPaidServicePeriod && accessEnd && !Number.isNaN(accessEnd.getTime()) ? (
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                                {t("accessUntilGraceHint", { days: data.subscriptionGraceDays ?? 0 })}
+                                {t("accessUntilGraceHint", { days: graceDays })}
                             </p>
                         ) : null}
-                        {hasPaidServicePeriod &&
-                        (data.subscriptionGraceDays ?? 0) > 0 &&
-                        accessEnd &&
-                        !Number.isNaN(accessEnd.getTime()) ? (
+                        {hasPaidServicePeriod && graceDays > 0 && until && !Number.isNaN(until.getTime()) ? (
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                                {t("accessIncludesGrace", { date: formatLocaleDate(accessEnd) })}
+                                {t("graceBreakdownNote", {
+                                    days: graceDays,
+                                    paidThrough: formatLocaleDate(until),
+                                })}
                             </p>
                         ) : null}
                     </div>

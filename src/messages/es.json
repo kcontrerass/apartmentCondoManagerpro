@@ -1184,10 +1184,11 @@
     "PlatformSubscription": {
         "title": "Suscripción a la plataforma",
         "subtitle": "Paga el uso del software con tarjeta (Recurrente) o por transferencia bancaria.",
-        "paidUntil": "Servicio vigente hasta",
+        "paidUntil": "Acceso al sistema / servicio activo hasta",
         "accessUntilGraceLabel": "Acceso al sistema hasta",
         "accessUntilGraceHint": "Incluye el alta del complejo y {days} día(s) de gracia. Al pagar la suscripción, aquí verás la vigencia por periodo pagado.",
         "accessIncludesGrace": "Con la gracia configurada, el acceso al sistema puede extenderse hasta {date}.",
+        "graceBreakdownNote": "Incluye {days} día(s) de gracia. El periodo de suscripción abonada vence el {paidThrough}.",
         "none": "Sin fecha de vigencia registrada",
         "notConfigured": "No hay forma de pago configurada (tarjeta ni transferencia). Contacta al soporte.",
         "noComplex": "No tienes un complejo asignado como administrador.",
