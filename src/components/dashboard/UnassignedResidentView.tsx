@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { signOut } from "next-auth/react";
+import { signOutAndDetachPush } from "@/lib/push-logout-client";
 
 export function UnassignedResidentView() {
     const t = useTranslations('Unassigned');
@@ -50,7 +50,7 @@ export function UnassignedResidentView() {
             <Button
                 variant="outline"
                 size="lg"
-                onClick={() => signOut({ callbackUrl: '/' })}
+                onClick={() => signOutAndDetachPush({ callbackUrl: "/" })}
                 icon="logout"
                 className="hover:bg-primary/5 border-primary/20"
             >

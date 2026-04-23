@@ -4,7 +4,7 @@ import { Link, usePathname } from '@/i18n/routing';
 import { Button } from "@/components/ui/Button";
 import { Breadcrumbs } from "@/components/dashboard/Breadcrumbs";
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react';
+import { signOutAndDetachPush } from '@/lib/push-logout-client';
 import { useTranslations, useLocale } from 'next-intl';
 import { Role } from "@/types/roles";
 import { useMobileSidebar } from "./MobileSidebarContext";
@@ -256,7 +256,9 @@ export function Sidebar({
                                 </Link>
                             )}
                             <button
-                                onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
+                                onClick={() =>
+                                    signOutAndDetachPush({ callbackUrl: `/${locale}/login` })
+                                }
                                 className="p-2 text-slate-400 hover:text-red-600 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                                 title={t('logout')}
                             >

@@ -1,6 +1,7 @@
 'use server';
 
-import { signIn, signOut } from '@/auth';
+import { auth, signIn, signOut } from '@/auth';
+import { removeStoredPushSubscription } from '@/lib/notifications';
 import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
@@ -118,5 +119,9 @@ export async function resetPasswordAction(prevState: AuthState, formData: FormDa
 }
 
 export async function signOutAction() {
+    const session = await auth();
+    if (session?.user?.id) {
+        await removeStoredPushSubscription(session.user.id);
+    }
     await signOut({ redirectTo: `/${defaultAuthLocale}/login` });
 }

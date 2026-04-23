@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
+import { stripPushSubscriptionFromOtherUsers } from '@/lib/notifications';
 
 function normalizePushSubscription(raw: unknown): Record<string, unknown> | null {
     if (!raw || typeof raw !== 'object') return null;
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest) {
         });
 
         const currentSettings = (user?.settings as any) || {};
+
+        await stripPushSubscriptionFromOtherUsers(subscription.endpoint as string, session.user.id);
 
         await (prisma as any).user.update({
             where: { id: session.user.id },

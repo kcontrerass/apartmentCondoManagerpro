@@ -59,6 +59,26 @@ function isPushSubscriptionGoneError(err: unknown): boolean {
     return sc === 410 || sc === 404;
 }
 
+/**
+ * Un mismo navegador solo debe estar asociado a un usuario: quita esta suscripción (por `endpoint`)
+ * del resto de cuentas antes de asignarla al usuario actual.
+ */
+export async function stripPushSubscriptionFromOtherUsers(endpoint: string, exceptUserId: string): Promise<void> {
+    const ep = endpoint.trim();
+    if (!ep) return;
+    try {
+        await prisma.$executeRaw`
+            UPDATE users
+            SET settings = JSON_REMOVE(settings, '$.pushSubscription')
+            WHERE id != ${exceptUserId}
+              AND settings IS NOT NULL
+              AND JSON_UNQUOTE(JSON_EXTRACT(settings, '$.pushSubscription.endpoint')) = ${ep}
+        `;
+    } catch (e) {
+        console.error("[stripPushSubscriptionFromOtherUsers]", e);
+    }
+}
+
 /** Quita la suscripción guardada para que el usuario pueda volver a activarla sin estado corrupto. */
 export async function removeStoredPushSubscription(userId: string): Promise<void> {
     try {
