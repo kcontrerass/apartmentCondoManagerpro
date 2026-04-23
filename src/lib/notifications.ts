@@ -45,6 +45,39 @@ export function pushPayloadJson(payload: NotificationPayload): string {
     return JSON.stringify(normalizePayload(payload));
 }
 
+function webPushStatusCode(err: unknown): number | undefined {
+    if (err && typeof err === "object" && "statusCode" in err) {
+        const sc = (err as { statusCode?: number }).statusCode;
+        return typeof sc === "number" ? sc : undefined;
+    }
+    return undefined;
+}
+
+/** FCM / push service considera el endpoint inválido (usuario reinstaló app, revocó permiso, etc.). */
+function isPushSubscriptionGoneError(err: unknown): boolean {
+    const sc = webPushStatusCode(err);
+    return sc === 410 || sc === 404;
+}
+
+/** Quita la suscripción guardada para que el usuario pueda volver a activarla sin estado corrupto. */
+export async function removeStoredPushSubscription(userId: string): Promise<void> {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { settings: true },
+        });
+        if (!user) return;
+        const newSettings = { ...((user.settings as Record<string, unknown> | null) || {}) };
+        delete newSettings.pushSubscription;
+        await prisma.user.update({
+            where: { id: userId },
+            data: { settings: newSettings as object },
+        });
+    } catch (e) {
+        console.error("[removeStoredPushSubscription]", e);
+    }
+}
+
 export type SendUserNotificationOptions = {
     /**
      * Por defecto los súper administradores no reciben push (solo pagos de suscripción plataforma).
@@ -81,6 +114,9 @@ export async function sendUserNotification(
         console.log(`Push notification sent to user ${userId}`);
     } catch (error) {
         console.error(`Error sending push to user ${userId}:`, error);
+        if (isPushSubscriptionGoneError(error)) {
+            await removeStoredPushSubscription(userId);
+        }
     }
 }
 
@@ -146,56 +182,110 @@ export async function notifyComplexPrimaryAdmin(
 }
 
 /**
- * Envía push a usuarios del **mismo complejo** con los roles indicados.
- * No incluye SUPER_ADMIN salvo que tenga vínculo con el complejo (misma regla de filtro).
+ * Resuelve destinatarios push **aislados por complejo** (sin mezclar personal de otro condominio).
+ * - ADMIN: solo el administrador principal (`Complex.adminId`), o personal ADMIN asignado a ese `complexId` si no hay `adminId`.
+ * - GUARD / BOARD: solo usuarios con ese rol y `user.complexId === complexId`.
+ * - RESIDENT: solo perfil residente en unidad de ese complejo.
+ */
+async function resolveUserIdsForComplexRoles(complexId: string, roles: string[]): Promise<string[]> {
+    const rolesFiltered = [...new Set(roles.filter((r) => r !== Role.SUPER_ADMIN))];
+    if (rolesFiltered.length === 0) {
+        return [];
+    }
+
+    const ids = new Set<string>();
+    const cx = await prisma.complex.findUnique({
+        where: { id: complexId },
+        select: { adminId: true },
+    });
+
+    if (rolesFiltered.includes(Role.ADMIN)) {
+        if (cx?.adminId) {
+            ids.add(cx.adminId);
+        } else {
+            const fallbackAdmins = await prisma.user.findMany({
+                where: { role: Role.ADMIN, complexId },
+                select: { id: true },
+            });
+            fallbackAdmins.forEach((u) => ids.add(u.id));
+        }
+    }
+
+    if (rolesFiltered.includes(Role.GUARD)) {
+        const guards = await prisma.user.findMany({
+            where: { role: Role.GUARD, complexId },
+            select: { id: true },
+        });
+        guards.forEach((u) => ids.add(u.id));
+    }
+
+    if (rolesFiltered.includes(Role.BOARD_OF_DIRECTORS)) {
+        const board = await prisma.user.findMany({
+            where: { role: Role.BOARD_OF_DIRECTORS, complexId },
+            select: { id: true },
+        });
+        board.forEach((u) => ids.add(u.id));
+    }
+
+    if (rolesFiltered.includes(Role.RESIDENT)) {
+        const residents = await prisma.user.findMany({
+            where: {
+                role: Role.RESIDENT,
+                residentProfile: { unit: { complexId } },
+            },
+            select: { id: true },
+        });
+        residents.forEach((u) => ids.add(u.id));
+    }
+
+    return [...ids];
+}
+
+/**
+ * Envía push a usuarios del **mismo complejo** con los roles indicados (aislado por condominio).
  */
 export async function sendComplexNotification(complexId: string, roles: string[], payload: NotificationPayload) {
     try {
-        const rolesFiltered = roles.filter((r) => r !== Role.SUPER_ADMIN);
-        if (rolesFiltered.length === 0) {
+        const userIds = await resolveUserIdsForComplexRoles(complexId, roles);
+        if (userIds.length === 0) {
             return;
         }
 
-        console.log(`📣 Searching for users in complex ${complexId} with roles: ${rolesFiltered.join(", ")}`);
+        console.log(
+            `📣 Push complex ${complexId} → ${userIds.length} usuario(s) (roles: ${roles.filter((r) => r !== Role.SUPER_ADMIN).join(", ")})`
+        );
 
-        const users = await (prisma as any).user.findMany({
-            where: {
-                AND: [
-                    { role: { in: rolesFiltered as any } },
-                    {
-                        OR: [
-                            { complexId: complexId },
-                            { managedComplexes: { id: complexId } },
-                            { residentProfile: { unit: { complexId: complexId } } },
-                        ],
-                    },
-                ],
-            },
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
             select: { id: true, settings: true, role: true, name: true },
         });
 
-        console.log(`👥 Found ${users.length} potential users (push only if subscribed).`);
-
         const body = normalizePayload(payload);
 
-        const sendPromises = users.map((user: any) => {
+        const sendPromises = users.map((user) => {
             const settings = (user.settings as Record<string, unknown> | null) || {};
             const subscription = settings.pushSubscription as any;
 
             if (subscription) {
+                if (user.role === Role.SUPER_ADMIN) {
+                    return Promise.resolve();
+                }
                 console.log(`📤 Sending push to ${user.name} (${user.role})`);
                 return webpush
                     .sendNotification(subscription, JSON.stringify(body))
                     .then(() => console.log(`✅ Push delivered to ${user.name}`))
-                    .catch((err) => {
-                        console.error(`❌ Error sending notification to ${user.id}:`, err.message);
+                    .catch(async (err) => {
+                        console.error(`❌ Error sending notification to ${user.id}:`, (err as Error)?.message);
+                        if (isPushSubscriptionGoneError(err)) {
+                            await removeStoredPushSubscription(user.id);
+                        }
                     });
             }
             return Promise.resolve();
         });
 
         await Promise.all(sendPromises);
-        console.log(`🏁 Broadcast notification process finished for ${users.length} users in complex ${complexId}`);
+        console.log(`🏁 Broadcast finished for complex ${complexId}`);
     } catch (error) {
         console.error(`🚨 Error in broadcast notification for complex ${complexId}:`, error);
     }
@@ -210,7 +300,7 @@ export async function notifyStaffOfAirbnbGuestRegistration(opts: {
     guestIdentification: string;
 }) {
     const { complexId, unitNumber, residentName, guestName, guestIdentification } = opts;
-    await sendComplexNotification(complexId, [Role.ADMIN, Role.GUARD, Role.BOARD_OF_DIRECTORS], {
+    await sendComplexNotification(complexId, [Role.ADMIN, Role.GUARD], {
         title: 'Huésped Airbnb registrado',
         body: `${residentName} · Unidad ${unitNumber}: ${guestName} (ID: ${guestIdentification}).`,
         url: pushDashboardUrl.residents,

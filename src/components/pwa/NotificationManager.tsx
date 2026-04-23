@@ -28,6 +28,24 @@ export function NotificationManager() {
         }
     }, []);
 
+    const postSubscriptionToServer = async (subscription: PushSubscription) => {
+        const payload = subscription.toJSON();
+        const response = await fetch('/api/notifications/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify(payload),
+        });
+        if (!response.ok) {
+            const data = await response.json().catch(() => null);
+            const msg =
+                data && typeof data === 'object' && 'error' in data
+                    ? String((data as { error?: { message?: string } }).error?.message ?? '')
+                    : '';
+            throw new Error(msg || 'Failed to save subscription on server');
+        }
+    };
+
     useEffect(() => {
         const ua = window.navigator.userAgent;
         setIsiOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
@@ -41,6 +59,17 @@ export function NotificationManager() {
             setPermission(Notification.permission);
             void checkSubscription();
         }
+    }, [checkSubscription]);
+
+    /** Al volver a la pestaña, alinear el toggle con la suscripción real del navegador. */
+    useEffect(() => {
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible' && 'PushManager' in window) {
+                void checkSubscription();
+            }
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => document.removeEventListener('visibilitychange', onVisibility);
     }, [checkSubscription]);
 
     const subscribeUser = async () => {
@@ -67,18 +96,25 @@ export function NotificationManager() {
                     applicationServerKey,
                 };
 
-                const subscription = await registration.pushManager.subscribe(subscribeOptions);
+                let subscription = await registration.pushManager.getSubscription();
 
-                // Save subscription to server
-                const response = await fetch('/api/notifications/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(subscription)
-                });
+                if (subscription) {
+                    await postSubscriptionToServer(subscription);
+                } else {
+                    try {
+                        subscription = await registration.pushManager.subscribe(subscribeOptions);
+                    } catch (firstError) {
+                        console.warn('[push] subscribe retry after unsubscribe', firstError);
+                        const stale = await registration.pushManager.getSubscription();
+                        if (stale) {
+                            await stale.unsubscribe();
+                        }
+                        subscription = await registration.pushManager.subscribe(subscribeOptions);
+                    }
+                    await postSubscriptionToServer(subscription);
+                }
 
-                if (!response.ok) throw new Error('Failed to save subscription on server');
-
-                setIsSubscribed(true);
+                await checkSubscription();
                 toast.success(t('subscribedSuccess'));
             }
         } catch (error: unknown) {
@@ -116,24 +152,33 @@ export function NotificationManager() {
     const unsubscribeUser = async () => {
         setLoading(true);
         try {
-            const registration = await navigator.serviceWorker.ready;
-            const subscription = await registration.pushManager.getSubscription();
-
-            if (subscription) {
-                await subscription.unsubscribe();
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (registration) {
+                    const subscription = await registration.pushManager.getSubscription();
+                    if (subscription) {
+                        await subscription.unsubscribe();
+                    }
+                }
+            } catch (localErr) {
+                console.error('[push] local unsubscribe', localErr);
             }
 
-            // Remove from server
-            await fetch('/api/notifications/unsubscribe', {
+            const res = await fetch('/api/notifications/unsubscribe', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
             });
+            if (!res.ok) {
+                throw new Error('Server unsubscribe failed');
+            }
 
-            setIsSubscribed(false);
+            await checkSubscription();
             toast.success(t('unsubscribedSuccess'));
         } catch (error) {
             console.error('Error unsubscribing:', error);
             toast.error(t('unsubscribeError'));
+            await checkSubscription();
         } finally {
             setLoading(false);
         }
@@ -144,7 +189,8 @@ export function NotificationManager() {
         try {
             const response = await fetch('/api/notifications/test', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
             });
 
             if (!response.ok) {

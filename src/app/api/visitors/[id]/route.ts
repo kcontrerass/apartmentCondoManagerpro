@@ -103,7 +103,7 @@ export async function PATCH(
             const siteArr = visitorStaffSiteLabel(staffCtxArr);
 
             // Notify administrative staff
-            await sendComplexNotification(log.complexId, ["ADMIN", "BOARD_OF_DIRECTORS"], {
+            await sendComplexNotification(log.complexId, ["GUARD", "ADMIN"], {
                 title: 'Check-in de Visitante',
                 body: `${log.visitorName} ha ingresado (${siteArr}).`,
                 url: pushDashboardUrl.accessControl
@@ -127,7 +127,7 @@ export async function PATCH(
             const siteDep = visitorStaffSiteLabel(staffCtxDep);
 
             // Notify administrative staff
-            await sendComplexNotification(log.complexId, ["ADMIN", "BOARD_OF_DIRECTORS"], {
+            await sendComplexNotification(log.complexId, ["GUARD", "ADMIN"], {
                 title: 'Check-out de Visitante',
                 body: `${log.visitorName} ha salido del complejo (${siteDep}).`,
                 url: pushDashboardUrl.accessControl

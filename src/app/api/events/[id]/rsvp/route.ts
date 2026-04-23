@@ -130,7 +130,7 @@ export async function POST(
                   : 'declinó';
         await sendComplexNotification(
             event.complexId,
-            ["ADMIN", "BOARD_OF_DIRECTORS"],
+            ["ADMIN"],
             {
                 title: 'Respuesta a evento',
                 body: `${session.user.name || 'Un usuario'} ${rsvpLabel}: ${event.title}`,

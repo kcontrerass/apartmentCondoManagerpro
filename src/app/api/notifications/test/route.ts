@@ -2,15 +2,17 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import webpush from 'web-push';
-import { pushPayloadJson } from '@/lib/notifications';
+import { pushPayloadJson, removeStoredPushSubscription } from '@/lib/notifications';
 import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 export async function POST() {
+    let sessionUserId: string | undefined;
     try {
         const session = await auth();
         if (!session?.user) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
+        sessionUserId = session.user.id;
 
         const user = await prisma.user.findUnique({
             where: { id: session.user.id },
@@ -46,6 +48,17 @@ export async function POST() {
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error('Error sending test notification:', error);
+        const gone = error?.statusCode === 410 || error?.statusCode === 404;
+        if (gone && sessionUserId) {
+            await removeStoredPushSubscription(sessionUserId);
+            return NextResponse.json(
+                {
+                    error: 'La suscripción push expiró o fue revocada. Activa de nuevo las notificaciones.',
+                    code: 'SUBSCRIPTION_EXPIRED',
+                },
+                { status: 410 }
+            );
+        }
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

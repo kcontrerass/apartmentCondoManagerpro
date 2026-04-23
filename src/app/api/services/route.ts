@@ -223,7 +223,7 @@ export async function POST(request: Request) {
 
         await sendComplexNotification(
             validatedData.complexId,
-            ["RESIDENT", "GUARD", "BOARD_OF_DIRECTORS", "ADMIN"],
+            ["RESIDENT", "ADMIN"],
             {
                 title: "Nuevo servicio en el complejo",
                 body: service.name,

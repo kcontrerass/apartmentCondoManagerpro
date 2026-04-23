@@ -195,7 +195,7 @@ export async function POST(request: NextRequest) {
         // Notify target roles
         let targetRoles = data.targetRoles as string[];
         if (!targetRoles || targetRoles.length === 0) {
-            targetRoles = ["RESIDENT", "GUARD", "ADMIN", "BOARD_OF_DIRECTORS"];
+            targetRoles = ["RESIDENT", "ADMIN"];
         }
         targetRoles = targetRoles.filter((r) => r !== "SUPER_ADMIN");
 

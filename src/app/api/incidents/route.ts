@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/db';
 import { incidentSchema } from '@/lib/validations/incident';
-import { notifyComplexPrimaryAdmin } from '@/lib/notifications';
+import { notifyComplexPrimaryAdmin, sendComplexNotification } from '@/lib/notifications';
+import { Role } from '@/types/roles';
 import { pushDashboardUrl } from '@/lib/push-dashboard-paths';
 
 /**
@@ -204,15 +205,13 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        await notifyComplexPrimaryAdmin(
-            data.complexId,
-            {
-                title: `Nuevo incidente: ${incident.title}`,
-                body: `Reportado por ${incident.reporter.name}. Prioridad: ${incident.priority}.`,
-                url: pushDashboardUrl.incident(incident.id),
-            },
-            { exceptUserId: incident.reporterId }
-        );
+        const incidentPayload = {
+            title: `Nuevo incidente: ${incident.title}`,
+            body: `Reportado por ${incident.reporter.name}. Prioridad: ${incident.priority}.`,
+            url: pushDashboardUrl.incident(incident.id),
+        };
+        await notifyComplexPrimaryAdmin(data.complexId, incidentPayload, { exceptUserId: incident.reporterId });
+        await sendComplexNotification(data.complexId, [Role.GUARD], incidentPayload);
 
         return NextResponse.json(
             {
