@@ -3,8 +3,9 @@
 import { signOut } from "next-auth/react";
 
 /**
- * Antes de cerrar sesión: borra la suscripción push del usuario en el servidor y la revoca en el navegador.
- * Incluye todos los `ServiceWorkerRegistration` (útil en PWA / iOS standalone donde a veces hay más de uno).
+ * Al cerrar sesión: quita la suscripción guardada **solo para este usuario** en el servidor.
+ * El navegador sigue suscrito al push para no tener que reactivar notificaciones al volver a entrar;
+ * al iniciar sesión otro perfil, `PushSubscriptionSessionSync` reasigna el mismo endpoint a esa cuenta.
  */
 export async function detachPushBeforeSignOut(): Promise<void> {
     try {
@@ -16,25 +17,9 @@ export async function detachPushBeforeSignOut(): Promise<void> {
     } catch {
         /* ignorar: sesión puede estar caducada */
     }
-    try {
-        if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const registration of registrations) {
-            try {
-                const sub = await registration.pushManager.getSubscription();
-                if (sub) {
-                    await sub.unsubscribe();
-                }
-            } catch {
-                /* siguiente registro */
-            }
-        }
-    } catch {
-        /* ignorar */
-    }
 }
 
-/** Cierre de sesión seguro para web y PWA: desvincula push y luego `signOut` de NextAuth. */
+/** Cierra sesión tras limpiar la suscripción push del usuario actual en BD (sin desactivar push en el dispositivo). */
 export async function signOutAndDetachPush(
     options?: Parameters<typeof signOut>[0]
 ): Promise<void> {
