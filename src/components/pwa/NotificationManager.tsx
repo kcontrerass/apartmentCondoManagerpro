@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
+import { assertValidVapidApplicationServerKey, urlBase64ToUint8Array } from '@/lib/vapid-client';
 
 export function NotificationManager() {
     const t = useTranslations("Profile.notifications");
@@ -17,6 +18,16 @@ export function NotificationManager() {
     const [isSecure, setIsSecure] = useState(true);
     const [isStandalone, setIsStandalone] = useState(false);
 
+    const checkSubscription = useCallback(async () => {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            setIsSubscribed(!!subscription);
+        } catch {
+            setIsSubscribed(false);
+        }
+    }, []);
+
     useEffect(() => {
         const ua = window.navigator.userAgent;
         setIsiOS(/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream);
@@ -28,15 +39,9 @@ export function NotificationManager() {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             setIsSupported(true);
             setPermission(Notification.permission);
-            checkSubscription();
+            void checkSubscription();
         }
-    }, []);
-
-    const checkSubscription = async () => {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
-        setIsSubscribed(!!subscription);
-    };
+    }, [checkSubscription]);
 
     const subscribeUser = async () => {
         setLoading(true);
@@ -45,28 +50,24 @@ export function NotificationManager() {
             setPermission(result);
 
             if (result === 'granted') {
-                console.log('🔔 Notifications permission granted');
-                if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+                const vapidRaw = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                if (!vapidRaw?.trim()) {
                     throw new Error('Missing NEXT_PUBLIC_VAPID_PUBLIC_KEY');
                 }
 
-                // Ensure SW is registered and ready
-                await navigator.serviceWorker.register('/sw.js');
+                await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
                 const registration = await navigator.serviceWorker.ready;
 
-                console.log('🛠 Service Worker ready:', registration.active?.state);
+                const keyBytes = urlBase64ToUint8Array(vapidRaw);
+                assertValidVapidApplicationServerKey(keyBytes);
+                const applicationServerKey = new Uint8Array(keyBytes);
 
-                const applicationServerKey = urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
-                console.log('📦 Uint8Array Key Length:', applicationServerKey.length);
-
-                const subscribeOptions = {
+                const subscribeOptions: PushSubscriptionOptionsInit = {
                     userVisibleOnly: true,
-                    applicationServerKey: applicationServerKey
+                    applicationServerKey,
                 };
 
-                console.log('📡 Subscribing with key:', process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY);
                 const subscription = await registration.pushManager.subscribe(subscribeOptions);
-                console.log('✅ Subscription successful:', subscription.endpoint);
 
                 // Save subscription to server
                 const response = await fetch('/api/notifications/subscribe', {
@@ -80,9 +81,33 @@ export function NotificationManager() {
                 setIsSubscribed(true);
                 toast.success(t('subscribedSuccess'));
             }
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Error subscribing to push:', error);
-            toast.error(t('subscribeError'));
+            let message = t('subscribeError');
+            if (error instanceof Error) {
+                if (error.message === 'Missing NEXT_PUBLIC_VAPID_PUBLIC_KEY') {
+                    message = t('subscribeErrorMissingKey');
+                } else if (
+                    error.message === 'VAPID_PUBLIC_KEY_EMPTY' ||
+                    error.message === 'VAPID_PUBLIC_KEY_BASE64_INVALID' ||
+                    error.message === 'VAPID_PUBLIC_KEY_WRONG_LENGTH'
+                ) {
+                    message = t('subscribeErrorVapid');
+                }
+            }
+            if (error instanceof DOMException) {
+                const m = error.message || '';
+                if (error.name === 'SecurityError') {
+                    message = t('subscribeErrorVapid');
+                } else if (
+                    error.name === 'AbortError' ||
+                    m.includes('push service') ||
+                    m.includes('Push service')
+                ) {
+                    message = t('subscribeErrorPushService');
+                }
+            }
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -133,19 +158,6 @@ export function NotificationManager() {
         } finally {
             setTestLoading(false);
         }
-    };
-
-    const urlBase64ToUint8Array = (base64String: string) => {
-        console.log('🧪 Decoding key:', base64String);
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-            outputArray[i] = rawData.charCodeAt(i);
-        }
-        console.log('✅ Decoded Uint8Array length:', outputArray.length);
-        return outputArray;
     };
 
     if (!isSupported || !isSecure) {

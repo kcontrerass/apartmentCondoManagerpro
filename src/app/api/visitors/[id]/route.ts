@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { Role } from "@/types/roles";
 import { sendUserNotification, sendComplexNotification } from "@/lib/notifications";
+import { loadVisitorNotifyContext, visitorStaffSiteLabel } from "@/lib/visitor-notification-text";
 import { apiError, apiOk } from "@/lib/api-response";
 import { resolveUserScope } from "@/lib/user-scope";
 
@@ -97,10 +98,13 @@ export async function PATCH(
                 });
             }
 
+            const staffCtxArr = await loadVisitorNotifyContext(log.complexId, log.unitId);
+            const siteArr = visitorStaffSiteLabel(staffCtxArr);
+
             // Notify administrative staff
             await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                 title: 'Check-in de Visitante',
-                body: `${log.visitorName} ha ingresado para la unidad ${log.unitId || ''}.`,
+                body: `${log.visitorName} ha ingresado (${siteArr}).`,
                 url: '/dashboard/visitors'
             });
         } else if (status === "DEPARTED" && log.unitId) {
@@ -118,10 +122,13 @@ export async function PATCH(
                 });
             }
 
+            const staffCtxDep = await loadVisitorNotifyContext(log.complexId, log.unitId);
+            const siteDep = visitorStaffSiteLabel(staffCtxDep);
+
             // Notify administrative staff
             await sendComplexNotification(log.complexId, ['ADMIN', 'BOARD_OF_DIRECTORS', 'SUPER_ADMIN'], {
                 title: 'Check-out de Visitante',
-                body: `${log.visitorName} ha salido del complejo (Unidad ${log.unitId || ''}).`,
+                body: `${log.visitorName} ha salido del complejo (${siteDep}).`,
                 url: '/dashboard/visitors'
             });
         }

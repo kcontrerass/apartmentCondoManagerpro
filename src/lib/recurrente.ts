@@ -6,6 +6,19 @@ export interface RecurrenteKeys {
     webhookSecret?: string;
 }
 
+/** Lee `settings.recurrente` del complejo (mismas claves que al crear el checkout). */
+export function getRecurrenteKeysFromComplexSettings(settings: unknown): RecurrenteKeys | null {
+    if (!settings || typeof settings !== "object" || Array.isArray(settings)) return null;
+    const recurrente = (settings as Record<string, unknown>).recurrente;
+    if (!recurrente || typeof recurrente !== "object" || Array.isArray(recurrente)) return null;
+    const r = recurrente as Record<string, unknown>;
+    const publicKey = typeof r.publicKey === "string" ? r.publicKey.trim() : "";
+    const secretKey = typeof r.secretKey === "string" ? r.secretKey.trim() : "";
+    if (!publicKey || !secretKey) return null;
+    const webhookSecret = typeof r.webhookSecret === "string" ? r.webhookSecret.trim() : undefined;
+    return webhookSecret ? { publicKey, secretKey, webhookSecret } : { publicKey, secretKey };
+}
+
 /**
  * Cliente HTTP a Recurrente (misma URL en test y live; distinguen las llaves).
  *

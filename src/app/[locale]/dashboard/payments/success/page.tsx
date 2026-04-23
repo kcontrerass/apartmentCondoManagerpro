@@ -2,8 +2,13 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { recurrente } from "@/lib/recurrente";
+import {
+    getRecurrenteKeysFromComplexSettings,
+    recurrente,
+    type RecurrenteKeys,
+} from "@/lib/recurrente";
 import { prisma } from "@/lib/db";
+import { notifyInvoicePaidToUnitResidents } from "@/lib/notifications";
 import { getPlatformRecurrenteKeys } from "@/lib/platform-billing";
 import { fulfillPlatformFeePayment } from "@/lib/platform-fee-fulfill";
 import { syncPlatformCardPaymentFromRecurrenteForComplex } from "@/lib/platform-fee-recurrente-sync";
@@ -28,8 +33,20 @@ interface Props {
         RecurrenteReturnSearchParams & {
             scope?: string;
             platformFeePaymentId?: string;
+            invoiceId?: string;
+            complexId?: string;
         }
     >;
+}
+
+function pickQueryString(
+    sp: Record<string, string | string[] | undefined>,
+    key: string
+): string | undefined {
+    const v = sp[key];
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (Array.isArray(v) && typeof v[0] === "string" && v[0].trim()) return v[0].trim();
+    return undefined;
 }
 
 export default async function PaymentSuccessPage({ params, searchParams }: Props) {
@@ -76,17 +93,45 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
     } else if (session_id) {
         try {
             const platformKeys = scope === "platform" ? await getPlatformRecurrenteKeys() : null;
+
+            let complexKeys: RecurrenteKeys | null = null;
+            if (scope !== "platform") {
+                const spRecord = sp as Record<string, string | string[] | undefined>;
+                const invoiceIdFromUrl = pickQueryString(spRecord, "invoiceId");
+                const complexIdFromUrl = pickQueryString(spRecord, "complexId");
+                if (invoiceIdFromUrl) {
+                    const inv = await prisma.invoice.findUnique({
+                        where: { id: invoiceIdFromUrl },
+                        select: {
+                            unit: {
+                                select: {
+                                    complex: { select: { settings: true } },
+                                },
+                            },
+                        },
+                    });
+                    complexKeys = getRecurrenteKeysFromComplexSettings(
+                        inv?.unit?.complex?.settings
+                    );
+                }
+                if (!complexKeys && complexIdFromUrl) {
+                    const cx = await prisma.complex.findUnique({
+                        where: { id: complexIdFromUrl },
+                        select: { settings: true },
+                    });
+                    complexKeys = getRecurrenteKeysFromComplexSettings(cx?.settings);
+                }
+            }
+
+            const checkoutKeys: RecurrenteKeys | null =
+                scope === "platform" ? platformKeys : complexKeys;
+
             let checkout: unknown = null;
-            if (scope === "platform" && platformKeys) {
-                checkout = await recurrente.checkouts.retrieveWithRetry(session_id, platformKeys, {
+            if (checkoutKeys) {
+                checkout = await recurrente.checkouts.retrieveWithRetry(session_id, checkoutKeys, {
                     maxAttempts: 5,
                     baseDelayMs: 400,
                 });
-            } else {
-                checkout = await recurrente.checkouts.retrieve(
-                    session_id,
-                    platformKeys || undefined
-                );
             }
 
             let recoveredPlatformPaid = false;
@@ -234,12 +279,20 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                                 }
                             }
                         } else {
-                            const invoiceIdRaw = metadata.invoiceId;
-                            if (invoiceIdRaw !== undefined && invoiceIdRaw !== null && String(invoiceIdRaw).length > 0) {
-                                const invoiceId = String(invoiceIdRaw);
-                                await prisma.invoice.updateMany({
+                            const fromMeta =
+                                metadata.invoiceId != null && String(metadata.invoiceId).length > 0
+                                    ? String(metadata.invoiceId)
+                                    : null;
+                            const fromUrl = pickQueryString(
+                                sp as Record<string, string | string[] | undefined>,
+                                "invoiceId"
+                            );
+                            const invoiceIdToMark = fromMeta || fromUrl || null;
+
+                            if (invoiceIdToMark) {
+                                const paidUpdate = await prisma.invoice.updateMany({
                                     where: {
-                                        id: invoiceId,
+                                        id: invoiceIdToMark,
                                         status: { not: "PAID" },
                                         category: InvoiceCategory.UNIT_BILLING,
                                     },
@@ -251,7 +304,7 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                                 });
 
                                 const linkedReservation = await prisma.reservation.findUnique({
-                                    where: { invoiceId },
+                                    where: { invoiceId: invoiceIdToMark },
                                 });
 
                                 if (linkedReservation) {
@@ -259,6 +312,10 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                                         where: { id: linkedReservation.id },
                                         data: { status: "APPROVED" },
                                     });
+                                }
+
+                                if (paidUpdate.count > 0) {
+                                    await notifyInvoicePaidToUnitResidents(invoiceIdToMark);
                                 }
                             }
                         }

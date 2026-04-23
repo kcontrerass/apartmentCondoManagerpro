@@ -32,7 +32,10 @@ function extractMetadataValue(payload: Record<string, unknown>, key: string): st
 }
 
 function extractInvoiceId(payload: Record<string, unknown>): string | null {
-    return extractMetadataValue(payload, "invoiceId");
+    return (
+        extractMetadataValue(payload, "invoiceId") ||
+        extractMetadataValue(payload, "invoice_id")
+    );
 }
 
 function extractAmenityId(payload: Record<string, unknown>): string | null {
@@ -44,6 +47,9 @@ function extractPlatformFeePaymentId(payload: Record<string, unknown>): string |
 }
 
 function isSuccessfulPaymentEvent(payload: Record<string, unknown>): boolean {
+    const checkout = payload.checkout as Record<string, unknown> | undefined;
+    if (pickString([checkout?.status]) === "paid") return true;
+
     const data = payload.data as Record<string, unknown> | undefined;
     const object = data?.object as Record<string, unknown> | undefined;
     const eventType = pickString([payload.type, payload.event_type]);
@@ -51,6 +57,7 @@ function isSuccessfulPaymentEvent(payload: Record<string, unknown>): boolean {
     return (
         eventType === "checkout.payment.succeeded" ||
         eventType === "payment.succeeded" ||
+        eventType === "payment_intent.succeeded" ||
         eventType === "checkout_payment_succeeded" ||
         status === "paid" ||
         status === "completed" ||

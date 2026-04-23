@@ -110,6 +110,7 @@ export async function POST(request: Request) {
 
             const recurrenteKeys = (amenity.complex.settings as any)?.recurrente;
 
+            const reservationSuccessUrl = `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}&complexId=${encodeURIComponent(amenity.complexId)}`;
             const checkoutSession = await recurrente.checkouts.create({
                 items: [{
                     name: `Reserva: ${amenity.name} - ${amenity.complex?.name}`,
@@ -117,10 +118,10 @@ export async function POST(request: Request) {
                     amount_in_cents: Math.round(totalAmount * 100),
                     quantity: 1,
                 }],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+                success_url: reservationSuccessUrl,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
-                return_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                return_url: reservationSuccessUrl,
                 metadata: {
                     type: 'RESERVATION',
                     amenityId,
@@ -198,6 +199,7 @@ export async function POST(request: Request) {
         if (method === "CARD" || !method) {
             const recurrenteKeys = (invoice.unit.complex.settings as any)?.recurrente;
 
+            const invoiceSuccessUrl = `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}&invoiceId=${encodeURIComponent(invoice.id)}&complexId=${encodeURIComponent(invoice.unit.complexId)}`;
             // Recurrente Checkout Creation
             const checkoutSession = await recurrente.checkouts.create({
                 items: [{
@@ -206,10 +208,11 @@ export async function POST(request: Request) {
                     amount_in_cents: Math.round(Number(invoice.totalAmount) * 100),
                     quantity: 1,
                 }],
-                success_url: `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+                success_url: invoiceSuccessUrl,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
-                return_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
+                /** Tras 3DS debe volver a la app para consultar el checkout con las claves del complejo. */
+                return_url: invoiceSuccessUrl,
                 metadata: {
                     type: 'INVOICE',
                     invoiceId: invoice.id,
