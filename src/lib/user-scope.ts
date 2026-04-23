@@ -13,6 +13,8 @@ export async function resolveUserScope(userId: string): Promise<UserScope | null
         select: {
             role: true,
             complexId: true,
+            /** Complejo que administra como titular (complexes.admin_id); mismo criterio que en auth `getUser`. */
+            managedComplexes: { select: { id: true } },
             residentProfile: {
                 select: {
                     unitId: true,
@@ -32,9 +34,11 @@ export async function resolveUserScope(userId: string): Promise<UserScope | null
         };
     }
 
+    const staffComplexId = user.complexId ?? user.managedComplexes?.id ?? null;
+
     return {
         role: user.role as Role,
-        complexId: user.complexId ?? null,
+        complexId: staffComplexId,
         unitId: null,
     };
 }
