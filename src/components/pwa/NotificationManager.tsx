@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { useTranslations } from 'next-intl';
-import { assertValidVapidApplicationServerKey, urlBase64ToUint8Array } from '@/lib/vapid-client';
+import { subscribeToPushNotifications } from '@/lib/web-push-subscribe';
 
 export function NotificationManager() {
     const t = useTranslations("Profile.notifications");
@@ -27,24 +27,6 @@ export function NotificationManager() {
             setIsSubscribed(false);
         }
     }, []);
-
-    const postSubscriptionToServer = async (subscription: PushSubscription) => {
-        const payload = subscription.toJSON();
-        const response = await fetch('/api/notifications/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-            const data = await response.json().catch(() => null);
-            const msg =
-                data && typeof data === 'object' && 'error' in data
-                    ? String((data as { error?: { message?: string } }).error?.message ?? '')
-                    : '';
-            throw new Error(msg || 'Failed to save subscription on server');
-        }
-    };
 
     useEffect(() => {
         const ua = window.navigator.userAgent;
@@ -75,45 +57,10 @@ export function NotificationManager() {
     const subscribeUser = async () => {
         setLoading(true);
         try {
-            const result = await Notification.requestPermission();
+            const result = await subscribeToPushNotifications();
             setPermission(result);
 
             if (result === 'granted') {
-                const vapidRaw = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-                if (!vapidRaw?.trim()) {
-                    throw new Error('Missing NEXT_PUBLIC_VAPID_PUBLIC_KEY');
-                }
-
-                await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-                const registration = await navigator.serviceWorker.ready;
-
-                const keyBytes = urlBase64ToUint8Array(vapidRaw);
-                assertValidVapidApplicationServerKey(keyBytes);
-                const applicationServerKey = new Uint8Array(keyBytes);
-
-                const subscribeOptions: PushSubscriptionOptionsInit = {
-                    userVisibleOnly: true,
-                    applicationServerKey,
-                };
-
-                let subscription = await registration.pushManager.getSubscription();
-
-                if (subscription) {
-                    await postSubscriptionToServer(subscription);
-                } else {
-                    try {
-                        subscription = await registration.pushManager.subscribe(subscribeOptions);
-                    } catch (firstError) {
-                        console.warn('[push] subscribe retry after unsubscribe', firstError);
-                        const stale = await registration.pushManager.getSubscription();
-                        if (stale) {
-                            await stale.unsubscribe();
-                        }
-                        subscription = await registration.pushManager.subscribe(subscribeOptions);
-                    }
-                    await postSubscriptionToServer(subscription);
-                }
-
                 await checkSubscription();
                 toast.success(t('subscribedSuccess'));
             }

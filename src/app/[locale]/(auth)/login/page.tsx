@@ -1,15 +1,10 @@
 'use client';
 
-import { useActionState, useEffect } from 'react';
+import { useActionState } from 'react';
 import { authenticate } from '@/lib/actions/auth-actions';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { toast } from 'sonner';
-import {
-    isStandaloneDisplayMode,
-    PWA_LOGOUT_NOTIFY_SESSION_KEY,
-} from '@/lib/pwa-standalone-client';
 
 export default function LoginPage() {
     const t = useTranslations("Auth");
@@ -17,20 +12,6 @@ export default function LoginPage() {
         authenticate,
         undefined
     );
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        try {
-            if (sessionStorage.getItem(PWA_LOGOUT_NOTIFY_SESSION_KEY) !== "1") {
-                return;
-            }
-            sessionStorage.removeItem(PWA_LOGOUT_NOTIFY_SESSION_KEY);
-            if (!isStandaloneDisplayMode()) return;
-            toast.info(t("logoutPwaNotificationHint"), { duration: 10_000 });
-        } catch {
-            /* storage no disponible */
-        }
-    }, [t]);
 
     return (
         <motion.div

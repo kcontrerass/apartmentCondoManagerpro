@@ -16,6 +16,7 @@ import { getPlatformSubscriptionGraceDays } from "@/lib/platform-subscription-ac
 import { UnassignedResidentView } from "@/components/dashboard/UnassignedResidentView";
 import { AnimatedPage } from "@/components/animations/AnimatedPage";
 import { PWAInstallPrompt, type PWAInstallCopy } from "@/components/pwa/PWAInstallPrompt";
+import { PwaPostLogoutNotificationPrompt } from "@/components/pwa/PwaPostLogoutNotificationPrompt";
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -140,6 +141,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
             <NextIntlClientProvider locale={locale} messages={messages}>
                 <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
                     <Toaster position="top-right" richColors />
+                    <PwaPostLogoutNotificationPrompt />
                     <div className="flex-1 flex flex-col">
                         <Header isUnassigned={isUnassignedResident} />
                         <main className="flex-1 p-6 md:p-8 flex items-center justify-center">
@@ -155,6 +157,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
         <NextIntlClientProvider locale={locale} messages={messages}>
             <div className="flex min-h-screen bg-background text-foreground font-sans transition-colors duration-300">
                 <Toaster position="top-right" richColors />
+                <PwaPostLogoutNotificationPrompt />
                 <PWAInstallPrompt copy={pwaInstallCopy} />
                 <MobileSidebarProvider>
                     {/* @ts-ignore */}

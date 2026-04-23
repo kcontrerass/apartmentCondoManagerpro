@@ -77,8 +77,7 @@
         "alreadyHaveAccount": "Already have an account?",
         "signIn": "Sign in",
         "heroCaption": "Solution for communities in Guatemala City: condominiums, towers, and shopping centers.",
-        "authorizedPoint": "Authorized Access Point",
-        "logoutPwaNotificationHint": "You're using the installed app (PWA). After you sign in again, turn on notifications in Profile to keep receiving important alerts."
+        "authorizedPoint": "Authorized Access Point"
     },
     "Dashboard": {
         "title": "Control Panel",
@@ -904,7 +903,11 @@
         "installed": "App installed successfully.",
         "manualHelp": "Open your browser menu and choose Install app or Add to Home screen.",
         "statusDirect": "Direct install available from this button.",
-        "statusManual": "If installation does not open, use your browser menu."
+        "statusManual": "If installation does not open, use your browser menu.",
+        "postLogoutNotifyTitle": "Turn on notifications",
+        "postLogoutNotifyBody": "You signed out of the installed app. Enable notifications again to get community alerts.",
+        "postLogoutNotifyEnable": "Enable notifications",
+        "postLogoutNotifyLater": "Not now"
     },
     "Documents": {
         "title": "Documents",
