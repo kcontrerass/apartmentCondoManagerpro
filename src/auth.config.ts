@@ -44,10 +44,14 @@ export const authConfig = {
                 token.id = user.id as string;
                 token.complexId = (user as any).complexId;
                 token.name = user.name;
+                if (user.email) {
+                    token.email = user.email;
+                }
             }
             // Handle client-side session.update() calls (e.g. after profile update)
-            if (trigger === 'update' && sessionData?.name) {
-                token.name = sessionData.name;
+            if (trigger === 'update' && sessionData) {
+                if (sessionData.name) token.name = sessionData.name as string;
+                if (sessionData.email) token.email = sessionData.email as string;
             }
             return token;
         },
@@ -56,6 +60,8 @@ export const authConfig = {
                 session.user.role = token.role as string;
                 session.user.id = token.id as string;
                 (session.user as any).complexId = token.complexId as string;
+                if (token.email) session.user.email = token.email as string;
+                if (token.name) session.user.name = token.name as string;
             }
             return session;
         },

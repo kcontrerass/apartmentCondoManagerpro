@@ -1035,6 +1035,9 @@
         "form": {
             "nameLabel": "Nombre Completo",
             "emailLabel": "Correo Electrónico",
+            "emailSuperAdminHint": "Como súper administrador puedes actualizar tu correo. Debe ser único en la plataforma.",
+            "emailRequired": "El correo es requerido",
+            "emailInvalid": "Ingresa un correo electrónico válido",
             "phoneLabel": "Teléfono",
             "phonePlaceholder": "Ej: +502 1234 5678",
             "nameRequired": "El nombre es requerido",

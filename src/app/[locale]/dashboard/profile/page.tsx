@@ -127,7 +127,14 @@ export default async function ProfilePage({
                                 <span className="material-symbols-outlined text-primary">person</span>
                                 {t("personalInfo")}
                             </h3>
-                            <ProfileForm user={user} />
+                            <ProfileForm
+                                user={{
+                                    name: user.name,
+                                    email: user.email,
+                                    phone: user.phone,
+                                    role: user.role,
+                                }}
+                            />
                         </Card>
 
                         {user.role === Role.RESIDENT && user.residentProfile && (

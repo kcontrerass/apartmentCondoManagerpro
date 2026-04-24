@@ -996,6 +996,9 @@
         "form": {
             "nameLabel": "Full Name",
             "emailLabel": "Email Address",
+            "emailSuperAdminHint": "As super administrator you can update your email. It must be unique in the platform.",
+            "emailRequired": "Email is required",
+            "emailInvalid": "Enter a valid email address",
             "phoneLabel": "Phone",
             "phonePlaceholder": "Ex: +1 555 123 4567",
             "nameRequired": "Name is required",
