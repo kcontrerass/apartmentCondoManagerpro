@@ -46,12 +46,21 @@
     },
     "ForgotPassword": {
         "title": "Forgot your password?",
-        "intro": "If you cannot sign in, your building administrator can restore your access.",
-        "showInstructions": "Continue",
-        "adminTitle": "Contact your administrator",
-        "adminBody": "This portal does not send password reset emails. Contact your condominium or residential administrator (management, board of directors, or front desk). They can give you a new password or reset your access.",
+        "intro": "Enter the email on your account. If we find it, we will email you a link to set a new password (valid for one hour).",
+        "spamHint": "If the email does not show up in a few minutes, check your spam, Promotions, or junk folder.",
+        "emailLabel": "Email",
+        "emailPlaceholder": "your@email.com",
+        "submit": "Send reset link",
+        "submitting": "Sending…",
+        "checkEmail": "If an account exists for that address, you will receive an email with a link to reset your password.",
+        "smtpNotConfigured": "Password reset by email is not set up on this server. Please contact an administrator for help.",
+        "emailSendFailed": "We could not send the email. Try again in a few minutes, or ask an administrator for help.",
+        "missingEmail": "Please enter your email address.",
+        "emailInvalid": "Please enter a valid email address.",
+        "adminTitle": "Need an administrator?",
+        "adminBody": "If you no longer have access to your email, or the link has expired, your building or condominium administrator can still restore your access.",
         "backToLogin": "Back to login",
-        "linkFromResetPage": "How to recover access (administrator)"
+        "linkFromResetPage": "Request a new reset link"
     },
     "Auth": {
         "tagline": "Comprehensive management for Condominiums, Buildings, and Shopping Centers",

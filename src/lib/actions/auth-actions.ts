@@ -1,13 +1,108 @@
 'use server';
 
+import { randomBytes } from 'crypto';
 import { auth, signIn, signOut } from '@/auth';
 import { removeStoredPushSubscription } from '@/lib/notifications';
+import { sendPasswordResetEmail, canSendPasswordResetEmail } from '@/lib/email/send-password-reset';
+import { getPublicAppUrl } from '@/lib/public-app-url';
 import { AuthError } from 'next-auth';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { routing } from '@/i18n/routing';
+import { Role } from '@prisma/client';
 
 const defaultAuthLocale = routing.defaultLocale;
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Nombre que aparece en el correo de recuperación: complejo, o ADESSO-365 si es plataforma. */
+function brandNameForPasswordEmail(u: {
+    role: Role;
+    assignedComplex: { name: string } | null;
+    managedComplexes: { name: string } | null;
+    residentProfile: { unit: { complex: { name: string } } } | null;
+}): string {
+    if (u.role === Role.SUPER_ADMIN) {
+        return 'ADESSO-365';
+    }
+    return (
+        u.assignedComplex?.name ??
+        u.managedComplexes?.name ??
+        u.residentProfile?.unit?.complex?.name ??
+        'ADESSO-365'
+    );
+}
+
+export type RequestPasswordResetState = { success?: boolean; messageKey?: string } | undefined;
+
+/**
+ * Cualquier usuario (incl. SUPER_ADMIN) con email en el sistema. Requiere SMTP y NEXTAUTH_URL en el servidor.
+ */
+export async function requestPasswordResetAction(
+    _prev: RequestPasswordResetState,
+    formData: FormData
+): Promise<RequestPasswordResetState> {
+    if (!canSendPasswordResetEmail()) {
+        return { success: false, messageKey: 'smtpNotConfigured' };
+    }
+
+    const email = String(formData.get('email') ?? '')
+        .trim()
+        .toLowerCase();
+    const loc = String(formData.get('locale') ?? defaultAuthLocale);
+    const safeLocale = routing.locales.includes(loc as (typeof routing.locales)[number]) ? loc : defaultAuthLocale;
+
+    if (!email) {
+        return { success: false, messageKey: 'missingEmail' };
+    }
+    if (!EMAIL_RE.test(email)) {
+        return { success: false, messageKey: 'emailInvalid' };
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { email },
+        include: {
+            assignedComplex: { select: { name: true } },
+            managedComplexes: { select: { name: true } },
+            residentProfile: {
+                select: {
+                    unit: { select: { complex: { select: { name: true } } } },
+                },
+            },
+        },
+    });
+
+    if (!user) {
+        return { success: true, messageKey: 'checkEmail' };
+    }
+
+    const token = randomBytes(32).toString('hex');
+    const resetPasswordExpires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.user.update({
+        where: { id: user.id },
+        data: { resetPasswordToken: token, resetPasswordExpires },
+    });
+
+    const base = getPublicAppUrl();
+    const resetUrl = `${base}/${safeLocale}/reset-password?token=${encodeURIComponent(token)}`;
+    const brandName = brandNameForPasswordEmail(user);
+    const result = await sendPasswordResetEmail(user.email, resetUrl, brandName);
+
+    if (!result.ok) {
+        console.error(
+            '[password-reset] Envío fallido. Si usas Brevo: BREVO_API_KEY (pestaña Claves API) y remitente en EMAIL_FROM; o SMTP: usuario …@smtp-brevo.com y clave SMTP. Detalle:',
+            result.error
+        );
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { resetPasswordToken: null, resetPasswordExpires: null },
+        });
+        return { success: false, messageKey: 'emailSendFailed' };
+    }
+
+    return { success: true, messageKey: 'checkEmail' };
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function authenticate(prevState: string | undefined, formData: FormData) {
@@ -100,7 +195,7 @@ export async function resetPasswordAction(prevState: AuthState, formData: FormDa
             return { success: false, message: 'Invalid or expired token.' };
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
         await prisma.user.update({
             where: { id: user.id },

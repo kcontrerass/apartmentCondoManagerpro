@@ -46,12 +46,21 @@
     },
     "ForgotPassword": {
         "title": "¿Olvidaste tu contraseña?",
-        "intro": "Si no puedes iniciar sesión, el administrador de tu edificio puede restablecer tu acceso.",
-        "showInstructions": "Continuar",
-        "adminTitle": "Comunícate con el administrador",
-        "adminBody": "Este portal no envía correos para recuperar la contraseña. Comunícate con el administrador de tu condominio o residencial (administración, junta de vecinos o conserjería). Ellos pueden darte una nueva contraseña o restablecer tu acceso.",
+        "intro": "Escribe el correo de tu cuenta. Si lo tenemos registrado, te enviaremos un enlace para ingresar una contraseña nueva (válido por una hora).",
+        "spamHint": "Si no ves el correo en unos minutos, revisa la carpeta de spam, promociones o correo no deseado.",
+        "emailLabel": "Correo",
+        "emailPlaceholder": "tu@correo.com",
+        "submit": "Enviar enlace de recuperación",
+        "submitting": "Enviando…",
+        "checkEmail": "Si existe una cuenta con ese correo, recibirás un email con un enlace para restablecer la contraseña.",
+        "smtpNotConfigured": "La recuperación por correo no está configurada en este servidor. Comunícate con un administrador para obtener ayuda.",
+        "emailSendFailed": "No pudimos enviar el correo. Intenta de nuevo en unos minutos o pide ayuda a un administrador.",
+        "missingEmail": "Escribe tu correo electrónico.",
+        "emailInvalid": "Escribe un correo electrónico válido.",
+        "adminTitle": "¿Necesitas a un administrador?",
+        "adminBody": "Si ya no tienes acceso a tu correo o el enlace expiró, el administrador de tu edificio o condominio aún puede restablecer tu acceso.",
         "backToLogin": "Volver al inicio de sesión",
-        "linkFromResetPage": "Cómo recuperar el acceso (administrador)"
+        "linkFromResetPage": "Solicitar un nuevo enlace de recuperación"
     },
     "Auth": {
         "tagline": "Gestión integral para Condominios, Edificios y Centros Comerciales",
