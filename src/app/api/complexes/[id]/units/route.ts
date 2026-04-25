@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { unitSchema } from "@/lib/validations/unit";
+import { createUnitWithServices } from "@/lib/units/create-unit-with-services";
 import { Role } from "@/types/roles";
 
 export const dynamic = "force-dynamic";
@@ -111,18 +112,22 @@ export async function POST(
 
         const { services, serviceIds, ...unitData } = validatedData;
 
-        const unit = await prisma.unit.create({
-            data: {
-                ...unitData,
-                complexId: id,
-                services: services ? {
-                    create: services.map(s => ({
-                        serviceId: s.id,
-                        quantity: s.quantity || 1,
-                    }))
-                } : undefined,
-            },
-        });
+        const unit = await prisma.$transaction(async (tx) =>
+            createUnitWithServices(
+                tx,
+                id,
+                {
+                    number: unitData.number,
+                    type: unitData.type,
+                    bedrooms: unitData.bedrooms,
+                    bathrooms: unitData.bathrooms,
+                    parkingSpots: unitData.parkingSpots,
+                    area: unitData.area,
+                    status: unitData.status,
+                },
+                body
+            )
+        );
 
         return NextResponse.json(unit, { status: 201 });
     } catch (error: any) {

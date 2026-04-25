@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
 import { UnitTable } from "@/components/units/UnitTable";
 import { UnitForm } from "@/components/units/UnitForm";
-import { UnitInput } from "@/lib/validations/unit";
+import { UnitInput, UnitBatchInput } from "@/lib/validations/unit";
 import { Unit, Resident } from "@prisma/client";
 import { Role } from "@/types/roles";
 import { useTranslations } from 'next-intl';
@@ -23,6 +24,29 @@ interface UnitWithResidents extends Unit {
 
 interface UnitsClientProps {
     user: any;
+}
+
+function unitMatchesSearch(
+    unit: UnitWithResidents,
+    q: string
+): boolean {
+    if (!q) return true;
+    const n = unit.number?.toLowerCase() ?? "";
+    const complexName = unit.complex?.name?.toLowerCase() ?? "";
+    const type = unit.type?.toLowerCase() ?? "";
+    const status = unit.status?.toLowerCase() ?? "";
+    const residents = unit.residents ?? [];
+    const names = residents
+        .map((r) => [r.user?.name, r.user?.email].filter(Boolean).join(" "))
+        .join(" ")
+        .toLowerCase();
+    return (
+        n.includes(q) ||
+        complexName.includes(q) ||
+        type.includes(q) ||
+        status.includes(q) ||
+        names.includes(q)
+    );
 }
 
 export function UnitsClient({ user }: UnitsClientProps) {
@@ -46,6 +70,13 @@ export function UnitsClient({ user }: UnitsClientProps) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [unitToDelete, setUnitToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [searchInput, setSearchInput] = useState("");
+
+    const filteredUnits = useMemo(() => {
+        const q = searchInput.trim().toLowerCase();
+        if (!q) return units;
+        return units.filter((u) => unitMatchesSearch(u, q));
+    }, [units, searchInput]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -150,6 +181,43 @@ export function UnitsClient({ user }: UnitsClientProps) {
         }
     };
 
+    const handleBatchSubmit = async (data: UnitBatchInput) => {
+        setIsSubmitting(true);
+        try {
+            const payload: UnitBatchInput = {
+                ...data,
+                complexId: complexIdFromQuery || data.complexId,
+            };
+            const response = await fetch("/api/units/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (response.ok) {
+                const j = await response.json();
+                toast.success(t("batchCreateSuccess", { count: j.count ?? j.created?.length ?? 0 }));
+                setIsModalOpen(false);
+                setEditingUnit(null);
+                fetchUnits();
+            } else {
+                const errorData = await response.json();
+                if (Array.isArray(errorData.error)) {
+                    toast.error(errorData.error.map((e: any) => e.message || "Error de validación").join(", "));
+                } else if (errorData.existingNumbers?.length) {
+                    toast.error(
+                        t("batchExistingError", { list: (errorData.existingNumbers as string[]).join(", ") })
+                    );
+                } else {
+                    toast.error(errorData.error || t("errorSaving"));
+                }
+            }
+        } catch (error) {
+            console.error("Error batch creating units:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleDelete = async () => {
         if (!unitToDelete) return;
 
@@ -195,25 +263,43 @@ export function UnitsClient({ user }: UnitsClientProps) {
             />
 
             <Card>
-                {isLoading ? (
-                    <div className="flex justify-center py-12">
-                        <Spinner />
+                <div className="p-4 space-y-4">
+                    <div className="relative max-w-md">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px] pointer-events-none">
+                            search
+                        </span>
+                        <Input
+                            type="search"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder={t("searchPlaceholder")}
+                            className="pl-10"
+                            aria-label={t("searchPlaceholder")}
+                        />
                     </div>
-                ) : (
-                    <UnitTable
-                        units={units}
-                        userRole={userRole}
-                        onEdit={(unit) => {
-                            setEditingUnit(unit);
-                            setIsModalOpen(true);
-                        }}
-                        onDelete={(id) => {
-                            setUnitToDelete(id);
-                            setIsDeleteModalOpen(true);
-                        }}
-                        onView={(id) => router.push(`/dashboard/units/${id}`)}
-                    />
-                )}
+
+                    {isLoading ? (
+                        <div className="flex justify-center py-12">
+                            <Spinner />
+                        </div>
+                    ) : (
+                        <UnitTable
+                            units={filteredUnits}
+                            hasUnfilteredUnits={units.length > 0}
+                            searchQuery={searchInput}
+                            userRole={userRole}
+                            onEdit={(unit) => {
+                                setEditingUnit(unit);
+                                setIsModalOpen(true);
+                            }}
+                            onDelete={(id) => {
+                                setUnitToDelete(id);
+                                setIsDeleteModalOpen(true);
+                            }}
+                            onView={(id) => router.push(`/dashboard/units/${id}`)}
+                        />
+                    )}
+                </div>
             </Card>
 
             <Modal
@@ -227,6 +313,7 @@ export function UnitsClient({ user }: UnitsClientProps) {
                 <UnitForm
                     initialData={editingUnit || undefined}
                     onSubmit={handleSubmit}
+                    onSubmitBatch={editingUnit ? undefined : handleBatchSubmit}
                     isLoading={isSubmitting}
                     complexes={complexes}
                     showComplexSelector={!complexIdFromQuery && !editingUnit}

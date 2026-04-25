@@ -171,6 +171,8 @@
         "mainResident": "Residente principal",
         "noResident": "Sin residente",
         "noUnitsFound": "No se encontraron unidades.",
+        "searchPlaceholder": "Buscar por número, complejo, tipo, estado o residente…",
+        "searchNoResults": "Ninguna unidad coincide con la búsqueda.",
         "notAvailable": "N/D",
         "form": {
             "complex": "Complejo",
@@ -193,8 +195,22 @@
             "quantityShort": "Cantidad",
             "loadingServices": "Cargando servicios disponibles...",
             "createUnit": "Crear Unidad",
-            "updateUnit": "Actualizar Unidad"
-        }
+            "updateUnit": "Actualizar Unidad",
+            "modeSingle": "Una unidad",
+            "modeBatch": "Varias unidades",
+            "batchCountLabel": "Cantidad de unidades",
+            "batchNameLabel": "Nombre o prefijo",
+            "batchNamePlaceholder": "ej. A",
+            "batchNameHint": "Escribe un prefijo, p. ej. «A» para generar A-1, A-2, A-3… (máx. {max} unidades a la vez).",
+            "batchNameEmpty": "Escribe un nombre o prefijo para las unidades.",
+            "batchCountInvalid": "Indica una cantidad entre 1 y 200.",
+            "batchPreview": "Ejemplos: {list}",
+            "batchAndMore": " y {n} más",
+            "batchComplexRequired": "Seleccione un complejo.",
+            "createManyUnits": "Crear unidades"
+        },
+        "batchCreateSuccess": "Se crearon {count} unidades correctamente.",
+        "batchExistingError": "Estos números ya existen: {list}"
     },
     "Residents": {
         "title": "Residentes",

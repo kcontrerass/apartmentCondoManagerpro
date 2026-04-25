@@ -171,6 +171,8 @@
         "mainResident": "Primary resident",
         "noResident": "No resident",
         "noUnitsFound": "No units found.",
+        "searchPlaceholder": "Search by number, complex, type, status, or resident…",
+        "searchNoResults": "No units match your search.",
         "notAvailable": "N/A",
         "form": {
             "complex": "Complex",
@@ -193,8 +195,22 @@
             "quantityShort": "Qty",
             "loadingServices": "Loading available services...",
             "createUnit": "Create unit",
-            "updateUnit": "Update unit"
-        }
+            "updateUnit": "Update unit",
+            "modeSingle": "One unit",
+            "modeBatch": "Multiple units",
+            "batchCountLabel": "Number of units",
+            "batchNameLabel": "Name or prefix",
+            "batchNamePlaceholder": "e.g. A",
+            "batchNameHint": "Enter a prefix, e.g. “A” to create A-1, A-2, A-3… (max {max} units at a time).",
+            "batchNameEmpty": "Enter a name or prefix for the units.",
+            "batchCountInvalid": "Enter a quantity between 1 and 200.",
+            "batchPreview": "Examples: {list}",
+            "batchAndMore": " and {n} more",
+            "batchComplexRequired": "Select a complex.",
+            "createManyUnits": "Create units"
+        },
+        "batchCreateSuccess": "Created {count} units successfully.",
+        "batchExistingError": "These numbers already exist: {list}"
     },
     "Residents": {
         "title": "Residents",

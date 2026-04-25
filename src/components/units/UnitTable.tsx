@@ -13,13 +13,24 @@ interface UnitWithResidents extends Unit {
 
 interface UnitTableProps {
     units: UnitWithResidents[];
+    /** True when the list was filtered and some units exist but none match the search. */
+    hasUnfilteredUnits?: boolean;
+    searchQuery?: string;
     userRole?: Role;
     onEdit?: (unit: UnitWithResidents) => void;
     onDelete?: (unitId: string) => void;
     onView?: (unitId: string) => void;
 }
 
-export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTableProps) {
+export function UnitTable({
+    units,
+    hasUnfilteredUnits,
+    searchQuery,
+    userRole,
+    onEdit,
+    onDelete,
+    onView,
+}: UnitTableProps) {
     const t = useTranslations("Units");
     const tCommon = useTranslations("Common");
 
@@ -110,7 +121,11 @@ export function UnitTable({ units, userRole, onEdit, onDelete, onView }: UnitTab
             </table>
             {units.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-slate-500">{t("noUnitsFound")}</p>
+                    <p className="text-slate-500">
+                        {hasUnfilteredUnits && searchQuery?.trim()
+                            ? t("searchNoResults")
+                            : t("noUnitsFound")}
+                    </p>
                 </div>
             )}
         </div>

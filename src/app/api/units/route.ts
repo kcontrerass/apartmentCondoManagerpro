@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { unitSchema } from "@/lib/validations/unit";
+import { createUnitWithServices } from "@/lib/units/create-unit-with-services";
 import { Role } from "@/types/roles";
 
 export const dynamic = "force-dynamic";
@@ -136,63 +137,22 @@ export async function POST(request: Request) {
             );
         }
 
-        const unit = await prisma.$transaction(async (tx) => {
-            const createdUnit = await tx.unit.create({
-                data: {
+        const unit = await prisma.$transaction(async (tx) =>
+            createUnitWithServices(
+                tx,
+                complexIdToUse,
+                {
                     number: unitData.number,
                     type: unitData.type,
                     bedrooms: unitData.bedrooms,
                     bathrooms: unitData.bathrooms,
+                    parkingSpots: unitData.parkingSpots,
                     area: unitData.area,
                     status: unitData.status,
-                    complexId: complexIdToUse,
                 },
-            });
-
-            // 1. Fetch mandatory services for this complex
-            const mandatoryServicesList = await tx.service.findMany({
-                where: {
-                    complexId: complexIdToUse,
-                    isRequired: true,
-                },
-                select: { id: true },
-            });
-
-            // 2. Combine and resolve quantities
-            // Map: serviceId -> quantity
-            const servicesToAssign = new Map<string, number>();
-
-            // All mandatory services get quantity 1 (initial default)
-            mandatoryServicesList.forEach((s) => servicesToAssign.set(s.id, 1));
-
-            // services (from body) is an array of {id, quantity}
-            const bodyServices = (body.services || []) as { id: string, quantity?: number }[];
-            bodyServices.forEach((s) => {
-                servicesToAssign.set(s.id, s.quantity || 1);
-            });
-
-            // serviceIds (legacy) can also be used
-            const bodyServiceIds = (body.serviceIds || []) as string[];
-            bodyServiceIds.forEach((id) => {
-                if (!servicesToAssign.has(id)) {
-                    servicesToAssign.set(id, 1);
-                }
-            });
-
-            if (servicesToAssign.size > 0) {
-                await tx.unitService.createMany({
-                    data: Array.from(servicesToAssign.entries()).map(([serviceId, quantity]) => ({
-                        unitId: createdUnit.id,
-                        serviceId,
-                        quantity,
-                        status: "ACTIVE",
-                        startDate: new Date(),
-                    })),
-                });
-            }
-
-            return createdUnit;
-        });
+                body
+            )
+        );
 
         return NextResponse.json(unit, { status: 201 });
     } catch (error: any) {
