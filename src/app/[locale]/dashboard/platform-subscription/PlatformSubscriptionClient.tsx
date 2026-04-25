@@ -11,6 +11,9 @@ import { PLATFORM_CARD_CHECKOUT_SESSION_KEY } from "@/lib/platform-card-checkout
 import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
 import { canPayPlatformSubscriptionRole } from "@/lib/platform-subscription-rules";
 import { toast } from "sonner";
+import { RecurrenteCardFeeBreakdown } from "@/components/payments/RecurrenteCardFeeBreakdown";
+import { useRecurrenteFeeConfig } from "@/hooks/useRecurrenteFeeConfig";
+import { RecurrenteCardFeeInline } from "@/components/payments/RecurrenteCardFeeInline";
 
 type PendingBankTransferPayload = {
     paymentId: string;
@@ -84,6 +87,7 @@ export function PlatformSubscriptionClient() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const [pdfInvoiceId, setPdfInvoiceId] = useState<string | null>(null);
     const [releasingCard, setReleasingCard] = useState(false);
+    const platformCardFeeConfig = useRecurrenteFeeConfig(null, true);
 
     const loadHistory = useCallback(async () => {
         setHistoryLoading(true);
@@ -144,7 +148,7 @@ export function PlatformSubscriptionClient() {
     }, [t]);
 
     /**
-     * Tras «atrás» desde Recurrente, la misma pestaña vuelve aquí; Recurrente suele dejar el checkout abierto.
+     * Tras «atrás» desde la ventana de pago, la misma pestaña vuelve aquí; el checkout puede quedar abierto.
      * El flag en sessionStorage prueba que el usuario salió del flujo iniciado aquí (no polling agresivo en servidor).
      */
     useEffect(() => {
@@ -446,8 +450,16 @@ export function PlatformSubscriptionClient() {
                                                     : "—"}
                                             </td>
                                             <td className="p-3 text-slate-900 dark:text-white">{r.periodMonths}</td>
-                                            <td className="p-3 text-slate-900 dark:text-white whitespace-nowrap">
-                                                Q{(r.amountCents / 100).toFixed(2)} {r.currency}
+                                            <td className="p-3 text-slate-900 dark:text-white align-top min-w-[8rem]">
+                                                <div className="whitespace-nowrap">
+                                                    Q{(r.amountCents / 100).toFixed(2)} {r.currency}
+                                                </div>
+                                                {r.paymentMethod === "CARD" ? (
+                                                    <RecurrenteCardFeeInline
+                                                        baseGtq={r.amountCents / 100}
+                                                        config={platformCardFeeConfig}
+                                                    />
+                                                ) : null}
                                             </td>
                                             <td className="p-3 text-slate-600 dark:text-slate-400">
                                                 {historyMethodLabel(r.paymentMethod)}
@@ -543,6 +555,10 @@ export function PlatformSubscriptionClient() {
 
                     <p className="text-xs text-slate-500 leading-relaxed">{t("renewHint")}</p>
                     <p className="text-xs text-slate-500 leading-relaxed">{t("onePaymentPerMonthNote")}</p>
+
+                    {cardOk && data && data.priceGtq > 0 ? (
+                        <RecurrenteCardFeeBreakdown baseGtq={data.priceGtq} platform />
+                    ) : null}
 
                     <label className="flex gap-3 items-start rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/40 px-4 py-3 cursor-pointer select-none">
                         <input

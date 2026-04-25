@@ -1,5 +1,66 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { computeRecurrenteCardAmountsWithConfig } from "@/lib/recurrente-fee-math";
+import type { RecurrenteFeeConfig } from "@/lib/recurrente-fee-types";
+import { getDefaultRecurrenteFeeConfigFromEnv } from "@/lib/recurrente-fee-config-env";
+
+export interface PdfCardRecurrenteDetail {
+    pct: number;
+    fixedGtq: number;
+    netSubtotal: number;
+    surcharge: number;
+    totalCharged: number;
+}
+
+/** Comisión con tarjeta en PDF (misma fórmula que en la UI). */
+export function buildCardRecurrenteDetailForInvoicePdf(
+    totalNetGtq: number,
+    paymentMethod: string | null | undefined,
+    reservationPaymentMethod: string | null | undefined,
+    config: RecurrenteFeeConfig | null | undefined
+): PdfCardRecurrenteDetail | undefined {
+    const method = paymentMethod || reservationPaymentMethod;
+    if (method !== "CARD" || !config) return undefined;
+    const split = computeRecurrenteCardAmountsWithConfig(
+        Math.round(totalNetGtq * 100),
+        config
+    );
+    if (split.surchargeCents <= 0) return undefined;
+    return {
+        pct: config.pct,
+        fixedGtq: config.fixedGtq,
+        netSubtotal: split.baseCents / 100,
+        surcharge: split.surchargeCents / 100,
+        totalCharged: split.totalCents / 100,
+    };
+}
+
+function formatGtqPdf(n: number) {
+    return n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Desglose de comisión con tarjeta (texto neutro, sin marca de pasarela). */
+function drawPdfCardRecurrenteBlock(
+    doc: any,
+    pageWidth: number,
+    yStart: number,
+    cr: PdfCardRecurrenteDetail
+): void {
+    let y = yStart;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(146, 64, 14);
+    doc.text("Pago con tarjeta (estimado)", 14, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(7.5);
+    const cardLines = doc.splitTextToSize(
+        `~${cr.pct}% + Q${formatGtqPdf(cr.fixedGtq)} fijos. Factura: Q${formatGtqPdf(cr.netSubtotal)}. Comision: Q${formatGtqPdf(cr.surcharge)}. Total: Q${formatGtqPdf(cr.totalCharged)}.`,
+        pageWidth - 28
+    ) as string[];
+    doc.text(cardLines, 14, y);
+}
 
 interface PDFData {
     invoiceNumber: string;
@@ -13,6 +74,8 @@ interface PDFData {
     total: number;
     status: string;
     bankAccount?: string;
+    /** Pago con tarjeta: comisión / ajuste (misma lógica que en la app). */
+    cardRecurrente?: PdfCardRecurrenteDetail;
 }
 
 export const generateInvoicePDF = (data: PDFData) => {
@@ -121,7 +184,7 @@ export const generateInvoicePDF = (data: PDFData) => {
     doc.text('TOTAL:', pageWidth - 65, finalY + 8);
     doc.text(`Q ${data.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - 18, finalY + 8, { align: 'right' });
 
-    // Sello de Estado (Badge Elegante)
+    // Sello de Estado (Badge Elegante) — misma fila que el total
     const isPaid = data.status === 'PAID';
     const statusLabel = isPaid ? 'COMPROBANTE PAGADO' : 'PENDIENTE DE PAGO';
     const statusColor = isPaid ? [22, 163, 74] : [220, 38, 38];
@@ -132,6 +195,10 @@ export const generateInvoicePDF = (data: PDFData) => {
     doc.setTextColor(statusColor[0], statusColor[1], statusColor[2]);
     doc.setFontSize(8);
     doc.text(statusLabel, 44, finalY + 6.5, { align: 'center' });
+
+    if (data.cardRecurrente) {
+        drawPdfCardRecurrenteBlock(doc, pageWidth, finalY + 14, data.cardRecurrente);
+    }
 
     // -- Firmas y Footer --
     const footerY = pageHeight - 50;
@@ -180,23 +247,27 @@ export interface PlatformSubscriptionReceiptPdfData {
     items: { description: string; amount: number }[];
     total: number;
     paymentMethodLabel: string;
+    cardRecurrente?: PdfCardRecurrenteDetail;
 }
 
-export function invoiceJsonToPlatformSubscriptionReceiptPdfData(invoice: {
-    number: string;
-    month: number;
-    year: number;
-    dueDate: string;
-    createdAt: string;
-    updatedAt?: string;
-    status?: string;
-    totalAmount: unknown;
-    paymentMethod?: string | null;
-    category?: string;
-    complex?: { name?: string | null; address?: string | null } | null;
-    items?: { description: string; amount: unknown }[];
-    platformFeePayment?: { paidAt?: string | Date | null } | null;
-}): PlatformSubscriptionReceiptPdfData {
+export function invoiceJsonToPlatformSubscriptionReceiptPdfData(
+    invoice: {
+        number: string;
+        month: number;
+        year: number;
+        dueDate: string;
+        createdAt: string;
+        updatedAt?: string;
+        status?: string;
+        totalAmount: unknown;
+        paymentMethod?: string | null;
+        category?: string;
+        complex?: { name?: string | null; address?: string | null } | null;
+        items?: { description: string; amount: unknown }[];
+        platformFeePayment?: { paidAt?: string | Date | null } | null;
+    },
+    feeConfig?: RecurrenteFeeConfig | null
+): PlatformSubscriptionReceiptPdfData {
     const total = Number(invoice.totalAmount);
     const items =
         invoice.items?.map((it) => ({
@@ -225,6 +296,14 @@ export function invoiceJsonToPlatformSubscriptionReceiptPdfData(invoice: {
           })
         : "—";
 
+    const cfg = feeConfig ?? getDefaultRecurrenteFeeConfigFromEnv();
+    const cardRecurrente = buildCardRecurrenteDetailForInvoicePdf(
+        Number.isFinite(total) ? total : 0,
+        pm,
+        undefined,
+        cfg
+    );
+
     return {
         invoiceNumber: invoice.number,
         complexName: invoice.complex?.name ?? "Complejo",
@@ -236,6 +315,7 @@ export function invoiceJsonToPlatformSubscriptionReceiptPdfData(invoice: {
         items,
         total: Number.isFinite(total) ? total : 0,
         paymentMethodLabel,
+        cardRecurrente,
     };
 }
 
@@ -334,6 +414,10 @@ export function generatePlatformSubscriptionReceiptPdf(data: PlatformSubscriptio
         finalY + 12,
         { align: "right" }
     );
+
+    if (data.cardRecurrente) {
+        drawPdfCardRecurrenteBlock(doc, pageWidth, finalY + 18, data.cardRecurrente);
+    }
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);

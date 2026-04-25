@@ -22,7 +22,7 @@ async function main() {
     const commonPassword = await hash('admin123', 12);
 
     // 1. Create Users
-    await prisma.user.upsert({
+    const superAdmin = await prisma.user.upsert({
         where: { email: 'admin@condomanager.com' },
         update: {},
         create: {

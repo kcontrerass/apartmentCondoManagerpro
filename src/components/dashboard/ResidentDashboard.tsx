@@ -11,6 +11,9 @@ import Link from "next/link";
 import { ActivityTable } from "@/components/dashboard/ActivityTable";
 import { Role } from "@/types/roles";
 import { motion } from "framer-motion";
+import { useRecurrenteFeeConfig } from "@/hooks/useRecurrenteFeeConfig";
+import { RecurrenteCardFeeInline } from "@/components/payments/RecurrenteCardFeeInline";
+import { invoiceShowsRecurrenteCardLine } from "@/lib/invoice-recurrente-card";
 
 const container = {
     hidden: { opacity: 0 },
@@ -32,6 +35,8 @@ interface ResidentDashboardProps {
         resident: any;
         complexSettings?: any;
         pendingInvoices: any[];
+        /** Identificador de complejo para tarifas de comisión con tarjeta. */
+        cardFeeComplexId?: string | null;
         upcomingReservations: any[];
         recentIncidents: any[];
         activities: any[];
@@ -41,7 +46,17 @@ interface ResidentDashboardProps {
 
 export function ResidentDashboard({ data }: ResidentDashboardProps) {
     const t = useTranslations("Dashboard");
-    const { resident, complexSettings, pendingInvoices, upcomingReservations, recentIncidents, activities, activePolls } = data;
+    const {
+        resident,
+        complexSettings,
+        pendingInvoices,
+        cardFeeComplexId,
+        upcomingReservations,
+        recentIncidents,
+        activities,
+        activePolls,
+    } = data;
+    const cardFeeConfig = useRecurrenteFeeConfig(cardFeeComplexId ?? null);
 
     const hasPermission = (module: string) => {
         // Resident role is always 'RESIDENT'
@@ -96,9 +111,18 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                             </div>
                             {pendingInvoices.length > 0 ? (
                                 <div className="space-y-3">
-                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                        {formatPrice(pendingInvoices[0].totalAmount)}
-                                    </p>
+                                    <div>
+                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                            {formatPrice(pendingInvoices[0].totalAmount)}
+                                        </p>
+                                        {invoiceShowsRecurrenteCardLine(pendingInvoices[0]) ? (
+                                            <RecurrenteCardFeeInline
+                                                baseGtq={Number(pendingInvoices[0].totalAmount)}
+                                                config={cardFeeConfig}
+                                                className="text-left"
+                                            />
+                                        ) : null}
+                                    </div>
                                     <p className="text-xs text-slate-500">
                                         {t("residentDashboard.dueOn")}: {format(new Date(pendingInvoices[0].dueDate), "dd MMM", { locale: es })}
                                     </p>
@@ -176,18 +200,31 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                             <p className="font-medium text-sm">{inv.number}</p>
                                             <p className="text-xs text-slate-500">{inv.month}/{inv.year}</p>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="text-right max-w-[min(100%,14rem)] ml-auto">
                                             <p className="font-bold text-sm">{formatPrice(inv.totalAmount)}</p>
+                                            {invoiceShowsRecurrenteCardLine(inv) ? (
+                                                <RecurrenteCardFeeInline
+                                                    baseGtq={Number(inv.totalAmount)}
+                                                    config={cardFeeConfig}
+                                                    className="text-right"
+                                                />
+                                            ) : null}
                                             <div className="flex flex-col items-end gap-1">
                                                 <Badge variant={inv.status === 'PAID' ? 'success' : 'warning'}>{inv.status}</Badge>
-                                                {inv.paymentMethod && !(inv.paymentMethod === 'CARD' && inv.status !== 'PAID') && (
+                                                {(() => {
+                                                    const pm =
+                                                        inv.paymentMethod ||
+                                                        inv.paymentMethodIntent;
+                                                    if (!pm) return null;
+                                                    return (
                                                     <div className="flex items-center gap-1 text-[10px] text-slate-500">
                                                         <span className="material-symbols-outlined text-xs">
-                                                            {inv.paymentMethod === 'CARD' ? 'credit_card' : inv.paymentMethod === 'CASH' ? 'payments' : 'account_balance'}
+                                                            {pm === 'CARD' ? 'credit_card' : pm === 'CASH' ? 'payments' : 'account_balance'}
                                                         </span>
-                                                        <span>{inv.paymentMethod}</span>
+                                                        <span>{pm}</span>
                                                     </div>
-                                                )}
+                                                    );
+                                                })()}
                                             </div>
                                         </div>
                                     </div>

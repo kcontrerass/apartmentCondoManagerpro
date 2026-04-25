@@ -22,7 +22,7 @@ const routeLabels: Record<string, string> = {
     profile: "Perfil",
     "platform-subscription": "Suscripción",
     "platform-payments": "Pagos plataforma",
-    "platform-recurrente": "Recurrente plataforma",
+    "platform-recurrente": "Pasarela — plataforma",
 };
 
 export function Breadcrumbs() {

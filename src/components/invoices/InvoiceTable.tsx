@@ -7,7 +7,14 @@ import { enUS, es } from "date-fns/locale";
 import { useLocale, useTranslations } from "next-intl";
 import { Role } from "@/types/roles";
 import { formatPrice } from "@/lib/utils";
-import { generateInvoicePDF } from "@/lib/utils/pdf-generator";
+import {
+    buildCardRecurrenteDetailForInvoicePdf,
+    generateInvoicePDF,
+} from "@/lib/utils/pdf-generator";
+import { getDefaultRecurrenteFeeConfigFromEnv } from "@/lib/recurrente-fee-config-env";
+import { useRecurrenteFeeConfig } from "@/hooks/useRecurrenteFeeConfig";
+import { RecurrenteCardFeeInline } from "@/components/payments/RecurrenteCardFeeInline";
+import { invoiceShowsRecurrenteCardLine } from "@/lib/invoice-recurrente-card";
 
 interface InvoiceTableProps {
     invoices: any[];
@@ -18,6 +25,8 @@ interface InvoiceTableProps {
     isLoading?: boolean;
     /** Residente: método solo en el modal; staff paga cuando el residente ya guardó intención en servidor. */
     requirePaymentMethodBeforePay?: boolean;
+    /** Para comisión % tarjeta (mismo complejo que en cobros). */
+    cardFeeComplexId?: string | null;
 }
 
 export function InvoiceTable({
@@ -28,10 +37,17 @@ export function InvoiceTable({
     userRole,
     isLoading,
     requirePaymentMethodBeforePay = false,
+    cardFeeComplexId: cardFeeComplexIdProp = null,
 }: InvoiceTableProps) {
     const t = useTranslations('Invoices');
     const locale = useLocale();
     const dateLocale = locale === 'es' ? es : enUS;
+
+    const cardFeeComplexId =
+        cardFeeComplexIdProp ||
+        invoices.find((i) => i.unit?.complexId)?.unit?.complexId ||
+        null;
+    const feeConfig = useRecurrenteFeeConfig(cardFeeComplexId);
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -61,6 +77,13 @@ export function InvoiceTable({
         !hasServerPaymentIntent(invoice);
 
     const handleDownload = (invoice: any) => {
+        const configForPdf = feeConfig ?? getDefaultRecurrenteFeeConfigFromEnv();
+        const cardRecurrente = buildCardRecurrenteDetailForInvoicePdf(
+            Number(invoice.totalAmount),
+            invoice.paymentMethod,
+            invoice.reservation?.paymentMethod,
+            configForPdf
+        );
         generateInvoicePDF({
             invoiceNumber: invoice.number,
             date: format(new Date(invoice.createdAt), 'dd/MM/yyyy'),
@@ -75,7 +98,8 @@ export function InvoiceTable({
             })),
             total: Number(invoice.totalAmount),
             status: invoice.status,
-            bankAccount: invoice.complex?.bankAccount
+            bankAccount: invoice.complex?.bankAccount,
+            cardRecurrente,
         });
     };
 
@@ -147,8 +171,14 @@ export function InvoiceTable({
                                     <span className="text-slate-400">-</span>
                                 )}
                             </td>
-                            <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-semibold">
-                                {formatPrice(invoice.totalAmount)}
+                            <td className="py-4 px-4 text-sm text-slate-900 dark:text-white font-semibold align-top">
+                                <div>{formatPrice(invoice.totalAmount)}</div>
+                                {invoiceShowsRecurrenteCardLine(invoice) ? (
+                                    <RecurrenteCardFeeInline
+                                        baseGtq={Number(invoice.totalAmount)}
+                                        config={feeConfig}
+                                    />
+                                ) : null}
                             </td>
                             <td className="py-4 px-4">
                                 <Badge variant={getStatusVariant(invoice.status)}>
@@ -173,14 +203,6 @@ export function InvoiceTable({
                                         (!isPaid && !isCancelled ? intent : null);
 
                                     if (display && !isCancelled) {
-                                        // Ocultar tarjeta solo cuando ya hay método registrado en factura y aún no está pagada
-                                        if (
-                                            invoice.paymentMethod === 'CARD' &&
-                                            !isPaid
-                                        ) {
-                                            return <span className="text-slate-400 dark:text-slate-500">-</span>;
-                                        }
-
                                         return (
                                             <div className="flex items-center gap-2">
                                                 <span className="material-symbols-outlined text-sm text-slate-500">

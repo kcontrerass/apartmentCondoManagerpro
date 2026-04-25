@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { formatPrice } from "@/lib/utils";
+import { RecurrenteCardFeeBreakdown } from "@/components/payments/RecurrenteCardFeeBreakdown";
+import { invoiceShowsRecurrenteCardLine } from "@/lib/invoice-recurrente-card";
 
 interface InvoiceDetailModalProps {
     invoice: any;
@@ -15,6 +17,10 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
     if (!invoice) return null;
 
     const isPlatformSubscription = invoice.category === "PLATFORM_SUBSCRIPTION";
+    const showCardFee =
+        !isPlatformSubscription && invoiceShowsRecurrenteCardLine(invoice);
+    const cardFeeComplexId =
+        invoice.unit?.complexId ?? invoice.complexId ?? null;
 
     return (
         <div className="space-y-6">
@@ -90,6 +96,14 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                         </tfoot>
                     </table>
                 </div>
+                {showCardFee && (
+                    <div className="mt-3">
+                        <RecurrenteCardFeeBreakdown
+                            baseGtq={Number(invoice.totalAmount)}
+                            complexId={cardFeeComplexId}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     );

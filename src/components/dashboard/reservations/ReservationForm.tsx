@@ -7,6 +7,7 @@ import { getAmenities } from '@/lib/api/amenities';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { RecurrenteCardFeeBreakdown } from '@/components/payments/RecurrenteCardFeeBreakdown';
 
 export default function ReservationForm({
     amenityId: initialAmenityId,
@@ -349,6 +350,12 @@ export default function ReservationForm({
                                 <option value="TRANSFER">{t('paymentMethod.TRANSFER')}</option>
                             </select>
                         </div>
+                        {paymentMethod === 'CARD' && totalCost > 0 ? (
+                            <RecurrenteCardFeeBreakdown
+                                baseGtq={totalCost}
+                                complexId={currentAmenity?.complexId}
+                            />
+                        ) : null}
                     </div>
                 )}
 

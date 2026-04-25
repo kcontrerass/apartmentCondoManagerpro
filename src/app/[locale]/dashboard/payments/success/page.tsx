@@ -3,7 +3,7 @@ import { Link } from "@/i18n/routing";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import {
-    getRecurrenteKeysFromComplexSettings,
+    getRecurrenteKeysForComplexOrEnv,
     recurrente,
     type RecurrenteKeys,
 } from "@/lib/recurrente";
@@ -92,13 +92,14 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
         ui = "paid";
     } else if (session_id) {
         try {
+            const spRecord = sp as Record<string, string | string[] | undefined>;
+            const invoiceIdFromUrl = pickQueryString(spRecord, "invoiceId");
+            const complexIdFromUrl = pickQueryString(spRecord, "complexId");
+
             const platformKeys = scope === "platform" ? await getPlatformRecurrenteKeys() : null;
 
             let complexKeys: RecurrenteKeys | null = null;
             if (scope !== "platform") {
-                const spRecord = sp as Record<string, string | string[] | undefined>;
-                const invoiceIdFromUrl = pickQueryString(spRecord, "invoiceId");
-                const complexIdFromUrl = pickQueryString(spRecord, "complexId");
                 if (invoiceIdFromUrl) {
                     const inv = await prisma.invoice.findUnique({
                         where: { id: invoiceIdFromUrl },
@@ -110,7 +111,8 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                             },
                         },
                     });
-                    complexKeys = getRecurrenteKeysFromComplexSettings(
+                    // Mismas claves que en /api/payments/checkout: ajustes del complejo o RECURRENTE_* en .env
+                    complexKeys = getRecurrenteKeysForComplexOrEnv(
                         inv?.unit?.complex?.settings
                     );
                 }
@@ -119,7 +121,7 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                         where: { id: complexIdFromUrl },
                         select: { settings: true },
                     });
-                    complexKeys = getRecurrenteKeysFromComplexSettings(cx?.settings);
+                    complexKeys = getRecurrenteKeysForComplexOrEnv(cx?.settings);
                 }
             }
 
@@ -150,7 +152,23 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                 }
             }
 
-            if (!checkout && !recoveredPlatformPaid) {
+            let invoiceAlreadyPaidInDb = false;
+            if (
+                !checkout &&
+                !recoveredPlatformPaid &&
+                scope !== "platform" &&
+                invoiceIdFromUrl
+            ) {
+                const invRow = await prisma.invoice.findUnique({
+                    where: { id: invoiceIdFromUrl },
+                    select: { status: true },
+                });
+                invoiceAlreadyPaidInDb = invRow?.status === "PAID";
+            }
+
+            if (invoiceAlreadyPaidInDb) {
+                ui = "paid";
+            } else if (!checkout && !recoveredPlatformPaid) {
                 ui = "verify_error";
             } else if (recoveredPlatformPaid && !checkout) {
                 ui = "paid";
@@ -363,7 +381,19 @@ export default async function PaymentSuccessPage({ params, searchParams }: Props
                     ui = "verify_error";
                 }
             } else {
-                ui = "verify_error";
+                const invIdCatch = pickQueryString(
+                    sp as Record<string, string | string[] | undefined>,
+                    "invoiceId"
+                );
+                if (invIdCatch) {
+                    const invRow = await prisma.invoice.findUnique({
+                        where: { id: invIdCatch },
+                        select: { status: true },
+                    });
+                    ui = invRow?.status === "PAID" ? "paid" : "verify_error";
+                } else {
+                    ui = "verify_error";
+                }
             }
         }
     }

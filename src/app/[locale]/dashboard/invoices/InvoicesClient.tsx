@@ -17,6 +17,7 @@ import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
 import { Input } from "@/components/ui/Input";
 import { SuperAdminBillingComplexSelector } from "@/components/invoices/SuperAdminBillingComplexSelector";
+import { RecurrenteCardFeeBreakdown } from "@/components/payments/RecurrenteCardFeeBreakdown";
 
 interface InvoicesClientProps {
     user: any;
@@ -57,6 +58,13 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
 
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
+
+    const cardFeeComplexIdForTable =
+        billingScopeComplexId ??
+        invoices.find((i) => i.unit?.complexId)?.unit?.complexId ??
+        complexId ??
+        (user as { complexId?: string } | null)?.complexId ??
+        null;
 
     useEffect(() => {
         const fetchComplexes = async () => {
@@ -213,10 +221,7 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
 
         setIsSubmitting(true);
         try {
-            if (
-                isResident &&
-                selectedMethod !== paymentInvoice.paymentMethodIntent
-            ) {
+            if (isResident) {
                 const syncRes = await fetch(
                     `/api/invoices/${paymentInvoice.id}/payment-intent`,
                     {
@@ -235,11 +240,13 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                     return;
                 }
                 setPaymentInvoice((prev: any) =>
-                    prev ? { ...prev, ...syncData } : prev
+                    prev ? { ...prev, ...syncData, paymentMethodIntent: selectedMethod } : prev
                 );
                 setInvoices((prev) =>
                     prev.map((i) =>
-                        i.id === paymentInvoice.id ? { ...i, ...syncData } : i
+                        i.id === paymentInvoice.id
+                            ? { ...i, ...syncData, paymentMethodIntent: selectedMethod }
+                            : i
                     )
                 );
             }
@@ -437,6 +444,7 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                         userRole={userRole}
                         isLoading={isLoading}
                         requirePaymentMethodBeforePay={isResident}
+                        cardFeeComplexId={cardFeeComplexIdForTable}
                     />
                 )}
             </Card>
@@ -571,6 +579,15 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
                                     <p className={`text-xs ${selectedMethod === 'TRANSFER' ? 'text-white/80' : 'text-slate-500'}`}>{tMethods('TRANSFER_desc' as any) || 'Envía tu comprobante'}</p>
                                 </div>
                             </div>
+
+                            {selectedMethod === "CARD" &&
+                            paymentInvoice &&
+                            Number(paymentInvoice.totalAmount) > 0 ? (
+                                <RecurrenteCardFeeBreakdown
+                                    baseGtq={Number(paymentInvoice.totalAmount)}
+                                    complexId={paymentInvoice.complexId ?? paymentInvoice.unit?.complexId ?? null}
+                                />
+                            ) : null}
 
                             <Button
                                 onClick={handleConfirmPayment}

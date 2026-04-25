@@ -334,7 +334,7 @@ export default function SettingsClient({ user }: { user: any }) {
                             </div>
 
                             <div className="lg:col-span-2 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">{t('recurrenteConfigTitle', { default: 'Configuración Pasarela de Pagos (Recurrente)' })}</h4>
+                                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">{t('recurrenteConfigTitle', { default: 'Configuración de la pasarela de pagos' })}</h4>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
                                     {t('platformRecurrenteHint')}
                                 </p>

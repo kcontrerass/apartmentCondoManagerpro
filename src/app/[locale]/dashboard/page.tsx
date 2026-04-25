@@ -148,7 +148,11 @@ async function getStats(userId: string, role: string) {
         const recentInvoicesRaw = [...invoicesRaw].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
 
         const pendingInvoices = invoicesRaw
-            .filter((inv: any) => inv.status === 'PENDING' || inv.status === 'OVERDUE')
+            .filter((inv: any) =>
+                inv.status === 'PENDING' ||
+                inv.status === 'OVERDUE' ||
+                inv.status === 'PROCESSING'
+            )
             .slice(0, 3)
             .map((inv: any) => ({
                 ...inv,
@@ -203,6 +207,7 @@ async function getStats(userId: string, role: string) {
                 resident,
                 complexSettings,
                 pendingInvoices,
+                cardFeeComplexId: resident.unit.complexId,
                 upcomingReservations,
                 recentIncidents: incidentsRaw.slice(0, 3),
                 activities,

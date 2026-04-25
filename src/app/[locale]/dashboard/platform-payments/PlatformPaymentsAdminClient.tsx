@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { downloadPlatformSubscriptionReceiptPdf } from "@/lib/download-platform-subscription-pdf";
 import { toast } from "sonner";
+import { useRecurrenteFeeConfig } from "@/hooks/useRecurrenteFeeConfig";
+import { RecurrenteCardFeeInline } from "@/components/payments/RecurrenteCardFeeInline";
 
 const SUPER_COMPLEX_FILTER_KEY = "cm_platform_payments_super_complex";
 
@@ -42,6 +44,7 @@ export function PlatformPaymentsAdminClient({
     /** Súper admin: "" = aún no eligió; "*" = todos los complejos; id = un complejo */
     const [superComplexFilter, setSuperComplexFilter] = useState("");
     const [complexOptions, setComplexOptions] = useState<{ id: string; name: string }[]>([]);
+    const platformCardFeeConfig = useRecurrenteFeeConfig(null, true);
 
     useEffect(() => {
         if (mode !== "super") return;
@@ -278,8 +281,16 @@ export function PlatformPaymentsAdminClient({
                                     {showComplexColumn ? (
                                         <td className="p-4 font-medium text-slate-900 dark:text-white">{r.complex.name}</td>
                                     ) : null}
-                                    <td className="p-4">
-                                        {(r.amountCents / 100).toFixed(2)} {r.currency}
+                                    <td className="p-4 align-top">
+                                        <div>
+                                            {(r.amountCents / 100).toFixed(2)} {r.currency}
+                                        </div>
+                                        {r.paymentMethod === "CARD" ? (
+                                            <RecurrenteCardFeeInline
+                                                baseGtq={r.amountCents / 100}
+                                                config={platformCardFeeConfig}
+                                            />
+                                        ) : null}
                                     </td>
                                     <td className="p-4 text-slate-600 dark:text-slate-400">{methodLabel(r.paymentMethod)}</td>
                                     <td className="p-4">{statusLabel(r.status)}</td>

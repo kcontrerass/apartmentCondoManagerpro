@@ -19,6 +19,20 @@ export function getRecurrenteKeysFromComplexSettings(settings: unknown): Recurre
     return webhookSecret ? { publicKey, secretKey, webhookSecret } : { publicKey, secretKey };
 }
 
+/** Claves globales en `RECURRENTE_*` cuando el complejo no definió las suyas en ajustes. */
+export function getRecurrenteKeysFromEnv(): RecurrenteKeys | null {
+    const publicKey = process.env.RECURRENTE_PUBLIC_KEY?.trim() || "";
+    const secretKey = process.env.RECURRENTE_SECRET_KEY?.trim() || "";
+    if (!publicKey || !secretKey) return null;
+    const webhookSecret = process.env.RECURRENTE_WEBHOOK_SECRET?.trim() || undefined;
+    return webhookSecret ? { publicKey, secretKey, webhookSecret } : { publicKey, secretKey };
+}
+
+/** Prioridad: `settings.recurrente` del complejo; si faltan, variables de entorno. */
+export function getRecurrenteKeysForComplexOrEnv(settings: unknown): RecurrenteKeys | null {
+    return getRecurrenteKeysFromComplexSettings(settings) ?? getRecurrenteKeysFromEnv();
+}
+
 /**
  * Cliente HTTP a Recurrente (misma URL en test y live; distinguen las llaves).
  *

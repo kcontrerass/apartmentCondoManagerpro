@@ -1,7 +1,12 @@
 import { InvoiceCategory } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { recurrente } from "@/lib/recurrente";
+import { getRecurrenteKeysForComplexOrEnv, recurrente } from "@/lib/recurrente";
+import { resolveRecurrenteFeeConfig } from "@/lib/recurrente-fee-config";
+import {
+    buildRecurrenteCardCheckoutLineItemsWithConfig,
+    computeRecurrenteCardAmountsWithConfig,
+} from "@/lib/recurrente-fee-math";
 import { Role } from "@/types/roles";
 import { apiError, apiOk } from "@/lib/api-response";
 
@@ -108,16 +113,31 @@ export async function POST(request: Request) {
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
             const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
-            const recurrenteKeys = (amenity.complex.settings as any)?.recurrente;
+            const recurrenteKeys = getRecurrenteKeysForComplexOrEnv(amenity.complex.settings);
+            if (!recurrenteKeys) {
+                return apiError(
+                    {
+                        code: "PAYMENT_GATEWAY_NOT_CONFIGURED",
+                        message:
+                            "La pasarela de pago no está configurada. Configura las claves en ajustes del complejo o define RECURRENTE_PUBLIC_KEY y RECURRENTE_SECRET_KEY en el entorno del servidor.",
+                    },
+                    503
+                );
+            }
 
+            const feeCfg = await resolveRecurrenteFeeConfig(recurrenteKeys);
             const reservationSuccessUrl = `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}&complexId=${encodeURIComponent(amenity.complexId)}`;
+            const resBaseCents = Math.round(totalAmount * 100);
+            const resCard = computeRecurrenteCardAmountsWithConfig(resBaseCents, feeCfg);
             const checkoutSession = await recurrente.checkouts.create({
-                items: [{
-                    name: `Reserva: ${amenity.name} - ${amenity.complex?.name}`,
-                    currency: 'GTQ',
-                    amount_in_cents: Math.round(totalAmount * 100),
-                    quantity: 1,
-                }],
+                items: buildRecurrenteCardCheckoutLineItemsWithConfig(
+                    {
+                        name: `Reserva: ${amenity.name} - ${amenity.complex?.name}`,
+                        currency: "GTQ",
+                    },
+                    resBaseCents,
+                    feeCfg
+                ),
                 success_url: reservationSuccessUrl,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
@@ -129,7 +149,8 @@ export async function POST(request: Request) {
                     endTime,
                     notes,
                     userId: session.user.id,
-                    totalAmount
+                    totalAmount,
+                    recurrenteSurchargeCents: resCard.surchargeCents,
                 }
             }, recurrenteKeys);
 
@@ -238,17 +259,38 @@ export async function POST(request: Request) {
         const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
 
         if (method === "CARD") {
-            const recurrenteKeys = (invoice.unit.complex.settings as any)?.recurrente;
+            const recurrenteKeys = getRecurrenteKeysForComplexOrEnv(invoice.unit.complex.settings);
+            if (!recurrenteKeys) {
+                return apiError(
+                    {
+                        code: "PAYMENT_GATEWAY_NOT_CONFIGURED",
+                        message:
+                            "La pasarela de pago no está configurada. Configura las claves en ajustes del complejo o define RECURRENTE_PUBLIC_KEY y RECURRENTE_SECRET_KEY en el entorno del servidor.",
+                    },
+                    503
+                );
+            }
 
+            const invFeeCfg = await resolveRecurrenteFeeConfig(recurrenteKeys);
             const invoiceSuccessUrl = `${appUrl}/${locale}/dashboard/payments/success?session_id={CHECKOUT_SESSION_ID}&invoiceId=${encodeURIComponent(invoice.id)}&complexId=${encodeURIComponent(invoice.unit.complexId)}`;
+            // Antes del checkout: mismo criterio que efectivo/transfer (PROCESSING) para que en BD quede
+            // método tarjeta aunque falle el redirect desde Recurrente; el admin ve "Tarjeta" al aprobar.
+            await (prisma as any).invoice.update({
+                where: { id: invoice.id },
+                data: { paymentMethod: "CARD", status: "PROCESSING" },
+            });
             // Recurrente Checkout Creation
+            const invBaseCents = Math.round(Number(invoice.totalAmount) * 100);
+            const invCard = computeRecurrenteCardAmountsWithConfig(invBaseCents, invFeeCfg);
             const checkoutSession = await recurrente.checkouts.create({
-                items: [{
-                    name: `Factura ${invoice.number} - Periodo: ${invoice.month}/${invoice.year} - Unidad: ${invoice.unit.number}`,
-                    currency: 'GTQ',
-                    amount_in_cents: Math.round(Number(invoice.totalAmount) * 100),
-                    quantity: 1,
-                }],
+                items: buildRecurrenteCardCheckoutLineItemsWithConfig(
+                    {
+                        name: `Factura ${invoice.number} - Periodo: ${invoice.month}/${invoice.year} - Unidad: ${invoice.unit.number}`,
+                        currency: "GTQ",
+                    },
+                    invBaseCents,
+                    invFeeCfg
+                ),
                 success_url: invoiceSuccessUrl,
                 cancel_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
                 back_url: `${appUrl}/${locale}/dashboard/payments/cancel`,
@@ -258,14 +300,9 @@ export async function POST(request: Request) {
                     type: 'INVOICE',
                     invoiceId: invoice.id,
                     unitId: invoice.unitId,
+                    recurrenteSurchargeCents: invCard.surchargeCents,
                 }
             }, recurrenteKeys);
-
-            // Update invoice with intended payment method
-            await (prisma as any).invoice.update({
-                where: { id: invoice.id },
-                data: { paymentMethod: 'CARD' }
-            });
 
             const url = checkoutSession.checkout_url || checkoutSession.url;
             return apiOk({ url });

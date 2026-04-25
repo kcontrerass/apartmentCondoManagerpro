@@ -15,6 +15,11 @@ import { findComplexForPlatformFeeByUser } from "@/lib/find-admin-complex-platfo
 import { getPlatformFeePaymentEligibility } from "@/lib/platform-fee-monthly-limit";
 import { isPrismaTableMissingError } from "@/lib/prisma-request-errors";
 import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
+import { resolveRecurrenteFeeConfig } from "@/lib/recurrente-fee-config";
+import {
+    buildRecurrenteCardCheckoutLineItemsWithConfig,
+    computeRecurrenteCardAmountsWithConfig,
+} from "@/lib/recurrente-fee-math";
 
 export async function POST(request: Request) {
     try {
@@ -172,16 +177,15 @@ export async function POST(request: Request) {
         const locale = request.headers.get("referer")?.includes("/en/") ? "en" : "es";
         const cancelReturnUrl = `${appUrl}/${locale}/dashboard/payments/cancel?scope=platform&platformFeePaymentId=${encodeURIComponent(payment.id)}`;
 
+        const platFeeCfg = await resolveRecurrenteFeeConfig(keys);
+        const platCard = computeRecurrenteCardAmountsWithConfig(amountCents, platFeeCfg);
         const checkoutSession = await recurrente.checkouts.create(
             {
-                items: [
-                    {
-                        name: `Uso de plataforma — ${complex.name}`,
-                        currency: "GTQ",
-                        amount_in_cents: amountCents,
-                        quantity: 1,
-                    },
-                ],
+                items: buildRecurrenteCardCheckoutLineItemsWithConfig(
+                    { name: `Uso de plataforma — ${complex.name}`, currency: "GTQ" },
+                    amountCents,
+                    platFeeCfg
+                ),
                 // Un solo placeholder evita query duplicada `checkout_id=ch_…&checkout_id={CHECKOUT_SESSION_ID}`. Recurrente suele añadir `checkout_id` al redirect.
                 success_url: `${appUrl}/${locale}/dashboard/payments/success?scope=platform&platformFeePaymentId=${encodeURIComponent(payment.id)}&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: cancelReturnUrl,
@@ -191,6 +195,7 @@ export async function POST(request: Request) {
                     type: "PLATFORM_FEE",
                     platformFeePaymentId: payment.id,
                     complexId: complex.id,
+                    recurrenteSurchargeCents: platCard.surchargeCents,
                 },
             },
             keys
