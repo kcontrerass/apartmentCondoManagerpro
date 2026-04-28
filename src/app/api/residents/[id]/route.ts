@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
-import { residentSchema } from "@/lib/validations/resident";
+import { residentPatchSchema } from "@/lib/validations/resident";
 import { Role } from "@/types/roles";
 import type { Prisma } from "@prisma/client";
+import { ZodError } from "zod";
 import { notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
 import { roleCanStaffManageResidentAirbnbFields } from "@/lib/complex-airbnb-guests";
 
@@ -18,7 +19,15 @@ const AIRBNB_PATCH_KEYS = [
 ] as const;
 
 function patchTouchesAirbnbFields(body: Record<string, unknown>): boolean {
+    if (body.type === "AIRBNB_GUEST") return true;
     return AIRBNB_PATCH_KEYS.some((k) => body[k] !== undefined);
+}
+
+/** PATCH puede enviar `null`; evita `.trim()` sobre null (lanzaba 500). */
+function toNullableTrimmed(v: unknown): string | null {
+    if (v == null) return null;
+    const s = String(v).trim();
+    return s === "" ? null : s;
 }
 
 export async function GET(
@@ -98,14 +107,14 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const validatedData = residentSchema.partial().parse(body);
+        const validatedData = residentPatchSchema.parse(body);
 
         const airbnbEnabled = roleCanStaffManageResidentAirbnbFields(
             residentToCheck.unit.complex.settings,
             session.user.role as Role
         );
         if (!airbnbEnabled) {
-            if (validatedData.isAirbnb === true) {
+            if (validatedData.isAirbnb === true || validatedData.type === "AIRBNB_GUEST") {
                 return NextResponse.json(
                     { error: "No tienes permiso para registrar huéspedes o la función está desactivada para tu rol" },
                     { status: 403 }
@@ -172,6 +181,20 @@ export async function PATCH(
         if (endDate !== undefined) data.endDate = endDate;
         if (emergencyContact !== undefined) data.emergencyContact = emergencyContact as object;
 
+        if (
+            type !== undefined &&
+            type !== "AIRBNB_GUEST" &&
+            residentToCheck.type === "AIRBNB_GUEST"
+        ) {
+            data.isAirbnb = false;
+            data.airbnbStartDate = null;
+            data.airbnbEndDate = null;
+            data.airbnbGuestName = null;
+            data.airbnbReservationCode = null;
+            data.airbnbGuestPhone = null;
+            data.airbnbGuestIdentification = null;
+        }
+
         if (isAirbnb !== undefined) {
             data.isAirbnb = isAirbnb;
             if (isAirbnb === false) {
@@ -184,15 +207,33 @@ export async function PATCH(
             }
         }
 
+        if (type === "AIRBNB_GUEST") {
+            data.isAirbnb = true;
+        }
+
         if (isAirbnb !== false) {
             if (airbnbStartDate !== undefined) data.airbnbStartDate = airbnbStartDate;
             if (airbnbEndDate !== undefined) data.airbnbEndDate = airbnbEndDate;
-            if (airbnbGuestName !== undefined) data.airbnbGuestName = airbnbGuestName.trim() || null;
+            if (airbnbGuestName !== undefined) data.airbnbGuestName = toNullableTrimmed(airbnbGuestName);
             if (airbnbReservationCode !== undefined)
-                data.airbnbReservationCode = airbnbReservationCode.trim() || null;
-            if (airbnbGuestPhone !== undefined) data.airbnbGuestPhone = airbnbGuestPhone.trim() || null;
+                data.airbnbReservationCode = toNullableTrimmed(airbnbReservationCode);
+            if (airbnbGuestPhone !== undefined) data.airbnbGuestPhone = toNullableTrimmed(airbnbGuestPhone);
             if (airbnbGuestIdentification !== undefined)
-                data.airbnbGuestIdentification = airbnbGuestIdentification.trim() || null;
+                data.airbnbGuestIdentification = toNullableTrimmed(airbnbGuestIdentification);
+        }
+
+        if (Object.keys(data).length === 0) {
+            const unchanged = await prisma.resident.findUnique({
+                where: { id },
+                include: {
+                    user: true,
+                    unit: { include: { complex: true } },
+                },
+            });
+            if (!unchanged) {
+                return NextResponse.json({ error: "Residente no encontrado" }, { status: 404 });
+            }
+            return NextResponse.json(unchanged);
         }
 
         const resident = await prisma.resident.update({
@@ -217,10 +258,11 @@ export async function PATCH(
         }
 
         return NextResponse.json(resident);
-    } catch (error: any) {
-        if (error.name === "ZodError") {
-            return NextResponse.json({ error: error.errors }, { status: 400 });
+    } catch (error: unknown) {
+        if (error instanceof ZodError) {
+            return NextResponse.json({ error: error.flatten() }, { status: 400 });
         }
+        console.error("[residents PATCH]", error);
         return NextResponse.json(
             { error: "Error al actualizar el residente" },
             { status: 500 }

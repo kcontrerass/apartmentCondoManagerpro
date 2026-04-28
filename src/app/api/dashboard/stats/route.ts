@@ -23,6 +23,7 @@ export async function GET() {
             occupancyRate: 0,
             occupiedByOwner: 0,
             occupiedByTenant: 0,
+            occupiedByAirbnbGuest: 0,
             vacantUnits: 0,
         };
 
@@ -90,9 +91,11 @@ export async function GET() {
         residents.forEach(res => {
             if (res.type === 'OWNER') stats.occupiedByOwner = res._count;
             if (res.type === 'TENANT') stats.occupiedByTenant = res._count;
+            if (res.type === 'AIRBNB_GUEST') stats.occupiedByAirbnbGuest = res._count;
         });
 
-        const totalOccupied = stats.occupiedByOwner + stats.occupiedByTenant;
+        const totalOccupied =
+            stats.occupiedByOwner + stats.occupiedByTenant + stats.occupiedByAirbnbGuest;
 
         // If we have occupied units but no residents (seed case), 
         // fallback to just calling them "tenants" or "occupied" for the chart

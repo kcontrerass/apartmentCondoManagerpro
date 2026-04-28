@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { residentSchema, ResidentInput } from "@/lib/validations/resident";
@@ -66,7 +66,9 @@ export function ResidentForm({
         },
     });
 
+    const residentType = watch("type");
     const isAirbnb = watch("isAirbnb");
+    const prevTypeRef = useRef<string | undefined>(undefined);
 
     const clearAirbnbFields = () => {
         setValue("airbnbStartDate", "");
@@ -83,6 +85,27 @@ export function ResidentForm({
             clearAirbnbFields();
         }
     }, [airbnbGuestsEnabled, setValue]);
+
+    useEffect(() => {
+        if (residentType === "AIRBNB_GUEST") {
+            setValue("isAirbnb", true);
+        }
+    }, [residentType, setValue]);
+
+    useEffect(() => {
+        if (prevTypeRef.current === undefined) {
+            prevTypeRef.current = residentType;
+            return;
+        }
+        if (prevTypeRef.current === "AIRBNB_GUEST" && residentType !== "AIRBNB_GUEST") {
+            setValue("isAirbnb", false);
+            clearAirbnbFields();
+        }
+        prevTypeRef.current = residentType;
+    }, [residentType, setValue]);
+
+    const showAirbnbCheckbox = residentType !== "AIRBNB_GUEST";
+    const showAirbnbFieldGrid = residentType === "AIRBNB_GUEST" || isAirbnb;
 
     const onFormSubmit = async (data: any) => {
         await onSubmit(data as ResidentInput);
@@ -143,6 +166,7 @@ export function ResidentForm({
                         >
                             <option value="TENANT">{t("form.typeTenant")}</option>
                             <option value="OWNER">{t("form.typeOwner")}</option>
+                            <option value="AIRBNB_GUEST">{t("form.typeAirbnbGuest")}</option>
                         </select>
                         {errors.type && (
                             <p className="text-xs text-red-500 mt-1">{errors.type.message as string}</p>
@@ -162,20 +186,25 @@ export function ResidentForm({
                     <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                         {t("form.airbnbSection")}
                     </h3>
-                    <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="mt-1 rounded border-slate-300 dark:border-slate-600"
-                            {...register("isAirbnb", {
-                                onChange: (e) => {
-                                    if (!e.target.checked) clearAirbnbFields();
-                                },
-                            })}
-                        />
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{t("form.airbnbCheckbox")}</span>
-                    </label>
+                    {showAirbnbCheckbox && (
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="mt-1 rounded border-slate-300 dark:border-slate-600"
+                                {...register("isAirbnb", {
+                                    onChange: (e) => {
+                                        if (!e.target.checked) clearAirbnbFields();
+                                    },
+                                })}
+                            />
+                            <span className="text-sm text-slate-700 dark:text-slate-300">{t("form.airbnbCheckbox")}</span>
+                        </label>
+                    )}
+                    {residentType === "AIRBNB_GUEST" && (
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{t("form.airbnbGuestTypeHint")}</p>
+                    )}
 
-                    {isAirbnb && (
+                    {showAirbnbFieldGrid && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 border-t border-slate-100 dark:border-slate-800">
                             <Input
                                 label={t("form.airbnbStartDate")}

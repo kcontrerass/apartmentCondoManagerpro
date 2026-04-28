@@ -290,25 +290,45 @@ function UnitFormBody({
                         {(() => {
                             const activeComplexId = complexId || watchedComplexId || (initialData as any)?.complexId;
                             const activeComplex = complexes?.find(c => c.id === activeComplexId);
-                            const complexType = activeComplex?.type || "RESIDENTIAL"; // Fallback to safe default
-                            
+                            const complexType = activeComplex?.type || "RESIDENTIAL";
+
+                            /** Local comercial, oficina y clínica: edificio (uso mixto) o centro comercial. */
+                            const commercialTypeOptions = (
+                                <>
+                                    <option value="Local comercial">{t("form.typeLocalCommercial")}</option>
+                                    {initialData?.type === "Local" ? (
+                                        <option value="Local">{t("form.typeLocalLegacy")}</option>
+                                    ) : null}
+                                    <option value="Oficina">{t("form.typeOffice")}</option>
+                                    <option value="Clínica">{t("form.typeClinic")}</option>
+                                </>
+                            );
+
                             if (complexType === "SHOPPING_CENTER") {
                                 return (
                                     <>
-                                        <option value="Local">{t("form.typeLocal") || "Local"}</option>
-                                        <option value="Oficina">{t("form.typeOffice") || "Oficina"}</option>
-                                        <option value="Clínica">{t("form.typeClinic") || "Clínica"}</option>
+                                        {commercialTypeOptions}
                                         <option value="Otro">{t("form.typeOther")}</option>
                                     </>
                                 );
                             }
-                            
-                            // DEFAULT for BUILDING, RESIDENTIAL, CONDO
+
+                            if (complexType === "BUILDING") {
+                                return (
+                                    <>
+                                        <option value="Apartamento">{t("form.typeApartment")}</option>
+                                        <option value="Casa">{t("form.typeHouse")}</option>
+                                        {commercialTypeOptions}
+                                        <option value="Otro">{t("form.typeOther")}</option>
+                                    </>
+                                );
+                            }
+
                             return (
                                 <>
                                     <option value="Apartamento">{t("form.typeApartment")}</option>
                                     <option value="Casa">{t("form.typeHouse")}</option>
-                                    <option value="Oficina">{t("form.typeOffice") || "Oficina"}</option>
+                                    <option value="Oficina">{t("form.typeOffice")}</option>
                                     <option value="Otro">{t("form.typeOther")}</option>
                                 </>
                             );

@@ -65,7 +65,16 @@ export default async function ResidentDetailPage({ params }: RouteParams) {
             ? t("form.typeOwner")
             : resident.type === "TENANT"
               ? t("form.typeTenant")
-              : resident.type;
+              : resident.type === "AIRBNB_GUEST"
+                ? t("form.typeAirbnbGuest")
+                : resident.type;
+
+    const typeBadgeVariant =
+        resident.type === "OWNER"
+            ? "info"
+            : resident.type === "AIRBNB_GUEST"
+              ? "warning"
+              : "neutral";
 
     return (
         <MainLayout user={session.user}>
@@ -101,7 +110,7 @@ export default async function ResidentDetailPage({ params }: RouteParams) {
                                 </div>
                                 <div>
                                     <p className="text-sm text-slate-500 mb-1">{t("detailPage.residenceType")}</p>
-                                    <Badge variant={resident.type === "OWNER" ? "info" : "neutral"}>{typeLabel}</Badge>
+                                    <Badge variant={typeBadgeVariant}>{typeLabel}</Badge>
                                 </div>
                             </div>
                         </Card>

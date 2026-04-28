@@ -5,7 +5,9 @@ import { auth, signIn, signOut } from '@/auth';
 import { removeStoredPushSubscription } from '@/lib/notifications';
 import { sendPasswordResetEmail, canSendPasswordResetEmail } from '@/lib/email/send-password-reset';
 import { getPublicAppUrl } from '@/lib/public-app-url';
+import { checkRecaptchaForm } from '@/lib/recaptcha/verify-recaptcha';
 import { AuthError } from 'next-auth';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/db';
 import bcrypt from 'bcrypt';
 import { routing } from '@/i18n/routing';
@@ -44,6 +46,15 @@ export async function requestPasswordResetAction(
 ): Promise<RequestPasswordResetState> {
     if (!canSendPasswordResetEmail()) {
         return { success: false, messageKey: 'smtpNotConfigured' };
+    }
+
+    const recaptcha = await checkRecaptchaForm(formData);
+    if (!recaptcha.ok) {
+        return {
+            success: false,
+            messageKey:
+                recaptcha.code === 'missing' ? 'captchaRequired' : 'captchaFailed',
+        };
     }
 
     const email = String(formData.get('email') ?? '')
@@ -106,6 +117,12 @@ export async function requestPasswordResetAction(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function authenticate(prevState: string | undefined, formData: FormData) {
+    const recaptcha = await checkRecaptchaForm(formData);
+    if (!recaptcha.ok) {
+        const t = await getTranslations('Auth');
+        return recaptcha.code === 'missing' ? t('captchaRequired') : t('captchaFailed');
+    }
+
     try {
         await signIn('credentials', formData);
     } catch (error) {
@@ -122,6 +139,12 @@ export async function authenticate(prevState: string | undefined, formData: Form
 }
 
 export async function register(prevState: string | undefined, formData: FormData) {
+    const recaptcha = await checkRecaptchaForm(formData);
+    if (!recaptcha.ok) {
+        const t = await getTranslations('Auth');
+        return recaptcha.code === 'missing' ? t('captchaRequired') : t('captchaFailed');
+    }
+
     const { name, email, password, phone } = Object.fromEntries(formData);
 
     if (!name || !email || !password) return 'Missing fields.';

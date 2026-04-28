@@ -53,7 +53,6 @@ export function Sidebar({
                     { icon: 'event_available', label: t('reservations'), href: '/dashboard/reservations', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT] },
                     { icon: 'handyman', label: t('services'), href: '/dashboard/services', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.RESIDENT] },
                     { icon: 'payments', label: t('billing'), href: '/dashboard/invoices', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT] },
-                    { icon: 'credit_card', label: t('platformSubscription'), href: '/dashboard/platform-subscription', roles: [Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                     { icon: 'badge', label: t('access'), href: '/dashboard/access-control', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.GUARD, Role.RESIDENT] },
                     { icon: 'settings', label: t('settings'), href: '/dashboard/settings', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                 ],
@@ -73,6 +72,12 @@ export function Sidebar({
                 items: [
                     { icon: 'groups', label: t('staff'), href: '/dashboard/staff', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS] },
                     { icon: 'description', label: t('documents'), href: '/dashboard/documents', roles: [Role.SUPER_ADMIN, Role.ADMIN, Role.BOARD_OF_DIRECTORS, Role.RESIDENT, Role.GUARD] },
+                    {
+                        icon: 'credit_card',
+                        label: t('platformSubscription'),
+                        href: '/dashboard/platform-subscription',
+                        roles: [Role.ADMIN, Role.BOARD_OF_DIRECTORS],
+                    },
                 ],
             },
         ];

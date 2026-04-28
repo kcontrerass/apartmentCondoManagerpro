@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/i18n/routing";
 import { useTranslations, useLocale } from "next-intl";
 import { motion } from "framer-motion";
 import { requestPasswordResetAction } from "@/lib/actions/auth-actions";
+import { AuthRecaptcha, isRecaptchaWidgetEnabled } from "@/components/auth/AuthRecaptcha";
 import { cn } from "@/lib/utils";
 
 type ForgotMessageKey =
@@ -12,7 +13,9 @@ type ForgotMessageKey =
     | "smtpNotConfigured"
     | "emailSendFailed"
     | "missingEmail"
-    | "emailInvalid";
+    | "emailInvalid"
+    | "captchaRequired"
+    | "captchaFailed";
 
 export default function ForgotPasswordPage() {
     const t = useTranslations("ForgotPassword");
@@ -21,6 +24,20 @@ export default function ForgotPasswordPage() {
         requestPasswordResetAction,
         undefined
     );
+    const [captchaNonce, setCaptchaNonce] = useState(0);
+    const [captchaReady, setCaptchaReady] = useState(() => !isRecaptchaWidgetEnabled());
+    const prevPending = useRef(isPending);
+
+    useEffect(() => {
+        if (prevPending.current && !isPending) {
+            setCaptchaNonce((n) => n + 1);
+        }
+        prevPending.current = isPending;
+    }, [isPending]);
+
+    const onCaptchaToken = useCallback((token: string) => {
+        setCaptchaReady(Boolean(token));
+    }, []);
 
     return (
         <motion.div
@@ -80,9 +97,11 @@ export default function ForgotPasswordPage() {
                     />
                 </div>
 
+                <AuthRecaptcha resetSignal={captchaNonce} onTokenChange={onCaptchaToken} />
+
                 <button
                     type="submit"
-                    disabled={isPending}
+                    disabled={isPending || !captchaReady}
                     className="flex w-full justify-center items-center rounded-xl bg-slate-900 dark:bg-primary px-6 py-4 text-xs font-black text-white uppercase tracking-[0.2em] shadow-lg shadow-slate-200 dark:shadow-none hover:bg-slate-800 dark:hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-all duration-300 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none"
                 >
                     {isPending ? t("submitting") : t("submit")}

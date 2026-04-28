@@ -174,8 +174,11 @@ export async function POST(request: Request) {
             }
         }
 
+        const wantsAirbnb =
+            Boolean(validatedData.isAirbnb) || validatedData.type === "AIRBNB_GUEST";
+
         if (
-            validatedData.isAirbnb &&
+            wantsAirbnb &&
             !roleCanStaffManageResidentAirbnbFields(unitExists.complex.settings, session.user.role as Role)
         ) {
             return NextResponse.json(
@@ -202,17 +205,17 @@ export async function POST(request: Request) {
                     emergencyContact: (validatedData.emergencyContact as any) || {},
                     userId: validatedData.userId,
                     unitId: validatedData.unitId,
-                    isAirbnb: validatedData.isAirbnb,
-                    airbnbStartDate: validatedData.isAirbnb ? validatedData.airbnbStartDate : null,
-                    airbnbEndDate: validatedData.isAirbnb ? validatedData.airbnbEndDate : null,
-                    airbnbGuestName: validatedData.isAirbnb ? validatedData.airbnbGuestName?.trim() || null : null,
-                    airbnbReservationCode: validatedData.isAirbnb
+                    isAirbnb: wantsAirbnb,
+                    airbnbStartDate: wantsAirbnb ? validatedData.airbnbStartDate : null,
+                    airbnbEndDate: wantsAirbnb ? validatedData.airbnbEndDate : null,
+                    airbnbGuestName: wantsAirbnb ? validatedData.airbnbGuestName?.trim() || null : null,
+                    airbnbReservationCode: wantsAirbnb
                         ? validatedData.airbnbReservationCode?.trim() || null
                         : null,
-                    airbnbGuestPhone: validatedData.isAirbnb
+                    airbnbGuestPhone: wantsAirbnb
                         ? validatedData.airbnbGuestPhone?.trim() || null
                         : null,
-                    airbnbGuestIdentification: validatedData.isAirbnb
+                    airbnbGuestIdentification: wantsAirbnb
                         ? validatedData.airbnbGuestIdentification?.trim() || null
                         : null,
                 },
@@ -254,7 +257,7 @@ export async function POST(request: Request) {
             url: pushDashboardUrl.home,
         });
 
-        if (validatedData.isAirbnb) {
+        if (wantsAirbnb) {
             const host = await prisma.user.findUnique({
                 where: { id: validatedData.userId },
                 select: { name: true },

@@ -456,6 +456,7 @@ enum UnitStatus {
 enum ResidentType {
   OWNER
   TENANT
+  AIRBNB_GUEST
 }
 
 enum ReservationStatus {
