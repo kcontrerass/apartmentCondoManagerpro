@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useSession } from "next-auth/react";
 import { Role } from "@/types/roles";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -25,7 +24,7 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
     const tRes = useTranslations('Reservations');
 
     const [amenities, setAmenities] = useState([]);
-    const [complexes, setComplexes] = useState([]);
+    const [complexes, setComplexes] = useState<Array<{ id: string; name: string; type?: string | null }>>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,6 +43,7 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
 
     // Safety check for complexId if not Super Admin
     const [complexId, setComplexId] = useState<string | null>(user?.complexId || null);
+    const [scopedComplexType, setScopedComplexType] = useState<string | null>(null);
 
     const fetchAmenities = useCallback(async () => {
         setIsLoading(true);
@@ -84,6 +84,29 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
     useEffect(() => {
         fetchComplexes();
     }, []);
+
+    useEffect(() => {
+        if (!complexId) {
+            setScopedComplexType(null);
+            return;
+        }
+        let cancelled = false;
+        (async () => {
+            try {
+                const r = await fetch(`/api/complexes/${complexId}`);
+                if (!r.ok) return;
+                const d = await r.json();
+                if (!cancelled) {
+                    setScopedComplexType(typeof d.type === "string" ? d.type : null);
+                }
+            } catch {
+                /* ignore */
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [complexId]);
 
     // Proactive complexId recovery for users with stale sessions
     useEffect(() => {
@@ -242,9 +265,16 @@ export function AmenitiesClient({ user }: AmenitiesClientProps) {
             >
                 <AmenityForm
                     onSubmit={handleSubmit}
-                    initialData={selectedAmenity}
+                    initialData={
+                        selectedAmenity
+                            ? selectedAmenity
+                            : complexId
+                              ? ({ complexId } as Partial<CreateAmenityInput>)
+                              : undefined
+                    }
                     isLoading={isSubmitting}
                     complexes={complexes}
+                    complexTypeHint={scopedComplexType}
                 />
             </Modal>
 

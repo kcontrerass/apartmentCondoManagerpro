@@ -43,6 +43,8 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
     let complexName: string | null = null;
     let complexId: string | null = null;
     let complexSettings: any = null;
+    /** Para ocultar módulos que no aplican (ej. Huéspedes Airbnb en centro comercial) */
+    let complexType: string | null = null;
     let platformPaidUntil: Date | null = null;
     let complexCreatedAt: Date | null = null;
     let isUnassignedResident = false;
@@ -60,6 +62,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                                 settings: true,
                                 platformPaidUntil: true,
                                 createdAt: true,
+                                type: true,
                             },
                         },
                     },
@@ -74,6 +77,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
             complexName = c.name;
             complexId = resident.unit.complexId;
             complexSettings = c.settings;
+            complexType = c.type ?? null;
             platformPaidUntil = c.platformPaidUntil;
             complexCreatedAt = c.createdAt;
         }
@@ -88,6 +92,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                 settings: true,
                 platformPaidUntil: true,
                 createdAt: true,
+                type: true,
             },
         });
 
@@ -107,6 +112,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                         settings: true,
                         platformPaidUntil: true,
                         createdAt: true,
+                        type: true,
                     },
                 });
             }
@@ -116,6 +122,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
             complexName = complex.name;
             complexId = complex.id;
             complexSettings = complex.settings;
+            complexType = complex.type ?? null;
             platformPaidUntil = complex.platformPaidUntil;
             complexCreatedAt = complex.createdAt;
         }
@@ -161,7 +168,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                 <PWAInstallPrompt copy={pwaInstallCopy} />
                 <MobileSidebarProvider>
                     {/* @ts-ignore */}
-                    <Sidebar user={user} complexName={complexName} complexSettings={complexSettings} />
+                    <Sidebar user={user} complexName={complexName} complexSettings={complexSettings} complexType={complexType} />
                     <div className="flex-1 flex flex-col min-w-0 md:pl-64 transition-all duration-300">
                         <Header isUnassigned={isUnassignedResident} />
                         <main className="flex-1 p-6 md:p-8">
@@ -170,7 +177,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                                     blocked={platformSubscriptionBlocked}
                                     userRole={user?.role}
                                 >
-                                    <ModuleGuard userRole={user?.role} complexSettings={complexSettings}>
+                                    <ModuleGuard userRole={user?.role} complexSettings={complexSettings} complexType={complexType}>
                                         <AnimatedPage>
                                             {children}
                                         </AnimatedPage>

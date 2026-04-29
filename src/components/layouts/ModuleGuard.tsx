@@ -4,14 +4,16 @@ import { usePathname } from '@/i18n/routing';
 import { ReactNode } from 'react';
 import { Role } from '@/types/roles';
 import { Card } from '@/components/ui/Card';
+import { staffAirbnbGuestsModuleAllowed } from '@/lib/resident-type-eligibility';
 
 interface ModuleGuardProps {
     children: ReactNode;
     complexSettings: any;
+    complexType?: string | null;
     userRole?: string;
 }
 
-export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuardProps) {
+export function ModuleGuard({ children, complexSettings, complexType, userRole }: ModuleGuardProps) {
     const pathname = usePathname();
 
     if (!userRole) return <>{children}</>;
@@ -22,6 +24,31 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
 
     const onAirbnbRoute =
         pathname === "/dashboard/airbnb-guests" || pathname.startsWith("/dashboard/airbnb-guests/");
+    if (onAirbnbRoute && !staffAirbnbGuestsModuleAllowed(complexType, userRole)) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in duration-300">
+                <Card className="p-8 max-w-md bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <span className="material-symbols-outlined text-3xl">lock</span>
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                        Módulo no disponible
+                    </h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">
+                        El listado de huéspedes Airbnb no aplica para centros comerciales.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => window.history.back()}
+                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                        &larr; Volver atrás
+                    </button>
+                </Card>
+            </div>
+        );
+    }
+
     if (onAirbnbRoute && complexSettings?.airbnbGuestsEnabled === false) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in fade-in zoom-in duration-300">
@@ -84,7 +111,8 @@ export function ModuleGuard({ children, complexSettings, userRole }: ModuleGuard
             isBlocked =
                 isBlocked ||
                 permissions['residents'] === false ||
-                complexSettings?.airbnbGuestsEnabled === false;
+                complexSettings?.airbnbGuestsEnabled === false ||
+                !staffAirbnbGuestsModuleAllowed(complexType, userRole);
         }
 
         // Only block if explicitly set to false or restricted by cascade

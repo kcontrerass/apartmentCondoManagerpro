@@ -1,11 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { serviceSchema, ServiceSchema } from "@/lib/validations/service";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
 import { useTranslations } from "next-intl";
 
 interface ServiceFormProps {
@@ -29,6 +29,8 @@ export function ServiceForm({
     const {
         register,
         handleSubmit,
+        watch,
+        setValue,
         formState: { errors },
     } = useForm<any>({
         resolver: zodResolver(serviceSchema) as any,
@@ -36,12 +38,26 @@ export function ServiceForm({
             name: initialData?.name || "",
             description: initialData?.description || "",
             basePrice: initialData?.basePrice ? Number(initialData.basePrice) : 0,
-            frequency: initialData?.frequency || "MONTHLY",
-            isRequired: initialData?.isRequired ? "true" : "false",
-            hasQuantity: initialData?.hasQuantity ? "true" : "false",
+            frequency: "MONTHLY",
+            isRequired: !!initialData?.isRequired,
+            hasQuantity: !!initialData?.hasQuantity,
+            defaultQuantity:
+                initialData?.defaultQuantity != null
+                    ? Number(initialData.defaultQuantity)
+                    : undefined,
             complexId: initialData?.complexId || defaultComplexId || "",
         },
     });
+
+    const hasQuantityRaw = watch("hasQuantity");
+    const hasQuantityEnabled =
+        hasQuantityRaw === true || hasQuantityRaw === "true";
+
+    useEffect(() => {
+        if (!hasQuantityEnabled) {
+            setValue("defaultQuantity", undefined);
+        }
+    }, [hasQuantityEnabled, setValue]);
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -70,6 +86,8 @@ export function ServiceForm({
                     </div>
                 )}
 
+                <input type="hidden" {...register("frequency")} />
+
                 <Input
                     label={t("form.serviceName")}
                     placeholder={t("form.serviceNamePlaceholder")}
@@ -88,7 +106,7 @@ export function ServiceForm({
                     />
                     {errors.description && (
                         <p className="text-xs text-red-500 mt-1">
-                            {(errors.description as any).message}
+                            {(errors.description as any)?.message}
                         </p>
                     )}
                 </div>
@@ -107,21 +125,10 @@ export function ServiceForm({
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                             {t("form.frequency")}
                         </label>
-                        <select
-                            className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                            {...register("frequency")}
-                        >
-                            <option value="ONCE">{t("frequencyOnce")}</option>
-                            <option value="DAILY">{t("frequencyDaily")}</option>
-                            <option value="WEEKLY">{t("frequencyWeekly")}</option>
-                            <option value="MONTHLY">{t("frequencyMonthly")}</option>
-                            <option value="YEARLY">{t("frequencyYearly")}</option>
-                        </select>
-                        {errors.frequency && (
-                            <p className="text-xs text-red-500 mt-1">
-                                {(errors.frequency as any).message}
-                            </p>
-                        )}
+                        <div className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg text-sm text-slate-800 dark:text-slate-200">
+                            {t("frequencyMonthly")}
+                        </div>
+                        <p className="text-[10px] text-slate-500">{t("form.frequencyMonthlyHint")}</p>
                     </div>
 
                     <div className="space-y-2">
@@ -130,7 +137,7 @@ export function ServiceForm({
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                            {...register("isRequired", { setValueAs: (v) => v === "true" })}
+                            {...register("isRequired")}
                         >
                             <option value="false">{t("form.optionalChoice")}</option>
                             <option value="true">{t("form.requiredAuto")}</option>
@@ -149,7 +156,7 @@ export function ServiceForm({
                         </label>
                         <select
                             className="w-full px-3 py-2 bg-white dark:bg-background-dark border border-slate-200 dark:border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm"
-                            {...register("hasQuantity", { setValueAs: (v) => v === "true" })}
+                            {...register("hasQuantity")}
                         >
                             <option value="false">{t("form.quantityNo")}</option>
                             <option value="true">{t("form.quantityYes")}</option>
@@ -161,6 +168,23 @@ export function ServiceForm({
                             </p>
                         )}
                     </div>
+
+                    {hasQuantityEnabled ? (
+                        <div className="md:col-span-2">
+                            <Input
+                                label={t("form.defaultQuantity")}
+                                type="number"
+                                min={1}
+                                step={1}
+                                placeholder={t("form.defaultQuantityPlaceholder")}
+                                {...register("defaultQuantity", { valueAsNumber: true })}
+                                error={(errors.defaultQuantity as any)?.message}
+                            />
+                            <p className="text-[10px] text-slate-500 mt-1">
+                                {t("form.defaultQuantityHelp")}
+                            </p>
+                        </div>
+                    ) : null}
                 </div>
             </div>
 

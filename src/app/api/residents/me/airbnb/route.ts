@@ -7,6 +7,7 @@ import { Role } from "@/types/roles";
 import type { Prisma } from "@prisma/client";
 import { notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
 import { roleCanResidentUseAirbnbSelfService } from "@/lib/complex-airbnb-guests";
+import { unitAllowsAirbnbGuestResident } from "@/lib/resident-type-eligibility";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function PATCH(request: Request) {
             include: {
                 unit: {
                     include: {
-                        complex: { select: { settings: true } },
+                        complex: { select: { settings: true, type: true } },
                     },
                 },
             },
@@ -43,6 +44,20 @@ export async function PATCH(request: Request) {
             return NextResponse.json(
                 { error: "El registro de huéspedes no está disponible para residentes en tu complejo" },
                 { status: 403 }
+            );
+        }
+
+        if (
+            data.isAirbnb &&
+            resident.unit &&
+            !unitAllowsAirbnbGuestResident(resident.unit.complex.type, resident.unit.type)
+        ) {
+            return NextResponse.json(
+                {
+                    error:
+                        "Huésped Airbnb no está disponible para tu tipo de unidad o complejo (p. ej. centro comercial o local).",
+                },
+                { status: 400 }
             );
         }
 

@@ -222,16 +222,18 @@ enum DepositStatus {
 }
 
 model Service {
-  id           String           @id @default(cuid())
-  name         String
-  description  String?          @db.Text
-  basePrice    Decimal          @map("base_price") @db.Decimal(10, 2)
-  frequency    ServiceFrequency @default(MONTHLY)
-  complexId    String           @map("complex_id")
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  hasQuantity  Boolean          @default(false)
-  isRequired   Boolean          @default(false)
+  id               String           @id @default(cuid())
+  name             String
+  description      String?          @db.Text
+  basePrice        Decimal          @map("base_price") @db.Decimal(10, 2)
+  frequency        ServiceFrequency @default(MONTHLY)
+  complexId        String           @map("complex_id")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  hasQuantity      Boolean          @default(false)
+  isRequired       Boolean          @default(false)
+  // Cantidad por defecto al contratar (ej. parqueos); solo si hasQuantity es true
+  defaultQuantity  Int?             @map("default_quantity")
   complex      Complex          @relation(fields: [complexId], references: [id], onDelete: Cascade)
   unitServices UnitService[]
 
@@ -480,6 +482,12 @@ enum AmenityType {
   CLUBHOUSE
   COURT
   BBQ
+  FOOD_COURT
+  EVENT_SPACE
+  VISITOR_PARKING
+  LOADING_AREA
+  MULTIPURPOSE_HALL
+  PLAY_AREA
   OTHER
 }
 

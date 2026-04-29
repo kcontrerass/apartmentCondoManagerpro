@@ -74,8 +74,8 @@ export async function GET(request: Request) {
             where,
             include: {
                 complex: {
-                    select: { name: true }
-                }
+                    select: { name: true, type: true },
+                },
             },
             orderBy: { name: 'asc' }
         });

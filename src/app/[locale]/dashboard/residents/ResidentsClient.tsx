@@ -27,6 +27,7 @@ interface ResidentWithExtras extends Resident {
     unit: Unit & {
         complex: {
             name: string;
+            type?: string | null;
         };
     };
 }
@@ -50,7 +51,14 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
 
     const [residents, setResidents] = useState<ResidentWithExtras[]>([]);
     const [users, setUsers] = useState<{ id: string, name: string, email: string }[]>([]);
-    const [units, setUnits] = useState<{ id: string, number: string, complex: { name: string } }[]>([]);
+    const [units, setUnits] = useState<
+        {
+            id: string;
+            number: string;
+            type?: string | null;
+            complex: { name: string; type?: string | null };
+        }[]
+    >([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingResident, setEditingResident] = useState<ResidentWithExtras | null>(null);
@@ -61,10 +69,15 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
     const [searchInput, setSearchInput] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [airbnbGuestsEnabled, setAirbnbGuestsEnabled] = useState(true);
+    /** Tipo de complejo del alcance actual (ej. SHOPPING_CENTER); necesario si la lista de unidades no trae nested complex.type */
+    const [scopedComplexType, setScopedComplexType] = useState<string | null>(null);
 
     useEffect(() => {
         const id = complexIdFromQuery || complexId;
-        if (!id) return;
+        if (!id) {
+            setScopedComplexType(null);
+            return;
+        }
         let cancelled = false;
         (async () => {
             try {
@@ -75,6 +88,7 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
                     setAirbnbGuestsEnabled(
                         roleCanStaffManageResidentAirbnbFields(d.settings, userRole)
                     );
+                    setScopedComplexType(typeof d.type === "string" ? d.type : null);
                 }
             } catch {
                 /* keep default */
@@ -291,6 +305,7 @@ export function ResidentsClient({ user }: ResidentsClientProps) {
                     users={users}
                     units={units}
                     airbnbGuestsEnabled={airbnbGuestsEnabled}
+                    complexTypeHint={scopedComplexType}
                 />
             </Modal>
 

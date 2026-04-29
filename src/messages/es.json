@@ -268,6 +268,7 @@
             "typeTenant": "Inquilino",
             "typeOwner": "Propietario",
             "typeAirbnbGuest": "Huésped Airbnb",
+            "airbnbNotApplicableUnit": "Para esta unidad o tipo de complejo no aplica huésped Airbnb (p. ej. locales en centro comercial o espacios no residenciales).",
             "airbnbGuestTypeHint": "Como huésped Airbnb, completa las fechas y datos del huésped principal a continuación.",
             "startDate": "Fecha de Inicio",
             "emergencySection": "Contacto de Emergencia",
@@ -394,6 +395,10 @@
             "quantityNo": "No (Precio fijo por unidad)",
             "quantityYes": "Sí (Permite especificar cantidad, ej: 2 parqueos)",
             "quantityHelp": "Use esto para servicios como parqueos o bodegas donde una unidad puede tener varios.",
+            "defaultQuantity": "Cantidad por defecto",
+            "defaultQuantityPlaceholder": "Ej: 2",
+            "defaultQuantityHelp": "Valor inicial cuando el residente contrata este servicio (puede cambiarla al contratar).",
+            "frequencyMonthlyHint": "Todos los cargos por este servicio se calculan en ciclo mensual.",
             "updateService": "Actualizar Servicio",
             "createService": "Crear Servicio"
         }
@@ -539,6 +544,12 @@
             "CLUBHOUSE": "Casa Club",
             "COURT": "Cancha Deportiva",
             "BBQ": "Área de Parrilla",
+            "FOOD_COURT": "Patio de comidas",
+            "EVENT_SPACE": "Espacio de eventos / plaza central",
+            "VISITOR_PARKING": "Parqueo visitantes",
+            "LOADING_AREA": "Zona de carga y descarga",
+            "MULTIPURPOSE_HALL": "Salón / sala multiuso",
+            "PLAY_AREA": "Zona infantil / entretenimiento",
             "OTHER": "Otro"
         },
         "form": {
@@ -1055,7 +1066,8 @@
             "savedSuccess": "Información de Airbnb guardada",
             "saveError": "No se pudo guardar. Revisa los datos.",
             "connectionError": "Error de conexión. Intenta de nuevo.",
-            "disabledByComplex": "Tu complejo desactivó el registro de huéspedes temporales. Si necesitas cambiar un registro previo, contacta a administración."
+            "disabledByComplex": "Tu complejo desactivó el registro de huéspedes temporales. Si necesitas cambiar un registro previo, contacta a administración.",
+            "notApplicableUnit": "Tu tipo de complejo o unidad no admite registro de huéspedes temporales (por ejemplo locales en centro comercial)."
         },
         "roles": {
             "SUPER_ADMIN": "Súper Admin",
@@ -1138,6 +1150,7 @@
     "Reports": {
         "title": "Reportes y Analíticas",
         "subtitle": "Resumen del rendimiento y estadísticas del complejo",
+        "subtitleShoppingCenter": "Indicadores orientados a locales comerciales y operación del centro",
         "noData": "No hay datos disponibles para los complejos seleccionados",
         "exportToExcel": "Exportar a Excel (.xlsx)",
         "filterByComplex": "Filtrar por Complejo",
@@ -1145,6 +1158,9 @@
         "stats": {
             "totalRevenue": "Ingresos Totales (6m)",
             "occupancy": "Ocupación",
+            "storeOccupancy": "Ocupación de locales",
+            "announcements90d": "Anuncios publicados (90 días)",
+            "upcomingEvents90d": "Eventos programados (próx. 90 días)",
             "incidents": "Incidentes",
             "resolution": "Resolución"
         },
@@ -1157,9 +1173,18 @@
                 "title": "Estado de Incidentes",
                 "total": "Total"
             },
+            "incidentTypes": {
+                "title": "Incidentes por tipo",
+                "total": "Total",
+                "empty": "Sin datos de incidentes por tipo en el período."
+            },
             "amenities": {
                 "title": "Popularidad de Amenidades (Top 5)",
                 "label": "Reservas"
+            },
+            "services": {
+                "title": "Servicios más contratados (Top 5)",
+                "label": "Contratos activos"
             },
             "payments": {
                 "title": "Distribución de Métodos de Pago",
@@ -1179,6 +1204,33 @@
             "IN_PROGRESS": "En Proceso",
             "RESOLVED": "Resueltos",
             "CANCELLED": "Cancelados"
+        },
+        "incidentTypes": {
+            "MAINTENANCE": "Mantenimiento",
+            "SECURITY": "Seguridad",
+            "NOISE": "Ruido",
+            "CLEANING": "Limpieza",
+            "OTHER": "Otro"
+        },
+        "excelSections": {
+            "monthlyRevenue": "INGRESOS POR MES",
+            "incidentsByStatus": "ESTADO DE INCIDENTES",
+            "amenityPopularity": "POPULARIDAD DE AMENIDADES",
+            "servicesRanking": "SERVICIOS MÁS CONTRATADOS",
+            "visitorTrends": "TENDENCIA DE VISITANTES (ÚLTIMOS 7 DÍAS)",
+            "incidentTypes": "INCIDENTES POR TIPO"
+        },
+        "excelColumns": {
+            "month": "Mes",
+            "amount": "Total",
+            "status": "Estado",
+            "count": "Cantidad",
+            "name": "Nombre",
+            "reservations": "Reservaciones",
+            "activeContracts": "Contratos activos",
+            "date": "Fecha",
+            "visitors": "Visitantes",
+            "incidentCategory": "Tipo"
         },
         "months": {
             "Jan": "Ene",

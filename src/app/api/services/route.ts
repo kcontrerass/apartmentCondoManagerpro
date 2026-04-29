@@ -173,6 +173,9 @@ export async function POST(request: Request) {
                     complexId: validatedData.complexId,
                     isRequired: validatedData.isRequired,
                     hasQuantity: validatedData.hasQuantity,
+                    defaultQuantity: validatedData.hasQuantity
+                        ? validatedData.defaultQuantity ?? null
+                        : null,
                 },
             });
 

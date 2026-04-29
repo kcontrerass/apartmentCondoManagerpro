@@ -8,15 +8,23 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Resident } from "@prisma/client";
 import { useTranslations } from "next-intl";
+import { unitAllowsAirbnbGuestResident } from "@/lib/resident-type-eligibility";
 
 interface ResidentFormProps {
     initialData?: Partial<Resident>;
     onSubmit: (data: ResidentInput) => Promise<void>;
     isLoading?: boolean;
     users?: { id: string; name: string; email: string }[];
-    units?: { id: string; number: string; complex: { name: string } }[];
+    units?: {
+        id: string;
+        number: string;
+        type?: string | null;
+        complex: { name: string; type?: string | null };
+    }[];
     /** When false, Airbnb fields are hidden and forced off on submit state. Default true. */
     airbnbGuestsEnabled?: boolean;
+    /** Tipo de complejo del alcance (GET /api/complexes/:id); necesario para SHOPPING_CENTER aunque falte nested complex.type en unidades */
+    complexTypeHint?: string | null;
 }
 
 function toDateInput(d: Date | string | null | undefined) {
@@ -31,6 +39,7 @@ export function ResidentForm({
     users,
     units,
     airbnbGuestsEnabled = true,
+    complexTypeHint,
 }: ResidentFormProps) {
     const t = useTranslations("Residents");
     const emergency = (initialData?.emergencyContact as any) || {};
@@ -66,6 +75,30 @@ export function ResidentForm({
         },
     });
 
+    const watchedUnitId = watch("unitId");
+    const selectedUnit = units?.find((u) => u.id === watchedUnitId);
+
+    const initialUnit = (initialData as { unit?: { type?: string | null; complex?: { type?: string | null } } })
+        ?.unit;
+
+    const resolvedComplexType =
+        complexTypeHint ??
+        selectedUnit?.complex?.type ??
+        initialUnit?.complex?.type ??
+        undefined;
+
+    const resolvedUnitType =
+        selectedUnit?.type ?? initialUnit?.type ?? null;
+
+    const unitEligibleAirbnb = unitAllowsAirbnbGuestResident(
+        resolvedComplexType ?? "",
+        resolvedUnitType,
+    );
+
+    const effectiveAirbnbGuestsEnabled = Boolean(
+        airbnbGuestsEnabled && unitEligibleAirbnb,
+    );
+
     const residentType = watch("type");
     const isAirbnb = watch("isAirbnb");
     const prevTypeRef = useRef<string | undefined>(undefined);
@@ -85,6 +118,16 @@ export function ResidentForm({
             clearAirbnbFields();
         }
     }, [airbnbGuestsEnabled, setValue]);
+
+    useEffect(() => {
+        if (!effectiveAirbnbGuestsEnabled) {
+            if (residentType === "AIRBNB_GUEST") {
+                setValue("type", "TENANT");
+            }
+            setValue("isAirbnb", false);
+            clearAirbnbFields();
+        }
+    }, [effectiveAirbnbGuestsEnabled, residentType, setValue]);
 
     useEffect(() => {
         if (residentType === "AIRBNB_GUEST") {
@@ -166,7 +209,9 @@ export function ResidentForm({
                         >
                             <option value="TENANT">{t("form.typeTenant")}</option>
                             <option value="OWNER">{t("form.typeOwner")}</option>
-                            <option value="AIRBNB_GUEST">{t("form.typeAirbnbGuest")}</option>
+                            {unitEligibleAirbnb ? (
+                                <option value="AIRBNB_GUEST">{t("form.typeAirbnbGuest")}</option>
+                            ) : null}
                         </select>
                         {errors.type && (
                             <p className="text-xs text-red-500 mt-1">{errors.type.message as string}</p>
@@ -181,7 +226,18 @@ export function ResidentForm({
                 </div>
             </div>
 
-            {airbnbGuestsEnabled && (
+            {airbnbGuestsEnabled &&
+                selectedUnit &&
+                !unitAllowsAirbnbGuestResident(
+                    resolvedComplexType ?? selectedUnit.complex?.type ?? "",
+                    selectedUnit.type,
+                ) && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg px-3 py-2">
+                        {t("form.airbnbNotApplicableUnit")}
+                    </p>
+                )}
+
+            {effectiveAirbnbGuestsEnabled && (
                 <div className="space-y-6">
                     <h3 className="text-sm font-semibold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                         {t("form.airbnbSection")}

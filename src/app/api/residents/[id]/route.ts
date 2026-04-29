@@ -7,6 +7,10 @@ import type { Prisma } from "@prisma/client";
 import { ZodError } from "zod";
 import { notifyStaffOfAirbnbGuestRegistration } from "@/lib/notifications";
 import { roleCanStaffManageResidentAirbnbFields } from "@/lib/complex-airbnb-guests";
+import {
+    inferAirbnbIntentAfterPatch,
+    unitAllowsAirbnbGuestResident,
+} from "@/lib/resident-type-eligibility";
 
 const AIRBNB_PATCH_KEYS = [
     "isAirbnb",
@@ -128,6 +132,39 @@ export async function PATCH(
             }
         }
 
+        const effectiveUnitId = validatedData.unitId ?? residentToCheck.unitId;
+        const effectiveUnit = await prisma.unit.findUnique({
+            where: { id: effectiveUnitId },
+            include: { complex: true },
+        });
+        if (!effectiveUnit) {
+            return NextResponse.json({ error: "La unidad especificada no existe" }, { status: 404 });
+        }
+
+        const wantsAirbnbFinal = inferAirbnbIntentAfterPatch(
+            {
+                type: residentToCheck.type,
+                isAirbnb: residentToCheck.isAirbnb,
+            },
+            {
+                type: validatedData.type,
+                isAirbnb: validatedData.isAirbnb,
+            },
+        );
+
+        if (
+            wantsAirbnbFinal &&
+            !unitAllowsAirbnbGuestResident(effectiveUnit.complex.type, effectiveUnit.type)
+        ) {
+            return NextResponse.json(
+                {
+                    error:
+                        "Huésped Airbnb no está disponible para este tipo de complejo o unidad (p. ej. centro comercial o local comercial).",
+                },
+                { status: 400 }
+            );
+        }
+
         const {
             userId,
             unitId,
@@ -159,16 +196,6 @@ export async function PATCH(
             });
             if (existingResident && existingResident.id !== id) {
                 return NextResponse.json({ error: "Este usuario ya está asignado como residente a otra unidad" }, { status: 400 });
-            }
-        }
-
-        // Verify unit exists if provided
-        if (validatedData.unitId) {
-            const unitExists = await prisma.unit.findUnique({
-                where: { id: validatedData.unitId }
-            });
-            if (!unitExists) {
-                return NextResponse.json({ error: "La unidad especificada no existe" }, { status: 404 });
             }
         }
 

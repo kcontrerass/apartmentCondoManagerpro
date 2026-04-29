@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { auth } from "@/auth";
 import { serviceUpdateSchema } from "@/lib/validations/service";
@@ -64,6 +65,14 @@ export async function PATCH(
         const body = await request.json();
         const validatedData = serviceUpdateSchema.parse(body);
 
+        const patchData = {
+            ...validatedData,
+            frequency: "MONTHLY" as const,
+        } as Record<string, unknown>;
+        if (validatedData.hasQuantity === false) {
+            patchData.defaultQuantity = null;
+        }
+
         const service = await prisma.service.findUnique({
             where: { id },
             include: { complex: true },
@@ -91,7 +100,7 @@ export async function PATCH(
 
         const updatedService = await prisma.service.update({
             where: { id },
-            data: validatedData,
+            data: patchData as Prisma.ServiceUpdateInput,
         });
 
         return NextResponse.json(updatedService);

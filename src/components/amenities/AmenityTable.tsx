@@ -29,12 +29,28 @@ export function AmenityTable({ amenities, onEdit, onDelete, onBook, isAdmin = tr
 
     const getTypeBadgeVariant = (type: string) => {
         switch (type) {
-            case "POOL": return "info";
-            case "GYM": return "neutral";
-            case "COURT": return "success";
-            case "CLUBHOUSE": return "warning";
-            case "BBQ": return "neutral";
-            default: return "neutral";
+            case "POOL":
+                return "info";
+            case "GYM":
+                return "neutral";
+            case "COURT":
+                return "success";
+            case "CLUBHOUSE":
+                return "warning";
+            case "BBQ":
+                return "neutral";
+            case "FOOD_COURT":
+            case "EVENT_SPACE":
+                return "info";
+            case "VISITOR_PARKING":
+            case "LOADING_AREA":
+                return "neutral";
+            case "MULTIPURPOSE_HALL":
+                return "warning";
+            case "PLAY_AREA":
+                return "success";
+            default:
+                return "neutral";
         }
     };
 

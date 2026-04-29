@@ -57,7 +57,7 @@ export async function GET(request: Request) {
             where: whereClause,
             include: {
                 complex: {
-                    select: { name: true },
+                    select: { name: true, type: true },
                 },
                 residents: {
                     include: {

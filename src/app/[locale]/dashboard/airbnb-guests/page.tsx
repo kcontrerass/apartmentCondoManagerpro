@@ -3,6 +3,8 @@ import { MainLayout } from "@/components/layouts/MainLayout";
 import { AirbnbGuestsClient } from "./AirbnbGuestsClient";
 import { Role } from "@/types/roles";
 import { redirect } from "next/navigation";
+import { staffAirbnbGuestsModuleAllowed } from "@/lib/resident-type-eligibility";
+import { getStaffUserComplexType } from "@/lib/session-complex-type";
 
 const ALLOWED = new Set([
     Role.SUPER_ADMIN,
@@ -17,6 +19,11 @@ export default async function AirbnbGuestsPage({ params }: { params: Promise<{ l
     if (!session?.user) return null;
 
     if (!ALLOWED.has(session.user.role as Role)) {
+        redirect(`/${locale}/dashboard`);
+    }
+
+    const scopedComplexType = await getStaffUserComplexType(session.user.id, session.user.role as Role);
+    if (!staffAirbnbGuestsModuleAllowed(scopedComplexType, session.user.role)) {
         redirect(`/${locale}/dashboard`);
     }
 

@@ -13,6 +13,7 @@ import { NotificationManager } from "@/components/pwa/NotificationManager";
 import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { getTranslations } from "next-intl/server";
 import { roleCanResidentUseAirbnbSelfService } from "@/lib/complex-airbnb-guests";
+import { unitAllowsAirbnbGuestResident } from "@/lib/resident-type-eligibility";
 
 export default async function ProfilePage({
     params
@@ -35,10 +36,10 @@ export default async function ProfilePage({
                     unit: {
                         include: {
                             complex: {
-                                select: { name: true, settings: true }
-                            }
-                        }
-                    }
+                                select: { name: true, settings: true, type: true },
+                            },
+                        },
+                    },
                 }
             },
             assignedComplex: {
@@ -69,9 +70,14 @@ export default async function ProfilePage({
     };
     const roleLabel = roleLabels[user.role] ?? user.role;
     const statusLabel = statusLabels[user.status] ?? user.status;
-    const airbnbGuestsEnabled = roleCanResidentUseAirbnbSelfService(
-        user.residentProfile?.unit?.complex?.settings
-    );
+    const residentUnit = user.residentProfile?.unit;
+    const residentComplex = residentUnit?.complex;
+
+    const airbnbGuestsEnabled = roleCanResidentUseAirbnbSelfService(residentComplex?.settings);
+
+    const airbnbApplicableForUnit =
+        !!residentUnit &&
+        unitAllowsAirbnbGuestResident(residentComplex?.type, residentUnit.type);
 
     return (
         <MainLayout user={session.user}>
@@ -143,7 +149,7 @@ export default async function ProfilePage({
                                     <span className="material-symbols-outlined text-primary">holiday_village</span>
                                     {t("airbnb.title")}
                                 </h3>
-                                {airbnbGuestsEnabled ? (
+                                {airbnbGuestsEnabled && airbnbApplicableForUnit ? (
                                     <ResidentAirbnbForm
                                         initial={{
                                             isAirbnb: user.residentProfile.isAirbnb,
@@ -155,6 +161,10 @@ export default async function ProfilePage({
                                             airbnbGuestIdentification: user.residentProfile.airbnbGuestIdentification,
                                         }}
                                     />
+                                ) : airbnbGuestsEnabled ? (
+                                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        {t("airbnb.notApplicableUnit")}
+                                    </p>
                                 ) : (
                                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                                         {t("airbnb.disabledByComplex")}

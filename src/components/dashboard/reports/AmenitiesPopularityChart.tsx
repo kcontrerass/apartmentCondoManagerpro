@@ -25,10 +25,12 @@ interface AmenitiesPopularityChartProps {
         name: string;
         count: number;
     }[];
+    /** Defaults to amenity reservations copy; use `services` for shopping-center services ranking. */
+    rankingChart?: 'amenities' | 'services';
 }
 
 export const AmenitiesPopularityChart = forwardRef((props: AmenitiesPopularityChartProps, ref) => {
-    const { data } = props;
+    const { data, rankingChart = 'amenities' } = props;
     const t = useTranslations('Reports');
     const chartRef = useRef<any>(null);
 
@@ -46,11 +48,16 @@ export const AmenitiesPopularityChart = forwardRef((props: AmenitiesPopularityCh
         link.click();
     };
 
+    const chartTitle =
+        rankingChart === 'services' ? t('charts.services.title') : t('charts.amenities.title');
+    const datasetLabel =
+        rankingChart === 'services' ? t('charts.services.label') : t('charts.amenities.label');
+
     const chartData = {
         labels: data.map(d => d.name),
         datasets: [
             {
-                label: t('charts.amenities.label'),
+                label: datasetLabel,
                 data: data.map(d => d.count),
                 backgroundColor: '#8b5cf6', // Violet
                 borderRadius: 8,
@@ -85,7 +92,7 @@ export const AmenitiesPopularityChart = forwardRef((props: AmenitiesPopularityCh
     return (
         <div className="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm h-full flex flex-col">
             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{t('charts.amenities.title')}</h3>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{chartTitle}</h3>
                 <button
                     onClick={downloadChart}
                     className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-primary group relative"

@@ -12,6 +12,7 @@ import {
     roleCanAccessAirbnbStaffRoutes,
     roleCanStaffManageResidentAirbnbFields,
 } from "@/lib/complex-airbnb-guests";
+import { unitAllowsAirbnbGuestResident } from "@/lib/resident-type-eligibility";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,7 @@ const residentInclude = {
             complex: {
                 select: {
                     name: true,
+                    type: true,
                 },
             },
         },
@@ -184,6 +186,19 @@ export async function POST(request: Request) {
             return NextResponse.json(
                 { error: "No tienes permiso para registrar huéspedes o la función está desactivada para tu rol" },
                 { status: 403 }
+            );
+        }
+
+        if (
+            wantsAirbnb &&
+            !unitAllowsAirbnbGuestResident(unitExists.complex.type, unitExists.type)
+        ) {
+            return NextResponse.json(
+                {
+                    error:
+                        "Huésped Airbnb no está disponible para este tipo de complejo o unidad (p. ej. centro comercial o local comercial).",
+                },
+                { status: 400 }
             );
         }
 

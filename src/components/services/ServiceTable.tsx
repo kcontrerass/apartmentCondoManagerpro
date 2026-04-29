@@ -12,6 +12,8 @@ interface ServiceWithCount {
     description: string | null;
     basePrice: any;
     frequency: string;
+    /** Cantidad por defecto al contratar (servicios con cantidad). */
+    defaultQuantity?: number | null;
     complexId: string;
     complex?: { name: string };
     _count: {
@@ -138,7 +140,7 @@ export function ServiceTable({
                                             id={`qty-${service.id}`}
                                             type="number"
                                             min="1"
-                                            defaultValue="1"
+                                            defaultValue={String(service.defaultQuantity ?? 1)}
                                             className="w-20 px-2 py-1 text-sm border rounded dark:bg-background-dark dark:border-slate-700"
                                         />
                                     ) : service.hasQuantity && service.unitServices?.length ? (
@@ -146,7 +148,7 @@ export function ServiceTable({
                                             id={`qty-edit-${service.unitServices[0].id}`}
                                             type="number"
                                             min="1"
-                                            defaultValue={service.unitServices[0].quantity}
+                                            defaultValue={String(service.unitServices[0].quantity)}
                                             className="w-20 px-2 py-1 text-sm border rounded dark:bg-background-dark dark:border-slate-700 border-emerald-200 dark:border-emerald-800"
                                             disabled={service.isRequired || userRole === Role.RESIDENT}
                                         />
@@ -228,7 +230,9 @@ export function ServiceTable({
                                             );
                                         })()
                                     ) : (
-                                        (userRole === Role.SUPER_ADMIN || userRole === Role.ADMIN) && (
+                                        (userRole === Role.SUPER_ADMIN ||
+                                            userRole === Role.ADMIN ||
+                                            userRole === Role.BOARD_OF_DIRECTORS) && (
                                             <>
                                                 <Button
                                                     variant="secondary"

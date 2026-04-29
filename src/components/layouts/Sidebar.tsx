@@ -8,15 +8,18 @@ import { signOutAndDetachPush } from '@/lib/push-logout-client';
 import { useTranslations, useLocale } from 'next-intl';
 import { Role } from "@/types/roles";
 import { useMobileSidebar } from "./MobileSidebarContext";
+import { staffAirbnbGuestsModuleAllowed } from "@/lib/resident-type-eligibility";
 
 export function Sidebar({
     user,
     complexName,
-    complexSettings
+    complexSettings,
+    complexType,
 }: {
     user?: { name?: string | null; role?: string; image?: string | null };
     complexName?: string | null;
     complexSettings?: any;
+    complexType?: string | null;
 }) {
     const pathname = usePathname();
     const t = useTranslations('Common');
@@ -87,6 +90,10 @@ export function Sidebar({
         if (role === Role.SUPER_ADMIN) return true;
 
         if (href === "/dashboard/airbnb-guests" && complexSettings?.airbnbGuestsEnabled === false) {
+            return false;
+        }
+
+        if (href === "/dashboard/airbnb-guests" && !staffAirbnbGuestsModuleAllowed(complexType, role)) {
             return false;
         }
 

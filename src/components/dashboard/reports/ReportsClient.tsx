@@ -7,6 +7,7 @@ import { saveAs } from 'file-saver';
 import { useTranslations } from 'next-intl';
 import { RevenueChart } from './RevenueChart';
 import { IncidentsChart } from './IncidentsChart';
+import { IncidentTypesChart } from './IncidentTypesChart';
 import { AmenitiesPopularityChart } from './AmenitiesPopularityChart';
 import { VisitorTrendsChart } from './VisitorTrendsChart';
 import { Button } from '@/components/ui/Button';
@@ -15,8 +16,9 @@ import { formatPrice } from '@/lib/utils';
 import { useRouter, usePathname } from '@/i18n/routing';
 import { Role } from '@/types/roles';
 
-interface ReportsClientProps {
-    data: {
+export type ReportsDashboardData =
+    | {
+        variant: 'RESIDENTIAL';
         revenueData: { month: string; total: number }[];
         incidentsData: { statusKey: string; count: number; color: string }[];
         reservationsByAmenity: { name: string; count: number }[];
@@ -26,8 +28,26 @@ interface ReportsClientProps {
             totalIncidents: number;
             resolvedRate: number;
             occupancyRate: number;
-        }
+        };
+    }
+    | {
+        variant: 'SHOPPING_CENTER';
+        revenueData: { month: string; total: number }[];
+        incidentsData: { statusKey: string; count: number; color: string }[];
+        incidentsByType: { typeKey: string; count: number; color: string }[];
+        servicesByContractCount: { name: string; count: number }[];
+        stats: {
+            totalRevenue: number;
+            totalIncidents: number;
+            resolvedRate: number;
+            storeOccupancyRate: number;
+            announcementsLast90Days: number;
+            upcomingEventsCount: number;
+        };
     };
+
+interface ReportsClientProps {
+    data: ReportsDashboardData;
     complexes: { id: string; name: string }[];
     selectedComplexId?: string;
     userRole: string;
@@ -40,6 +60,7 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
 
     const revenueChartRef = useRef<any>(null);
     const incidentsChartRef = useRef<any>(null);
+    const incidentTypesChartRef = useRef<any>(null);
     const amenitiesChartRef = useRef<any>(null);
     const visitorTrendsChartRef = useRef<any>(null);
 
@@ -53,6 +74,15 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
         count: d.count,
         color: d.color
     }));
+
+    const localizedIncidentTypesData =
+        data.variant === 'SHOPPING_CENTER'
+            ? data.incidentsByType.map((d) => ({
+                label: t(`incidentTypes.${d.typeKey}`),
+                count: d.count,
+                color: d.color,
+            }))
+            : [];
 
     const handleComplexChange = (id: string) => {
         const params = new URLSearchParams();
@@ -73,11 +103,11 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
         let currentRow = 1;
 
         // 1. Revenue Section
-        sheet.getCell(`A${currentRow}`).value = 'INGRESOS POR MES';
+        sheet.getCell(`A${currentRow}`).value = t('excelSections.monthlyRevenue');
         sheet.getCell(`A${currentRow}`).style = titleStyle;
         currentRow++;
 
-        sheet.getRow(currentRow).values = ['Mes', 'Total'];
+        sheet.getRow(currentRow).values = [t('excelColumns.month'), t('excelColumns.amount')];
         sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
         currentRow++;
 
@@ -86,7 +116,6 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
             currentRow++;
         });
 
-        // Add Revenue Chart Image below table
         currentRow++;
         const revenueImg = revenueChartRef.current?.getChartImage();
         if (revenueImg) {
@@ -98,17 +127,17 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
                 tl: { col: 0, row: currentRow - 1 },
                 ext: { width: 300, height: 180 }
             });
-            currentRow += 10; // Reserve space for the chart
+            currentRow += 10;
         }
 
         currentRow += 2;
 
         // 2. Incidents Section
-        sheet.getCell(`A${currentRow}`).value = 'ESTADO DE INCIDENTES';
+        sheet.getCell(`A${currentRow}`).value = t('excelSections.incidentsByStatus');
         sheet.getCell(`A${currentRow}`).style = titleStyle;
         currentRow++;
 
-        sheet.getRow(currentRow).values = ['Estado', 'Cantidad'];
+        sheet.getRow(currentRow).values = [t('excelColumns.status'), t('excelColumns.count')];
         sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
         currentRow++;
 
@@ -133,16 +162,59 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
 
         currentRow += 2;
 
-        // 3. Amenities Section
-        sheet.getCell(`A${currentRow}`).value = 'POPULARIDAD DE AMENIDADES';
+        if (data.variant === 'SHOPPING_CENTER') {
+            sheet.getCell(`A${currentRow}`).value = t('excelSections.incidentTypes');
+            sheet.getCell(`A${currentRow}`).style = titleStyle;
+            currentRow++;
+
+            sheet.getRow(currentRow).values = [t('excelColumns.incidentCategory'), t('excelColumns.count')];
+            sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
+            currentRow++;
+
+            localizedIncidentTypesData.forEach(d => {
+                sheet.getRow(currentRow).values = [d.label, d.count];
+                currentRow++;
+            });
+
+            currentRow++;
+            const incidentTypesImg = incidentTypesChartRef.current?.getChartImage();
+            if (incidentTypesImg) {
+                const imageId = workbook.addImage({
+                    base64: incidentTypesImg,
+                    extension: 'png',
+                });
+                sheet.addImage(imageId, {
+                    tl: { col: 0, row: currentRow - 1 },
+                    ext: { width: 240, height: 180 }
+                });
+                currentRow += 10;
+            }
+
+            currentRow += 2;
+        }
+
+        // 3. Amenities vs services ranking
+        sheet.getCell(`A${currentRow}`).value =
+            data.variant === 'SHOPPING_CENTER'
+                ? t('excelSections.servicesRanking')
+                : t('excelSections.amenityPopularity');
         sheet.getCell(`A${currentRow}`).style = titleStyle;
         currentRow++;
 
-        sheet.getRow(currentRow).values = ['Amenidad', 'Reservaciones'];
+        const rankingRows =
+            data.variant === 'SHOPPING_CENTER'
+                ? data.servicesByContractCount
+                : data.reservationsByAmenity;
+        const col2Header =
+            data.variant === 'SHOPPING_CENTER'
+                ? t('excelColumns.activeContracts')
+                : t('excelColumns.reservations');
+
+        sheet.getRow(currentRow).values = [t('excelColumns.name'), col2Header];
         sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
         currentRow++;
 
-        data.reservationsByAmenity.forEach(d => {
+        rankingRows.forEach(d => {
             sheet.getRow(currentRow).values = [d.name, d.count];
             currentRow++;
         });
@@ -163,32 +235,34 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
 
         currentRow += 2;
 
-        // 4. Visitors Section
-        sheet.getCell(`A${currentRow}`).value = 'TENDENCIA DE VISITANTES (Últimos 7 días)';
-        sheet.getCell(`A${currentRow}`).style = titleStyle;
-        currentRow++;
-
-        sheet.getRow(currentRow).values = ['Fecha', 'Visitantes'];
-        sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
-        currentRow++;
-
-        data.visitorTrends.forEach(d => {
-            sheet.getRow(currentRow).values = [d.date, d.count];
+        if (data.variant === 'RESIDENTIAL') {
+            // Visitors (residential only)
+            sheet.getCell(`A${currentRow}`).value = t('excelSections.visitorTrends');
+            sheet.getCell(`A${currentRow}`).style = titleStyle;
             currentRow++;
-        });
 
-        currentRow++;
-        const visitorsImg = visitorTrendsChartRef.current?.getChartImage();
-        if (visitorsImg) {
-            const imageId = workbook.addImage({
-                base64: visitorsImg,
-                extension: 'png',
+            sheet.getRow(currentRow).values = [t('excelColumns.date'), t('excelColumns.visitors')];
+            sheet.getRow(currentRow).eachCell(cell => cell.style = headerStyle);
+            currentRow++;
+
+            data.visitorTrends.forEach(d => {
+                sheet.getRow(currentRow).values = [d.date, d.count];
+                currentRow++;
             });
-            sheet.addImage(imageId, {
-                tl: { col: 0, row: currentRow - 1 },
-                ext: { width: 300, height: 180 }
-            });
-            currentRow += 10;
+
+            currentRow++;
+            const visitorsImg = visitorTrendsChartRef.current?.getChartImage();
+            if (visitorsImg) {
+                const imageId = workbook.addImage({
+                    base64: visitorsImg,
+                    extension: 'png',
+                });
+                sheet.addImage(imageId, {
+                    tl: { col: 0, row: currentRow - 1 },
+                    ext: { width: 300, height: 180 }
+                });
+                currentRow += 10;
+            }
         }
 
         // Column Widths
@@ -199,6 +273,13 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         saveAs(blob, `reporte_general_${new Date().toISOString().split('T')[0]}.xlsx`);
     };
+
+    const isShoppingCenter = data.variant === 'SHOPPING_CENTER';
+
+    const occupancyRate =
+        data.variant === 'RESIDENTIAL' ? data.stats.occupancyRate : null;
+    const storeOccupancyRate =
+        data.variant === 'SHOPPING_CENTER' ? data.stats.storeOccupancyRate : null;
 
     return (
         <div className="space-y-8 pb-12">
@@ -261,11 +342,19 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
                     <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-8 -mt-8 group-hover:bg-emerald-500/10 transition-colors" />
                     <div className="flex items-center gap-4 relative">
                         <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
-                            <span className="material-symbols-outlined text-[24px]">pie_chart</span>
+                            <span className="material-symbols-outlined text-[24px]">
+                                {isShoppingCenter ? 'storefront' : 'pie_chart'}
+                            </span>
                         </div>
                         <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-0.5">{t('stats.occupancy')}</p>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{data.stats.occupancyRate}%</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-0.5">
+                                {isShoppingCenter ? t('stats.storeOccupancy') : t('stats.occupancy')}
+                            </p>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                {isShoppingCenter
+                                    ? `${storeOccupancyRate ?? 0}%`
+                                    : `${occupancyRate ?? 0}%`}
+                            </h3>
                         </div>
                     </div>
                 </Card>
@@ -297,16 +386,63 @@ export function ReportsClient({ data, complexes, selectedComplexId, userRole }: 
                 </Card>
             </div>
 
+            {data.variant === 'SHOPPING_CENTER' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card className="p-6 bg-white dark:bg-background-dark border-slate-200 dark:border-slate-800 shadow-sm border border-violet-200/60 dark:border-violet-900/40">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400">
+                                <span className="material-symbols-outlined text-[24px]">campaign</span>
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-0.5">
+                                    {t('stats.announcements90d')}
+                                </p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {data.stats.announcementsLast90Days}
+                                </h3>
+                            </div>
+                        </div>
+                    </Card>
+                    <Card className="p-6 bg-white dark:bg-background-dark border-slate-200 dark:border-slate-800 shadow-sm border border-sky-200/60 dark:border-sky-900/40">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400">
+                                <span className="material-symbols-outlined text-[24px]">event</span>
+                            </div>
+                            <div>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider mb-0.5">
+                                    {t('stats.upcomingEvents90d')}
+                                </p>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                                    {data.stats.upcomingEventsCount}
+                                </h3>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+
             {/* Charts Grid - High Priority */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <RevenueChart ref={revenueChartRef} data={localizedRevenueData} />
-                <VisitorTrendsChart ref={visitorTrendsChartRef} data={data.visitorTrends} />
+                {data.variant === 'SHOPPING_CENTER' ? (
+                    <IncidentTypesChart ref={incidentTypesChartRef} data={localizedIncidentTypesData} />
+                ) : (
+                    <VisitorTrendsChart ref={visitorTrendsChartRef} data={data.visitorTrends} />
+                )}
             </div>
 
             {/* Charts Grid - Secondary */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                    <AmenitiesPopularityChart ref={amenitiesChartRef} data={data.reservationsByAmenity} />
+                    <AmenitiesPopularityChart
+                        ref={amenitiesChartRef}
+                        data={
+                            isShoppingCenter
+                                ? data.servicesByContractCount
+                                : data.reservationsByAmenity
+                        }
+                        rankingChart={isShoppingCenter ? 'services' : 'amenities'}
+                    />
                 </div>
                 <div className="lg:col-span-1">
                     <IncidentsChart ref={incidentsChartRef} data={localizedIncidentsData} />

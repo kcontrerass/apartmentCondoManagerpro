@@ -268,6 +268,7 @@
             "typeTenant": "Tenant",
             "typeOwner": "Owner",
             "typeAirbnbGuest": "Airbnb guest",
+            "airbnbNotApplicableUnit": "Airbnb guest stays don’t apply to this unit or complex type (e.g. retail units in a mall or non-residential spaces).",
             "airbnbGuestTypeHint": "As an Airbnb guest, fill in the stay dates and primary guest details below.",
             "startDate": "Start date",
             "emergencySection": "Emergency contact",
@@ -394,6 +395,10 @@
             "quantityNo": "No (fixed price per unit)",
             "quantityYes": "Yes (e.g. 2 parking spots)",
             "quantityHelp": "Use for parking, storage, etc. where a unit may have multiple.",
+            "defaultQuantity": "Default quantity",
+            "defaultQuantityPlaceholder": "e.g. 2",
+            "defaultQuantityHelp": "Initial amount shown when a resident subscribes (they can change it when booking).",
+            "frequencyMonthlyHint": "Charges for this service use a monthly billing cycle.",
             "updateService": "Update service",
             "createService": "Create service"
         }
@@ -540,6 +545,12 @@
             "CLUBHOUSE": "Clubhouse",
             "COURT": "Sports Court",
             "BBQ": "BBQ Area",
+            "FOOD_COURT": "Food court",
+            "EVENT_SPACE": "Event space / central court",
+            "VISITOR_PARKING": "Visitor parking",
+            "LOADING_AREA": "Loading / unloading zone",
+            "MULTIPURPOSE_HALL": "Multi-purpose hall",
+            "PLAY_AREA": "Kids / entertainment area",
             "OTHER": "Other"
         },
         "form": {
@@ -1016,7 +1027,8 @@
             "savedSuccess": "Airbnb details saved",
             "saveError": "Could not save. Please check the form.",
             "connectionError": "Connection error. Please try again.",
-            "disabledByComplex": "Your complex turned off short-term guest registration. If you need to change an existing record, contact administration."
+            "disabledByComplex": "Your complex turned off short-term guest registration. If you need to change an existing record, contact administration.",
+            "notApplicableUnit": "Your complex or unit type doesn’t support temporary guest registration (for example retail units in a mall)."
         },
         "roles": {
             "SUPER_ADMIN": "Super Admin",
@@ -1099,6 +1111,7 @@
     "Reports": {
         "title": "Reports & Analytics",
         "subtitle": "Complex performance and statistics overview",
+        "subtitleShoppingCenter": "Metrics focused on retail tenants and mall operations",
         "noData": "No data available for the selected complexes",
         "exportToExcel": "Export to Excel (.xlsx)",
         "filterByComplex": "Filter by Complex",
@@ -1106,6 +1119,9 @@
         "stats": {
             "totalRevenue": "Total Revenue (6m)",
             "occupancy": "Occupancy",
+            "storeOccupancy": "Store occupancy",
+            "announcements90d": "Announcements published (90 days)",
+            "upcomingEvents90d": "Scheduled events (next 90 days)",
             "incidents": "Incidents",
             "resolution": "Resolution"
         },
@@ -1118,9 +1134,18 @@
                 "title": "Incident Status",
                 "total": "Total"
             },
+            "incidentTypes": {
+                "title": "Incidents by type",
+                "total": "Total",
+                "empty": "No incident type data for this scope."
+            },
             "amenities": {
                 "title": "Amenity Popularity (Top 5)",
                 "label": "Reservations"
+            },
+            "services": {
+                "title": "Most contracted services (Top 5)",
+                "label": "Active contracts"
             },
             "payments": {
                 "title": "Payment Method Distribution",
@@ -1140,6 +1165,33 @@
             "IN_PROGRESS": "In Progress",
             "RESOLVED": "Resolved",
             "CANCELLED": "Cancelled"
+        },
+        "incidentTypes": {
+            "MAINTENANCE": "Maintenance",
+            "SECURITY": "Security",
+            "NOISE": "Noise",
+            "CLEANING": "Cleaning",
+            "OTHER": "Other"
+        },
+        "excelSections": {
+            "monthlyRevenue": "MONTHLY REVENUE",
+            "incidentsByStatus": "INCIDENT STATUS",
+            "amenityPopularity": "AMENITY POPULARITY",
+            "servicesRanking": "TOP CONTRACTED SERVICES",
+            "visitorTrends": "VISITOR TRENDS (LAST 7 DAYS)",
+            "incidentTypes": "INCIDENTS BY TYPE"
+        },
+        "excelColumns": {
+            "month": "Month",
+            "amount": "Total",
+            "status": "Status",
+            "count": "Count",
+            "name": "Name",
+            "reservations": "Reservations",
+            "activeContracts": "Active contracts",
+            "date": "Date",
+            "visitors": "Visitors",
+            "incidentCategory": "Category"
         },
         "months": {
             "Jan": "Jan",

@@ -8,6 +8,18 @@ import { Role } from "@/types/roles";
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
+async function reportVariantForComplexIds(
+    ids: string[],
+): Promise<'RESIDENTIAL' | 'SHOPPING_CENTER'> {
+    if (ids.length === 0) return 'RESIDENTIAL';
+    const rows = await prisma.complex.findMany({
+        where: { id: { in: ids } },
+        select: { type: true },
+    });
+    if (rows.length === 0) return 'RESIDENTIAL';
+    return rows.every((r) => r.type === 'SHOPPING_CENTER') ? 'SHOPPING_CENTER' : 'RESIDENTIAL';
+}
+
 async function getReportsData(userId: string, role: string, selectedComplexId?: string) {
     let managedComplexIds: string[] = [];
 
@@ -106,64 +118,172 @@ async function getReportsData(userId: string, role: string, selectedComplexId?: 
         color: statusMap[inc.status]?.color || '#cbd5e1'
     }));
 
-    // 3. Reservations by Amenity
-    const reservationsByAmenityRaw = await prisma.reservation.groupBy({
-        by: ['amenityId'],
-        where: {
-            amenity: { complexId: { in: managedComplexIds } },
-            status: 'APPROVED'
-        },
-        _count: true
-    });
+    const variant = await reportVariantForComplexIds(managedComplexIds);
 
-    const amenities = await prisma.amenity.findMany({
-        where: { id: { in: reservationsByAmenityRaw.map(r => r.amenityId) } },
-        select: { id: true, name: true }
-    });
+    let reservationsByAmenity: { name: string; count: number }[] = [];
+    if (variant !== 'SHOPPING_CENTER') {
+        const reservationsByAmenityRaw = await prisma.reservation.groupBy({
+            by: ['amenityId'],
+            where: {
+                amenity: { complexId: { in: managedComplexIds } },
+                status: 'APPROVED'
+            },
+            _count: true
+        });
 
-    const reservationsByAmenity = reservationsByAmenityRaw.map(r => ({
-        name: amenities.find(a => a.id === r.amenityId)?.name || 'Unknown',
-        count: r._count
-    })).sort((a, b) => b.count - a.count).slice(0, 5);
+        const amenities = await prisma.amenity.findMany({
+            where: { id: { in: reservationsByAmenityRaw.map(r => r.amenityId) } },
+            select: { id: true, name: true }
+        });
 
-    // 4. Visitor Trends (Last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+        reservationsByAmenity = reservationsByAmenityRaw.map(r => ({
+            name: amenities.find(a => a.id === r.amenityId)?.name || 'Unknown',
+            count: r._count
+        })).sort((a, b) => b.count - a.count).slice(0, 5);
+    }
 
-    const visitorsRaw = await prisma.visitorLog.groupBy({
-        by: ['scheduledDate'],
-        where: {
-            complexId: { in: managedComplexIds },
-            scheduledDate: { gte: sevenDaysAgo }
-        },
-        _count: true
-    });
+    let visitorTrends: { date: string; count: number }[] = [];
+    if (variant === 'RESIDENTIAL') {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const visitorTrends = Array.from({ length: 7 }).map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        const dateStr = d.toISOString().split('T')[0];
-        const count = visitorsRaw.find(v => v.scheduledDate.toISOString().split('T')[0] === dateStr)?._count || 0;
-        return {
-            date: dateStr,
-            count
-        };
-    });
+        const visitorsRaw = await prisma.visitorLog.groupBy({
+            by: ['scheduledDate'],
+            where: {
+                complexId: { in: managedComplexIds },
+                scheduledDate: { gte: sevenDaysAgo }
+            },
+            _count: true
+        });
 
-    // 5. Stats Summary
+        visitorTrends = Array.from({ length: 7 }).map((_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - (6 - i));
+            const dateStr = d.toISOString().split('T')[0];
+            const count = visitorsRaw.find(v => v.scheduledDate.toISOString().split('T')[0] === dateStr)?._count || 0;
+            return {
+                date: dateStr,
+                count
+            };
+        });
+    }
+
+    // 5. Stats Summary (shared)
     const totalRevenue = revenueData.reduce((acc, curr) => acc + curr.total, 0);
     const totalIncidents = incidents.reduce((acc, curr) => acc + curr._count, 0);
     const resolvedIncidents = incidents.find(i => i.status === 'RESOLVED')?._count || 0;
     const resolvedRate = totalIncidents > 0 ? Math.round((resolvedIncidents / totalIncidents) * 100) : 0;
 
+    if (variant === 'SHOPPING_CENTER') {
+        const unitsInScope = await prisma.unit.findMany({
+            where: { complexId: { in: managedComplexIds } },
+            select: { id: true },
+        });
+        const unitIds = unitsInScope.map((u) => u.id);
+
+        let servicesByContractCount: { name: string; count: number }[] = [];
+        if (unitIds.length > 0) {
+            const grouped = await prisma.unitService.groupBy({
+                by: ['serviceId'],
+                where: {
+                    unitId: { in: unitIds },
+                    status: 'ACTIVE',
+                },
+                _count: true,
+            });
+            if (grouped.length > 0) {
+                const services = await prisma.service.findMany({
+                    where: { id: { in: grouped.map((g) => g.serviceId) } },
+                    select: { id: true, name: true },
+                });
+                servicesByContractCount = grouped
+                    .map((g) => ({
+                        name: services.find((s) => s.id === g.serviceId)?.name ?? '—',
+                        count: g._count,
+                    }))
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 5);
+            }
+        }
+
+        const incidentTypeColors: Record<string, string> = {
+            MAINTENANCE: '#6366f1',
+            SECURITY: '#ef4444',
+            NOISE: '#f59e0b',
+            CLEANING: '#22c55e',
+            OTHER: '#94a3b8',
+        };
+
+        const incidentsByTypeRaw = await prisma.incident.groupBy({
+            by: ['type'],
+            where: { complexId: { in: managedComplexIds } },
+            _count: true,
+        });
+
+        const incidentsByType = incidentsByTypeRaw.map((row) => ({
+            typeKey: row.type,
+            count: row._count,
+            color: incidentTypeColors[row.type] ?? '#cbd5e1',
+        }));
+
+        const ninetyDaysAgo = new Date();
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+        const windowStart = new Date();
+        windowStart.setHours(0, 0, 0, 0);
+        const windowEnd = new Date(windowStart);
+        windowEnd.setDate(windowEnd.getDate() + 90);
+
+        const [totalUnitsCount, occupiedUnitsCount, announcementsLast90Days, upcomingEventsCount] =
+            await Promise.all([
+                prisma.unit.count({ where: { complexId: { in: managedComplexIds } } }),
+                prisma.unit.count({
+                    where: { complexId: { in: managedComplexIds }, status: 'OCCUPIED' },
+                }),
+                prisma.announcement.count({
+                    where: {
+                        complexId: { in: managedComplexIds },
+                        createdAt: { gte: ninetyDaysAgo },
+                    },
+                }),
+                prisma.event.count({
+                    where: {
+                        complexId: { in: managedComplexIds },
+                        eventDate: { gte: windowStart, lte: windowEnd },
+                    },
+                }),
+            ]);
+
+        const storeOccupancyRate =
+            totalUnitsCount > 0 ? Math.round((occupiedUnitsCount / totalUnitsCount) * 100) : 0;
+
+        return {
+            variant: 'SHOPPING_CENTER' as const,
+            revenueData,
+            incidentsData,
+            incidentsByType,
+            servicesByContractCount,
+            stats: {
+                totalRevenue,
+                totalIncidents,
+                resolvedRate,
+                storeOccupancyRate,
+                announcementsLast90Days,
+                upcomingEventsCount,
+            },
+        };
+    }
+
     const [totalUnitsCount, occupiedUnitsCount] = await Promise.all([
         prisma.unit.count({ where: { complexId: { in: managedComplexIds } } }),
-        prisma.unit.count({ where: { complexId: { in: managedComplexIds }, status: 'OCCUPIED' } })
+        prisma.unit.count({ where: { complexId: { in: managedComplexIds }, status: 'OCCUPIED' } }),
     ]);
-    const occupancyRate = totalUnitsCount > 0 ? Math.round((occupiedUnitsCount / totalUnitsCount) * 100) : 0;
+    const occupancyRate =
+        totalUnitsCount > 0 ? Math.round((occupiedUnitsCount / totalUnitsCount) * 100) : 0;
 
     return {
+        variant: 'RESIDENTIAL' as const,
         revenueData,
         incidentsData,
         reservationsByAmenity,
@@ -172,8 +292,8 @@ async function getReportsData(userId: string, role: string, selectedComplexId?: 
             totalRevenue,
             totalIncidents,
             resolvedRate,
-            occupancyRate
-        }
+            occupancyRate,
+        },
     };
 }
 
@@ -242,7 +362,11 @@ export default async function ReportsPage({
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <PageHeader
                         title={tReports('title')}
-                        subtitle={tReports('subtitle')}
+                        subtitle={
+                            data?.variant === 'SHOPPING_CENTER'
+                                ? tReports('subtitleShoppingCenter')
+                                : tReports('subtitle')
+                        }
                     />
                 </div>
 
