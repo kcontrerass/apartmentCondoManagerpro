@@ -203,9 +203,13 @@ export function InvoicesClient({ user, billingScopeComplexId = null }: InvoicesC
 
             if (response.ok) {
                 fetchInvoices();
+            } else {
+                const data = await response.json();
+                toast.error(data.error || "Error al actualizar la factura");
             }
         } catch (error) {
             console.error("Error updating invoice status:", error);
+            toast.error("Error de conexión al actualizar la factura");
         }
     };
 

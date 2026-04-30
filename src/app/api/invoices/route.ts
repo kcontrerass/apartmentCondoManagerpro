@@ -101,7 +101,7 @@ export async function GET(request: Request) {
         await prisma.invoice.updateMany({
             where: {
                 status: "PENDING",
-                dueDate: { lt: new Date() },
+                dueDate: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) },
                 category: InvoiceCategory.UNIT_BILLING,
                 number: { not: { startsWith: "RES-" } },
             },

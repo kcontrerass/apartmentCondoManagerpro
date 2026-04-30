@@ -124,7 +124,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                         ) : null}
                                     </div>
                                     <p className="text-xs text-slate-500">
-                                        {t("residentDashboard.dueOn")}: {format(new Date(pendingInvoices[0].dueDate), "dd MMM", { locale: es })}
+                                        {t("residentDashboard.dueOn")}: {format(new Date(new Date(pendingInvoices[0].dueDate).getTime() + new Date(pendingInvoices[0].dueDate).getTimezoneOffset() * 60000), "dd MMM", { locale: es })}
                                     </p>
                                     <Link href="/dashboard/invoices">
                                         <Button size="sm" className="w-full mt-2" variant="primary">

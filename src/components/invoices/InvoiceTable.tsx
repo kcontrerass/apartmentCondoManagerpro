@@ -87,7 +87,7 @@ export function InvoiceTable({
         generateInvoicePDF({
             invoiceNumber: invoice.number,
             date: format(new Date(invoice.createdAt), 'dd/MM/yyyy'),
-            dueDate: format(new Date(invoice.dueDate), 'dd/MM/yyyy'),
+            dueDate: format(new Date(new Date(invoice.dueDate).getTime() + new Date(invoice.dueDate).getTimezoneOffset() * 60000), 'dd/MM/yyyy'),
             residentName: invoice.resident?.name || invoice.unit?.residents?.[0]?.user?.name || "Residente",
             unitNumber: invoice.unit?.number || "N/A",
             complexName: invoice.complex?.name || "ADESSO-365 Complex",
@@ -225,7 +225,7 @@ export function InvoiceTable({
                                 })()}
                             </td>
                             <td className="py-4 px-4 text-sm text-slate-600 dark:text-slate-400">
-                                {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: dateLocale })}
+                                {invoice.number?.startsWith('RES-') ? '-' : format(new Date(new Date(invoice.dueDate).getTime() + new Date(invoice.dueDate).getTimezoneOffset() * 60000), 'dd MMM yyyy', { locale: dateLocale })}
                             </td>
                             <td className="py-4 px-4 text-right">
                                 <div className="flex flex-col items-end sm:flex-row sm:justify-end gap-2">

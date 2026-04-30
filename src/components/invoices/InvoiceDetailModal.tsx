@@ -38,7 +38,7 @@ export function InvoiceDetailModal({ invoice }: InvoiceDetailModalProps) {
                         Vencimiento
                     </p>
                     <p className="text-sm text-slate-500">
-                        {invoice.number?.startsWith('RES-') ? '-' : format(new Date(invoice.dueDate), 'dd MMM yyyy', { locale: es })}
+                        {invoice.number?.startsWith('RES-') ? '-' : format(new Date(new Date(invoice.dueDate).getTime() + new Date(invoice.dueDate).getTimezoneOffset() * 60000), 'dd MMM yyyy', { locale: es })}
                     </p>
                 </div>
             </div>
