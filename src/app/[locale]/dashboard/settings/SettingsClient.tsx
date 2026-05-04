@@ -179,6 +179,7 @@ export default function SettingsClient({ user }: { user: any }) {
 
     // Render permissions when complexId is updated
     useEffect(() => {
+        
         if (complexId) {
             fetchSettings(complexId);
         }
