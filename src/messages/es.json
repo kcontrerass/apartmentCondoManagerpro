@@ -24,6 +24,7 @@
         "main": "Principal",
         "management": "Gestión",
         "support": "Soporte",
+        "footerCopyright": "© {year} ADESSO-365. Todos los derechos reservados.",
         "services": "Servicios",
         "billing": "Cobros",
         "access": "Accesos",
@@ -64,6 +65,14 @@
         "backToLogin": "Volver al inicio de sesión",
         "linkFromResetPage": "Solicitar un nuevo enlace de recuperación"
     },
+    "SupportPage": {
+        "title": "Soporte",
+        "intro": "Estamos para ayudarte con ADESSO-365: acceso, facturación de la plataforma o incidencias técnicas.",
+        "emailIntro": "La forma más rápida de contactarnos es por correo:",
+        "emailCta": "Escribir a soporte",
+        "noPublicEmail": "Aún no hay un correo público de soporte configurado en este servidor. Si administras esta instalación, define NEXT_PUBLIC_SUPPORT_EMAIL en el entorno. Si no, comunícate con el administrador de tu condominio o edificio.",
+        "backToDashboard": "Volver al panel"
+    },
     "Auth": {
         "tagline": "Gestión integral para Condominios, Edificios y Centros Comerciales",
         "welcomeBack": "Bienvenido de vuelta",
@@ -90,7 +99,19 @@
         "captchaRequired": "Completa la verificación de seguridad antes de continuar.",
         "captchaFailed": "La verificación de seguridad no fue válida. Inténtalo de nuevo.",
         "heroCaption": "Solución para conjuntos en Ciudad de Guatemala: condominios, edificios y centros comerciales.",
-        "authorizedPoint": "Punto de Acceso Autorizado"
+        "authorizedPoint": "Punto de Acceso Autorizado",
+        "termsNotAccepted": "Debes aceptar los Términos y Condiciones y la Política de Uso y Tratamiento de Datos para registrarte.",
+        "termsCheckboxLead": "Declaro que he leído y acepto los",
+        "termsCheckboxLink": "Términos y Condiciones de Uso y la Política de Uso y Tratamiento de Datos",
+        "termsCheckboxTrail": "(documento versión {version}).",
+        "termsDocAriaLabel": "Leer términos y política de datos (se abre en nueva pestaña)"
+    },
+    "SoftwareTerms": {
+        "pageTitle": "Términos y Condiciones y Política de datos",
+        "version": "Versión documento: {version}",
+        "backToRegister": "Volver al registro",
+        "backToLogin": "Iniciar sesión",
+        "langNotice": ""
     },
     "Dashboard": {
         "title": "Panel de Control",

@@ -4,6 +4,7 @@ import { useActionState, useCallback, useEffect, useRef, useState } from 'react'
 import { register } from '@/lib/actions/auth-actions';
 import { AuthRecaptcha, isRecaptchaWidgetEnabled } from '@/components/auth/AuthRecaptcha';
 import { Link } from '@/i18n/routing';
+import { SOFTWARE_TERMS_AND_PRIVACY_VERSION } from '@/lib/software-terms';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
@@ -13,6 +14,7 @@ export default function RegisterPage() {
     const [errorMessage, formAction, isPending] = useActionState(register, undefined);
     const [captchaNonce, setCaptchaNonce] = useState(0);
     const [captchaReady, setCaptchaReady] = useState(() => !isRecaptchaWidgetEnabled());
+    const [termsAccepted, setTermsAccepted] = useState(false);
     const prevPending = useRef(isPending);
 
     useEffect(() => {
@@ -102,12 +104,37 @@ export default function RegisterPage() {
                     />
                 </div>
 
+                <div className="flex gap-3 items-start rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-slate-800/20 px-4 py-3">
+                    <input
+                        id="acceptSoftwareTerms"
+                        name="acceptSoftwareTerms"
+                        type="checkbox"
+                        value="on"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="acceptSoftwareTerms" className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-snug cursor-pointer">
+                        {t('termsCheckboxLead')}{' '}
+                        <Link
+                            href="/legal/software-terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-primary hover:underline underline-offset-2"
+                            aria-label={t('termsDocAriaLabel')}
+                        >
+                            {t('termsCheckboxLink')}
+                        </Link>{' '}
+                        {t('termsCheckboxTrail', { version: SOFTWARE_TERMS_AND_PRIVACY_VERSION })}
+                    </label>
+                </div>
+
                 <AuthRecaptcha resetSignal={captchaNonce} onTokenChange={onCaptchaToken} />
 
                 <div className="pt-2">
                     <button
                         type="submit"
-                        disabled={isPending || !captchaReady}
+                        disabled={isPending || !captchaReady || !termsAccepted}
                         className="flex w-full justify-center items-center rounded-xl bg-slate-900 dark:bg-primary px-6 py-4 text-xs font-black text-white uppercase tracking-[0.2em] shadow-lg shadow-slate-200 dark:shadow-none hover:bg-slate-800 dark:hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 active:scale-[0.98]"
                     >
                         {isPending ? (

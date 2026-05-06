@@ -12,6 +12,7 @@ import { MobileSidebarProvider } from "./MobileSidebarContext";
 import { PlatformSubscriptionGate } from "./PlatformSubscriptionGate";
 import { evaluatePlatformSubscriptionAccess } from "@/lib/platform-subscription-rules";
 import { getPlatformSubscriptionGraceDays } from "@/lib/platform-subscription-access";
+import { canAccessSupport } from "@/lib/support-access";
 
 import { UnassignedResidentView } from "@/components/dashboard/UnassignedResidentView";
 import { AnimatedPage } from "@/components/animations/AnimatedPage";
@@ -128,6 +129,8 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
         }
     }
 
+    const showFooterSupport = canAccessSupport(user?.role);
+
     let platformSubscriptionBlocked = false;
     if (
         user?.role &&
@@ -154,7 +157,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                         <main className="flex-1 p-6 md:p-8 flex items-center justify-center">
                             <UnassignedResidentView />
                         </main>
-                        <Footer />
+                        <Footer showSupport={false} />
                     </div>
                 </div>
             </NextIntlClientProvider>
@@ -185,7 +188,7 @@ export async function MainLayout({ children, user }: MainLayoutProps) {
                                 </PlatformSubscriptionGate>
                             </div>
                         </main>
-                        <Footer />
+                        <Footer showSupport={showFooterSupport} />
                     </div>
                 </MobileSidebarProvider>
             </div>

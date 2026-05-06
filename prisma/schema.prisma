@@ -33,7 +33,9 @@ model User {
   polls                Poll[]            @relation("PollAuthor")
   votes                Vote[]
   settings             Json?
-
+  /// Aceptación de Términos del Software / Política de datos al registrarse (auditoría).
+  softwareTermsAcceptedAt DateTime? @map("software_terms_accepted_at")
+  softwareTermsVersion    String?   @map("software_terms_version")
 
   @@index([complexId], map: "users_complex_id_fkey")
   @@map("users")

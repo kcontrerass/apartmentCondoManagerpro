@@ -24,6 +24,7 @@
         "main": "Main",
         "management": "Management",
         "support": "Support",
+        "footerCopyright": "© {year} ADESSO-365. All rights reserved.",
         "services": "Services",
         "billing": "Billing",
         "access": "Access Control",
@@ -64,6 +65,14 @@
         "backToLogin": "Back to login",
         "linkFromResetPage": "Request a new reset link"
     },
+    "SupportPage": {
+        "title": "Support",
+        "intro": "We are here to help with ADESSO-365: access issues, billing questions about the platform, or technical problems.",
+        "emailIntro": "The fastest way to reach us is by email:",
+        "emailCta": "Write to support",
+        "noPublicEmail": "A public support address is not configured on this server yet. If you manage this installation, set NEXT_PUBLIC_SUPPORT_EMAIL in the environment. Otherwise, contact your building or condominium administrator.",
+        "backToDashboard": "Back to dashboard"
+    },
     "Auth": {
         "tagline": "Comprehensive management for Condominiums, Buildings, and Shopping Centers",
         "welcomeBack": "Welcome back",
@@ -90,7 +99,19 @@
         "captchaRequired": "Complete the security check before continuing.",
         "captchaFailed": "Security verification failed. Please try again.",
         "heroCaption": "Solution for communities in Guatemala City: condominiums, towers, and shopping centers.",
-        "authorizedPoint": "Authorized Access Point"
+        "authorizedPoint": "Authorized Access Point",
+        "termsNotAccepted": "You must accept the Terms of Use and the Data Use and Processing Policy to register.",
+        "termsCheckboxLead": "I declare that I have read and accept the",
+        "termsCheckboxLink": "Terms of Use and Data Use and Processing Policy",
+        "termsCheckboxTrail": "(document version {version}).",
+        "termsDocAriaLabel": "Read terms and data policy (opens in a new tab)"
+    },
+    "SoftwareTerms": {
+        "pageTitle": "Terms of use and data processing policy",
+        "version": "Document version: {version}",
+        "backToRegister": "Back to sign up",
+        "backToLogin": "Sign in",
+        "langNotice": "The legally binding text is published in Spanish below."
     },
     "Dashboard": {
         "title": "Control Panel",

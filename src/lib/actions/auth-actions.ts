@@ -6,6 +6,7 @@ import { removeStoredPushSubscription } from '@/lib/notifications';
 import { sendPasswordResetEmail, canSendPasswordResetEmail } from '@/lib/email/send-password-reset';
 import { getPublicAppUrl } from '@/lib/public-app-url';
 import { checkRecaptchaForm } from '@/lib/recaptcha/verify-recaptcha';
+import { SOFTWARE_TERMS_AND_PRIVACY_VERSION } from '@/lib/software-terms';
 import { AuthError } from 'next-auth';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/db';
@@ -149,6 +150,12 @@ export async function register(prevState: string | undefined, formData: FormData
 
     if (!name || !email || !password) return 'Missing fields.';
 
+    const acceptTerms = formData.get('acceptSoftwareTerms');
+    if (acceptTerms !== 'on') {
+        const t = await getTranslations('Auth');
+        return t('termsNotAccepted');
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(password as string, 10);
 
@@ -162,6 +169,8 @@ export async function register(prevState: string | undefined, formData: FormData
                 password: hashedPassword,
                 phone: phone ? (phone as string) : null,
                 image: avatarUrl,
+                softwareTermsAcceptedAt: new Date(),
+                softwareTermsVersion: SOFTWARE_TERMS_AND_PRIVACY_VERSION,
             },
         });
     } catch (error) {

@@ -1,40 +1,39 @@
-import { getTranslations } from "next-intl/server";
-import Link from "next/link";
-import { PLATFORM_SUBSCRIPTION_TERMS_VERSION } from "@/lib/platform-subscription-terms";
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
+import { SOFTWARE_TERMS_AND_PRIVACY_VERSION } from '@/lib/software-terms';
+import { SoftwareTermsBody } from '@/components/legal/SoftwareTermsBody';
 
 type Props = { params: Promise<{ locale: string }> };
 
-export default async function PlatformLegalNoticePage({ params }: Props) {
+/**
+ * Mismo texto normativo que `/legal/terms` y `/legal/software-terms`; título acorde al enlace “Aspectos legales” del flujo de suscripción.
+ */
+export default async function LegalNoticePage({ params }: Props) {
     const { locale } = await params;
-    const t = await getTranslations({ locale, namespace: "PlatformLegalDocs" });
-    const paragraphs = t("legalBody")
-        .split(/\n\n+/)
-        .map((p) => p.trim())
-        .filter(Boolean);
+    const t = await getTranslations({ locale, namespace: 'SoftwareTerms' });
+    const tSub = await getTranslations({ locale, namespace: 'PlatformLegalDocs' });
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100">
-            <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
-                <Link
-                    href={`/${locale}/dashboard/platform-subscription`}
-                    className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1"
-                >
-                    <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-                    {t("backToSubscription")}
-                </Link>
-                <header className="space-y-2">
-                    <h1 className="text-2xl font-bold tracking-tight">{t("legalTitle")}</h1>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t("legalUpdated", { version: PLATFORM_SUBSCRIPTION_TERMS_VERSION })}
-                    </p>
-                </header>
-                <article className="prose prose-slate dark:prose-invert prose-sm max-w-none space-y-4">
-                    {paragraphs.map((p, i) => (
-                        <p key={i} className="leading-relaxed text-slate-700 dark:text-slate-300">
-                            {p}
-                        </p>
-                    ))}
-                </article>
+            <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
+                <nav className="flex flex-wrap gap-4 text-sm font-medium">
+                    <Link
+                        href={`/${locale}/dashboard/platform-subscription`}
+                        className="text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                        {tSub('backToSubscription')}
+                    </Link>
+                    <Link href={`/${locale}/login`} className="text-slate-500 dark:text-slate-400 hover:text-primary hover:underline">
+                        {t('backToLogin')}
+                    </Link>
+                </nav>
+
+                <SoftwareTermsBody
+                    pageTitle={tSub('legalTitle')}
+                    versionLine={t('version', { version: SOFTWARE_TERMS_AND_PRIVACY_VERSION })}
+                    langNotice={locale === 'en' ? t('langNotice') : null}
+                />
             </div>
         </div>
     );
