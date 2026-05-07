@@ -70,7 +70,7 @@
         "intro": "We are here to help with ADESSO-365: access issues, billing questions about the platform, or technical problems.",
         "emailIntro": "The fastest way to reach us is by email:",
         "emailCta": "Write to support",
-        "noPublicEmail": "A public support address is not configured on this server yet. If you manage this installation, set NEXT_PUBLIC_SUPPORT_EMAIL in the environment. Otherwise, contact your building or condominium administrator.",
+        "noPublicEmail": "The support email is not set yet. A super admin should add it under Platform gateway (platform billing settings) and save. Until then, NEXT_PUBLIC_SUPPORT_EMAIL or EMAIL_FROM on the server may be used as fallback.",
         "backToDashboard": "Back to dashboard"
     },
     "Auth": {
@@ -1400,6 +1400,10 @@
         "subscriptionGraceDaysPlaceholder": "e.g. 5",
         "subscriptionGraceDaysHelp": "After the complex’s paid-through date, these extra days keep the app usable before it is blocked. 0 = no grace. Blank = PLATFORM_SUBSCRIPTION_GRACE_DAYS or 0.",
         "subscriptionGraceDaysInvalid": "Enter an integer from 0 to 365, or leave blank.",
+        "supportSectionTitle": "Support email (admins & board)",
+        "supportEmailLabel": "Email shown on Support",
+        "supportEmailPlaceholder": "support@yourcompany.com",
+        "supportEmailHelp": "Admins and board members see this in the footer and Support page (mailto). It overrides environment fallbacks. Leave empty to use server fallbacks.",
         "subscriptionPriceInvalid": "Enter a valid price (number greater than 0).",
         "subscriptionPeriodInvalid": "Enter months between 1 and 120, or leave blank.",
         "publicLabel": "Public Key",

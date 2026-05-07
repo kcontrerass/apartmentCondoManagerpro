@@ -30,6 +30,7 @@ export async function GET() {
             subscriptionPriceGtq: Prisma.Decimal | null;
             subscriptionPeriodMonths: number | null;
             subscriptionGraceDays: number | null;
+            supportEmail: string | null;
         } | null = null;
         try {
             row = await prisma.platformRecurrenteSettings.findUnique({
@@ -54,6 +55,7 @@ export async function GET() {
             subscriptionPriceGtq: row?.subscriptionPriceGtq != null ? String(row.subscriptionPriceGtq) : "",
             subscriptionPeriodMonths: row?.subscriptionPeriodMonths ?? null,
             subscriptionGraceDays: row?.subscriptionGraceDays ?? null,
+            supportEmail: row?.supportEmail?.trim() ?? "",
             secretKeyConfigured,
             webhookSecretConfigured,
             keysActive: !!keys,
@@ -80,11 +82,32 @@ export async function PUT(request: Request) {
             subscriptionPriceGtq?: number | string | null;
             subscriptionPeriodMonths?: number | string | null;
             subscriptionGraceDays?: number | string | null;
+            supportEmail?: string | null;
         };
 
         const existing = await prisma.platformRecurrenteSettings.findUnique({
             where: { id: "default" },
         });
+
+        const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        let supportEmailNext = existing?.supportEmail?.trim() ?? null;
+        if (body.supportEmail !== undefined) {
+            if (body.supportEmail === null || String(body.supportEmail).trim() === "") {
+                supportEmailNext = null;
+            } else {
+                const em = String(body.supportEmail).trim().toLowerCase();
+                if (!emailRe.test(em)) {
+                    return apiError(
+                        { code: "VALIDATION", message: "Correo de soporte inválido (usa formato email@dominio.com)" },
+                        400
+                    );
+                }
+                if (em.length > 320) {
+                    return apiError({ code: "VALIDATION", message: "Correo demasiado largo" }, 400);
+                }
+                supportEmailNext = em;
+            }
+        }
 
         // Evitar borrar claves en BD si el formulario se envió vacío pero el origen real es .env
         // (o la petición previa no rellenó el campo) — misma resolución que al leer.
@@ -180,6 +203,7 @@ export async function PUT(request: Request) {
                 subscriptionPriceGtq: subscriptionPriceNext,
                 subscriptionPeriodMonths: subscriptionPeriodNext,
                 subscriptionGraceDays: subscriptionGraceDaysNext,
+                supportEmail: supportEmailNext,
             },
             update: {
                 publicKey: publicKeyNext,
@@ -189,6 +213,7 @@ export async function PUT(request: Request) {
                 subscriptionPriceGtq: subscriptionPriceNext,
                 subscriptionPeriodMonths: subscriptionPeriodNext,
                 subscriptionGraceDays: subscriptionGraceDaysNext,
+                supportEmail: supportEmailNext,
             },
         });
 

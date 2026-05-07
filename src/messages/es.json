@@ -70,7 +70,7 @@
         "intro": "Estamos para ayudarte con ADESSO-365: acceso, facturación de la plataforma o incidencias técnicas.",
         "emailIntro": "La forma más rápida de contactarnos es por correo:",
         "emailCta": "Escribir a soporte",
-        "noPublicEmail": "Aún no hay un correo público de soporte configurado en este servidor. Si administras esta instalación, define NEXT_PUBLIC_SUPPORT_EMAIL en el entorno. Si no, comunícate con el administrador de tu condominio o edificio.",
+        "noPublicEmail": "El súper administrador aún no ha configurado el correo de soporte. Debe indicarlo en el menú «Pasarela — plataforma» (Cobros de plataforma) y guardar. Mientras tanto puede usarse NEXT_PUBLIC_SUPPORT_EMAIL o EMAIL_FROM en el servidor como respaldo.",
         "backToDashboard": "Volver al panel"
     },
     "Auth": {
@@ -1439,6 +1439,10 @@
         "subscriptionGraceDaysPlaceholder": "ej. 5",
         "subscriptionGraceDaysHelp": "Tras vencer la fecha de vigencia del complejo (campo interno), estos días adicionales permiten usar la app antes de bloquearla. 0 = sin gracia. Vacío = PLATFORM_SUBSCRIPTION_GRACE_DAYS o 0.",
         "subscriptionGraceDaysInvalid": "Indica un entero entre 0 y 365 o déjalo vacío.",
+        "supportSectionTitle": "Correo de soporte (administradores y junta)",
+        "supportEmailLabel": "Correo visible en «Soporte»",
+        "supportEmailPlaceholder": "soporte@tuempresa.com",
+        "supportEmailHelp": "Lo verán administradores y junta directiva en el pie y en la página Soporte (enlace mailto). Prioridad sobre variables de entorno. Déjalo vacío para usar respaldos del servidor.",
         "subscriptionPriceInvalid": "Indica un precio válido (número mayor que 0).",
         "subscriptionPeriodInvalid": "Indica meses entre 1 y 120 o déjalo vacío.",
         "publicLabel": "Public Key",
