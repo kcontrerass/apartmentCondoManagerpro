@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "ADESSO-365",
   description: "Sistema Integral de Gestión de Condominios",
   manifest: "/manifest.json",
+  icons: {
+    icon: [{ url: "/logoadesso.svg", type: "image/svg+xml", sizes: "any" }],
+    apple: [{ url: "/logoadesso.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/logoadesso.svg", type: "image/svg+xml" }],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -66,6 +71,9 @@ export default async function LocaleLayout({
             `
           }}
         />
+        <link rel="icon" href="/logoadesso.svg" type="image/svg+xml" sizes="any" />
+        <link rel="mask-icon" href="/logoadesso.svg" color="#59BA47" />
+        <link rel="apple-touch-icon" href="/logoadesso.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />

@@ -55,5 +55,6 @@ export default auth(async (req) => {
 });
 
 export const config = {
-    matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|icon.svg|sw.js|uploads).*)"],
+    // Excluye estáticos (cualquier segmento con punto: .svg, .ico, .png…) para que no los intercepte i18n/auth.
+    matcher: ["/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|uploads|.*\\..*).*)"],
 };
