@@ -139,7 +139,18 @@
             "noReservations": "You have no upcoming reservations.",
             "bookAmenity": "Book Amenity",
             "recentInvoices": "Recent Invoices",
-            "recentActivity": "Recent Activity"
+            "recentActivity": "Recent Activity",
+            "noPendingInvoices": "No pending invoices.",
+            "incidentsTitle": "Reports & Incidents",
+            "incidentsDesc": "Report any technical or security issue in the complex.",
+            "noRecentIncidents": "You have no recent reports.",
+            "newIncident": "New Report",
+            "pendingPolls": "Pending Polls",
+            "registeredVotes": "{count} registered votes",
+            "goVote": "Go Vote",
+            "accessControlTitle": "Access Control",
+            "accessControlDesc": "Register your scheduled visits to speed up their entry to the complex.",
+            "registerVisit": "Register Visit"
         },
         "boardOfDirectorsDashboard": {
             "todayVisitors": "Today's Visitors",
@@ -154,6 +165,10 @@
         "occupancyStat": "Occupancy",
         "unitsOccupied": "Units occupied",
         "toReview": "To review",
+        "pendingIncidents": "Pending Incidents",
+        "actionRequired": "Action required",
+        "sendAnnouncement": "Send Announcement",
+        "registerVisitor": "Register Visitor",
         "activity": {
             "title": "Recent Activity",
             "viewAll": "View All",
@@ -161,7 +176,26 @@
             "type": "Type",
             "status": "Status",
             "datetime": "Date/Time",
-            "details": "Details"
+            "details": "Details",
+            "noActivity": "No recent activity to display.",
+            "types": {
+                "incident": "Incident",
+                "invoice": "Invoice",
+                "reservation": "Reservation"
+            },
+            "statusLabels": {
+                "RESOLVED": "Resolved",
+                "REPORTED": "Reported",
+                "IN_PROGRESS": "In progress",
+                "CANCELLED": "Cancelled",
+                "PENDING": "Pending",
+                "PAID": "Paid",
+                "OVERDUE": "Overdue",
+                "PROCESSING": "Processing",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected",
+                "COMPLETED": "Completed"
+            }
         },
         "occupancy": {
             "title": "Occupancy Status",

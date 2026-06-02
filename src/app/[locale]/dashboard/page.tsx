@@ -187,7 +187,13 @@ async function getStats(userId: string, role: string) {
             ...recentInvoicesRaw.map((inv: any) => ({
                 reference: inv.number,
                 type: 'Factura',
-                status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+                status: {
+                    label: inv.status,
+                    variant: inv.status === 'PAID' ? 'success' :
+                             inv.status === 'OVERDUE' ? 'error' :
+                             inv.status === 'PROCESSING' ? 'info' :
+                             inv.status === 'CANCELLED' ? 'neutral' : 'warning'
+                },
                 datetime: inv.createdAt,
                 details: `Monto: ${inv.totalAmount}`,
                 href: `/dashboard/invoices`
@@ -283,7 +289,13 @@ async function getStats(userId: string, role: string) {
             ...recentInvoicesRaw.map((inv: any) => ({
                 reference: `Unidad ${inv.unit?.number || 'N/A'}`,
                 type: 'Factura',
-                status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+                status: {
+                    label: inv.status,
+                    variant: inv.status === 'PAID' ? 'success' :
+                             inv.status === 'OVERDUE' ? 'error' :
+                             inv.status === 'PROCESSING' ? 'info' :
+                             inv.status === 'CANCELLED' ? 'neutral' : 'warning'
+                },
                 datetime: inv.createdAt,
                 details: `Monto: ${inv.totalAmount}`,
                 href: `/dashboard/invoices`
@@ -406,7 +418,13 @@ async function getStats(userId: string, role: string) {
         ...recentInvoicesRaw.map((inv: any) => ({
             reference: `Unidad ${inv.unit?.number || 'N/A'}`,
             type: 'Factura',
-            status: { label: inv.status, variant: inv.status === 'PAID' ? 'success' : 'warning' },
+            status: {
+                label: inv.status,
+                variant: inv.status === 'PAID' ? 'success' :
+                         inv.status === 'OVERDUE' ? 'error' :
+                         inv.status === 'PROCESSING' ? 'info' :
+                         inv.status === 'CANCELLED' ? 'neutral' : 'warning'
+            },
             datetime: inv.createdAt,
             details: `Monto: ${inv.totalAmount}`,
             href: `/dashboard/invoices`
@@ -447,10 +465,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
                         !isResident && (
                             <>
                                 <Link href="/dashboard/announcements/new">
-                                    <Button variant="secondary" icon="mail">Enviar Aviso</Button>
+                                    <Button variant="secondary" icon="mail">{t('sendAnnouncement', { defaultValue: 'Enviar Aviso' })}</Button>
                                 </Link>
                                 <Link href="/dashboard/access-control">
-                                    <Button variant="secondary" icon="person_add">Registrar Visitante</Button>
+                                    <Button variant="secondary" icon="person_add">{t('registerVisitor', { defaultValue: 'Registrar Visitante' })}</Button>
                                 </Link>
                             </>
                         )

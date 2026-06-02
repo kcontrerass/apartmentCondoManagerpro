@@ -139,7 +139,18 @@
             "noReservations": "No tienes reservas próximas.",
             "bookAmenity": "Reservar Amenidad",
             "recentInvoices": "Facturas Recientes",
-            "recentActivity": "Actividad Reciente"
+            "recentActivity": "Actividad Reciente",
+            "noPendingInvoices": "No hay facturas pendientes.",
+            "incidentsTitle": "Reportes e Incidentes",
+            "incidentsDesc": "Informa sobre cualquier problema técnico o de seguridad en el complejo.",
+            "noRecentIncidents": "No tienes reportes recientes.",
+            "newIncident": "Nuevo Reporte",
+            "pendingPolls": "Votaciones Pendientes",
+            "registeredVotes": "{count} votos registrados",
+            "goVote": "Ir a Votar",
+            "accessControlTitle": "Control de Acceso",
+            "accessControlDesc": "Registra tus visitas programadas para agilizar su ingreso al complejo.",
+            "registerVisit": "Registrar Visita"
         },
         "boardOfDirectorsDashboard": {
             "todayVisitors": "Visitantes de Hoy",
@@ -154,6 +165,10 @@
         "occupancyStat": "Ocupación",
         "unitsOccupied": "Unidades ocupadas",
         "toReview": "Por revisar",
+        "pendingIncidents": "Incidentes Pendientes",
+        "actionRequired": "Acción requerida",
+        "sendAnnouncement": "Enviar Aviso",
+        "registerVisitor": "Registrar Visitante",
         "activity": {
             "title": "Actividad Reciente",
             "viewAll": "Ver Todo",
@@ -161,7 +176,26 @@
             "type": "Tipo",
             "status": "Estado",
             "datetime": "Fecha/Hora",
-            "details": "Detalles"
+            "details": "Detalles",
+            "noActivity": "No hay actividad reciente para mostrar.",
+            "types": {
+                "incident": "Incidente",
+                "invoice": "Factura",
+                "reservation": "Reservación"
+            },
+            "statusLabels": {
+                "RESOLVED": "Resuelto",
+                "REPORTED": "Reportado",
+                "IN_PROGRESS": "En proceso",
+                "CANCELLED": "Cancelado",
+                "PENDING": "Pendiente",
+                "PAID": "Pagada",
+                "OVERDUE": "Vencida",
+                "PROCESSING": "En proceso",
+                "APPROVED": "Aprobada",
+                "REJECTED": "Rechazada",
+                "COMPLETED": "Completada"
+            }
         },
         "occupancy": {
             "title": "Estado de Ocupación",

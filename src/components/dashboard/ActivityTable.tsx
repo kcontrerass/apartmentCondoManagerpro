@@ -9,7 +9,7 @@ interface Activity {
     type: string;
     status: {
         label: string;
-        variant: 'success' | 'warning' | 'info' | 'neutral';
+        variant: 'success' | 'warning' | 'info' | 'neutral' | 'error';
     };
     datetime: string | Date;
     details: string;
@@ -26,10 +26,23 @@ const statusStyles = {
     warning: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
     info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     neutral: 'bg-slate-100 text-slate-800 dark:bg-background-dark dark:text-slate-300',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
 };
 
 export function ActivityTable({ activities, onViewAll }: ActivityTableProps) {
     const t = useTranslations('Dashboard');
+
+    const translateType = (type: string) => {
+        const lower = type.toLowerCase();
+        if (lower === 'incidente' || lower === 'incident') return t('activity.types.incident', { defaultValue: 'Incident' });
+        if (lower === 'factura' || lower === 'invoice') return t('activity.types.invoice', { defaultValue: 'Invoice' });
+        if (lower === 'reservación' || lower === 'reservation' || lower === 'reservacion') return t('activity.types.reservation', { defaultValue: 'Reservation' });
+        return type;
+    };
+
+    const translateStatus = (statusLabel: string) => {
+        return t('activity.statusLabels.' + statusLabel, { defaultValue: statusLabel });
+    };
 
     return (
         <div className="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
@@ -69,11 +82,11 @@ export function ActivityTable({ activities, onViewAll }: ActivityTableProps) {
                                         {activity.reference}
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">
-                                        {activity.type}
+                                        {translateType(activity.type)}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider", statusStyles[activity.status.variant])}>
-                                            {activity.status.label}
+                                            {translateStatus(activity.status.label)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 hidden sm:table-cell">
@@ -101,7 +114,7 @@ export function ActivityTable({ activities, onViewAll }: ActivityTableProps) {
                         {activities.length === 0 && (
                             <tr>
                                 <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                                    No hay actividad reciente para mostrar.
+                                    {t('activity.noActivity', { defaultValue: 'No hay actividad reciente para mostrar.' })}
                                 </td>
                             </tr>
                         )}

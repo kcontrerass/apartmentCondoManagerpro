@@ -77,12 +77,12 @@ export function DashboardClient({ stats }: DashboardClientProps) {
                 />
                 <StatCard
                     icon="report"
-                    label="Incidentes Pendientes"
+                    label={t('pendingIncidents', { defaultValue: 'Incidentes Pendientes' })}
                     value={stats.pendingIncidents.toString()}
-                    subtitle="Por resolver"
+                    subtitle={t('toReview', { defaultValue: 'Por resolver' })}
                     iconBgColor="bg-red-50 dark:bg-red-900/20"
                     iconColor="text-red-500"
-                    badge={stats.pendingIncidents > 0 ? { text: "Acción requerida", variant: "error" } : undefined}
+                    badge={stats.pendingIncidents > 0 ? { text: t('actionRequired', { defaultValue: 'Acción requerida' }), variant: "error" } : undefined}
                 />
             </motion.div>
 

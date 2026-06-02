@@ -46,6 +46,9 @@ interface ResidentDashboardProps {
 
 export function ResidentDashboard({ data }: ResidentDashboardProps) {
     const t = useTranslations("Dashboard");
+    const tInvoices = useTranslations("Invoices");
+    const tIncidents = useTranslations("Incidents");
+    const tReservations = useTranslations("Reservations");
     const {
         resident,
         complexSettings,
@@ -163,7 +166,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                             </p>
                                         </div>
                                         <Badge variant={upcomingReservations[0].status === 'APPROVED' ? 'success' : 'warning'}>
-                                            {upcomingReservations[0].status}
+                                            {tReservations('status.' + upcomingReservations[0].status, { defaultValue: upcomingReservations[0].status })}
                                         </Badge>
                                     </div>
                                     <Link href="/dashboard/reservations">
@@ -210,7 +213,14 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                                 />
                                             ) : null}
                                             <div className="flex flex-col items-end gap-1">
-                                                <Badge variant={inv.status === 'PAID' ? 'success' : 'warning'}>{inv.status}</Badge>
+                                                <Badge variant={
+                                                    inv.status === 'PAID' ? 'success' :
+                                                    inv.status === 'OVERDUE' ? 'error' :
+                                                    inv.status === 'PROCESSING' ? 'info' :
+                                                    inv.status === 'CANCELLED' ? 'neutral' : 'warning'
+                                                }>
+                                                    {tInvoices('status.' + inv.status, { defaultValue: inv.status })}
+                                                </Badge>
                                                 {(() => {
                                                     const pm =
                                                         inv.paymentMethod ||
@@ -221,7 +231,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                                         <span className="material-symbols-outlined text-xs">
                                                             {pm === 'CARD' ? 'credit_card' : pm === 'CASH' ? 'payments' : 'account_balance'}
                                                         </span>
-                                                        <span>{pm}</span>
+                                                        <span>{tInvoices('paymentMethod.' + pm, { defaultValue: pm })}</span>
                                                     </div>
                                                     );
                                                 })()}
@@ -230,7 +240,7 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                     </div>
                                 ))}
                             </div>
-                            {pendingInvoices.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No hay facturas pendientes.</p>}
+                            {pendingInvoices.length === 0 && <p className="text-sm text-slate-500 text-center py-4">{t("residentDashboard.noPendingInvoices")}</p>}
                         </Card>
                     </motion.div>
                 )}
@@ -239,15 +249,15 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                     {hasPermission('incidents') && (
                         <motion.div variants={item}>
                             <Card className="p-6">
-                                <h3 className="font-bold mb-4">Reportes e Incidentes</h3>
-                                <p className="text-sm text-slate-500 mb-4">Informa sobre cualquier problema técnico o de seguridad en el complejo.</p>
+                                <h3 className="font-bold mb-4">{t("residentDashboard.incidentsTitle")}</h3>
+                                <p className="text-sm text-slate-500 mb-4">{t("residentDashboard.incidentsDesc")}</p>
                                 <div className="space-y-3 mb-4">
                                     {recentIncidents.map((inc: any) => (
                                         <Link key={inc.id} href={`/dashboard/incidents/${inc.id}`} className="block border-b border-slate-50 dark:border-slate-800 pb-2 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors px-1 rounded">
                                             <div className="flex justify-between items-center">
                                                 <p className="text-xs font-bold truncate pr-2">{inc.title}</p>
                                                 <Badge variant={inc.status === 'RESOLVED' ? 'success' : 'warning'} className="scale-75 origin-right">
-                                                    {inc.status}
+                                                    {tIncidents('status.' + inc.status, { defaultValue: inc.status })}
                                                 </Badge>
                                             </div>
                                             <p className="text-[10px] text-slate-400">
@@ -256,12 +266,12 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                                         </Link>
                                     ))}
                                     {recentIncidents.length === 0 && (
-                                        <p className="text-xs text-slate-400 italic">No tienes reportes recientes.</p>
+                                        <p className="text-xs text-slate-400 italic">{t("residentDashboard.noRecentIncidents")}</p>
                                     )}
                                 </div>
                                 <Link href="/dashboard/incidents">
                                     <Button variant="outline" className="w-full" icon="report">
-                                        Nuevo Reporte
+                                        {t("residentDashboard.newIncident")}
                                     </Button>
                                 </Link>
                             </Card>
@@ -273,21 +283,21 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                             <Card className="p-6 border-l-4 border-primary">
                                 <h3 className="font-bold mb-4 flex items-center gap-2">
                                     <span className="material-symbols-outlined text-primary">ballot</span>
-                                    Votaciones Pendientes
+                                    {t("residentDashboard.pendingPolls")}
                                 </h3>
                                 <div className="space-y-4 mb-4">
                                     {activePolls.map((poll: any) => (
                                         <div key={poll.id} className="bg-slate-50 dark:bg-background-dark/50 p-3 rounded-xl">
                                             <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">{poll.title}</p>
                                             <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
-                                                {poll._count.votes} votos registrados
+                                                {t("residentDashboard.registeredVotes", { count: poll._count.votes })}
                                             </p>
                                         </div>
                                     ))}
                                 </div>
                                 <Link href="/dashboard/polls">
                                     <Button className="w-full" variant="primary">
-                                        Ir a Votar
+                                        {t("residentDashboard.goVote")}
                                     </Button>
                                 </Link>
                             </Card>
@@ -297,11 +307,11 @@ export function ResidentDashboard({ data }: ResidentDashboardProps) {
                     {hasPermission('accessControl') && (
                         <motion.div variants={item}>
                             <Card className="p-6">
-                                <h3 className="font-bold mb-4">Control de Acceso</h3>
-                                <p className="text-sm text-slate-500 mb-4">Registra tus visitas programadas para agilizar su ingreso al complejo.</p>
+                                <h3 className="font-bold mb-4">{t("residentDashboard.accessControlTitle")}</h3>
+                                <p className="text-sm text-slate-500 mb-4">{t("residentDashboard.accessControlDesc")}</p>
                                 <Link href="/dashboard/access-control">
                                     <Button variant="outline" className="w-full" icon="add_card">
-                                        Registrar Visita
+                                        {t("residentDashboard.registerVisit")}
                                     </Button>
                                 </Link>
                             </Card>
