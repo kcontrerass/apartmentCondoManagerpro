@@ -24,7 +24,7 @@ export function PlatformRecurrenteClient() {
     const t = useTranslations("PlatformRecurrente");
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [publicKey, setPublicKey] = useState("");
+
     const [secretKey, setSecretKey] = useState("");
     const [webhookSecret, setWebhookSecret] = useState("");
     const [bankTransferInstructions, setBankTransferInstructions] = useState("");
@@ -47,7 +47,7 @@ export function PlatformRecurrenteClient() {
                 return;
             }
             const d = json.data as ConfigPayload;
-            setPublicKey(d.publicKey ?? "");
+
             setBankTransferInstructions(d.bankTransferInstructions ?? "");
             setSubscriptionPriceGtq(d.subscriptionPriceGtq ?? "");
             setSubscriptionPeriodMonths(
@@ -81,8 +81,7 @@ export function PlatformRecurrenteClient() {
         setSaving(true);
         try {
             const body: Record<string, string | number | null> = {};
-            if (publicKey.trim()) body.publicKey = publicKey.trim();
-            else body.publicKey = "";
+
             if (secretKey.trim()) body.secretKey = secretKey.trim();
             if (webhookSecret.trim()) body.webhookSecret = webhookSecret.trim();
             body.bankTransferInstructions = bankTransferInstructions;
@@ -250,18 +249,7 @@ export function PlatformRecurrenteClient() {
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                        {t("publicLabel")}
-                    </label>
-                    <input
-                        type="text"
-                        value={publicKey}
-                        onChange={(e) => setPublicKey(e.target.value)}
-                        placeholder="pk_..."
-                        className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
-                    />
-                </div>
+
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">

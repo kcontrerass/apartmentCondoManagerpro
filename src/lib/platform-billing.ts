@@ -63,8 +63,12 @@ export async function getPlatformRecurrenteKeys(): Promise<RecurrenteKeys | null
         process.env.RECURRENTE_WEBHOOK_SECRET?.trim() ||
         undefined;
 
-    if (!publicKey || !secretKey) return null;
-    return { publicKey, secretKey, webhookSecret: webhookSecret || undefined };
+    if (!secretKey) return null;
+    return {
+        ...(publicKey ? { publicKey } : {}),
+        secretKey,
+        webhookSecret: webhookSecret || undefined
+    };
 }
 
 /** Indica si hay algún valor de Recurrente plataforma persistido en BD (public, secret o webhook). */

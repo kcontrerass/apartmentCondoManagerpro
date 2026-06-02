@@ -25,7 +25,6 @@ export default function SettingsClient({ user }: { user: any }) {
     const [complexId, setLocalComplexId] = useState<string | null>(selectedComplexId);
     const [bankAccount, setBankAccount] = useState("");
     const [phone, setPhone] = useState("");
-    const [recurrentePublicKey, setRecurrentePublicKey] = useState("");
     const [recurrenteSecretKey, setRecurrenteSecretKey] = useState("");
     const [recurrenteWebhookSecret, setRecurrenteWebhookSecret] = useState("");
     const [permissions, setPermissions] = useState<PermissionSettings>({
@@ -135,7 +134,6 @@ export default function SettingsClient({ user }: { user: any }) {
                 setPermissions(mergedPermissions);
                 setBankAccount(complexData.bankAccount || "");
                 setPhone(complexData.phone || "");
-                setRecurrentePublicKey(fullSettings.recurrente?.publicKey || "");
                 setRecurrenteSecretKey(fullSettings.recurrente?.secretKey || "");
                 setRecurrenteWebhookSecret(fullSettings.recurrente?.webhookSecret || "");
             }
@@ -220,7 +218,6 @@ export default function SettingsClient({ user }: { user: any }) {
                     settings: { 
                         permissions,
                         recurrente: {
-                            publicKey: recurrentePublicKey.trim(),
                             secretKey: recurrenteSecretKey.trim(),
                             webhookSecret: recurrenteWebhookSecret.trim()
                         }
@@ -341,18 +338,7 @@ export default function SettingsClient({ user }: { user: any }) {
                                 </p>
                             </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                                    {t('recurrentePublicLabel', { default: 'Public Key' })}
-                                </label>
-                                <input
-                                    type="text"
-                                    value={recurrentePublicKey}
-                                    onChange={(e) => setRecurrentePublicKey(e.target.value)}
-                                    placeholder="pk_test_..."
-                                    className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-background-dark text-sm"
-                                />
-                            </div>
+
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">

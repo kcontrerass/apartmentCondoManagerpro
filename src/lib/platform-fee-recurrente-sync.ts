@@ -35,7 +35,7 @@ export async function syncPlatformCardPaymentFromRecurrenteForComplex(
 ): Promise<boolean> {
     const abandonIfNotPaid = options?.abandonIfNotPaid === true;
     const keys = await getPlatformRecurrenteKeys();
-    if (!keys?.publicKey || !keys?.secretKey) {
+    if (!keys?.secretKey) {
         return false;
     }
 

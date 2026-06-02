@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 export interface RecurrenteKeys {
-    publicKey: string;
+    publicKey?: string;
     secretKey: string;
     webhookSecret?: string;
 }
@@ -14,18 +14,26 @@ export function getRecurrenteKeysFromComplexSettings(settings: unknown): Recurre
     const r = recurrente as Record<string, unknown>;
     const publicKey = typeof r.publicKey === "string" ? r.publicKey.trim() : "";
     const secretKey = typeof r.secretKey === "string" ? r.secretKey.trim() : "";
-    if (!publicKey || !secretKey) return null;
+    if (!secretKey) return null;
     const webhookSecret = typeof r.webhookSecret === "string" ? r.webhookSecret.trim() : undefined;
-    return webhookSecret ? { publicKey, secretKey, webhookSecret } : { publicKey, secretKey };
+    return {
+        ...(publicKey ? { publicKey } : {}),
+        secretKey,
+        ...(webhookSecret ? { webhookSecret } : {})
+    };
 }
 
 /** Claves globales en `RECURRENTE_*` cuando el complejo no definió las suyas en ajustes. */
 export function getRecurrenteKeysFromEnv(): RecurrenteKeys | null {
     const publicKey = process.env.RECURRENTE_PUBLIC_KEY?.trim() || "";
     const secretKey = process.env.RECURRENTE_SECRET_KEY?.trim() || "";
-    if (!publicKey || !secretKey) return null;
+    if (!secretKey) return null;
     const webhookSecret = process.env.RECURRENTE_WEBHOOK_SECRET?.trim() || undefined;
-    return webhookSecret ? { publicKey, secretKey, webhookSecret } : { publicKey, secretKey };
+    return {
+        ...(publicKey ? { publicKey } : {}),
+        secretKey,
+        ...(webhookSecret ? { webhookSecret } : {})
+    };
 }
 
 /** Prioridad: `settings.recurrente` del complejo; si faltan, variables de entorno. */
@@ -62,13 +70,15 @@ export const recurrente = {
                 const pubKey = keys?.publicKey;
                 const secKey = keys?.secretKey;
 
-                if (!pubKey || !secKey) throw new Error("Missing Recurrente API Keys check complex settings");
+                if (!secKey) throw new Error("Missing Recurrente API Keys check complex settings");
 
-                const requestHeaders = {
+                const requestHeaders: Record<string, string> = {
                     'Content-Type': 'application/json',
-                    'X-PUBLIC-KEY': pubKey,
                     'X-SECRET-KEY': secKey,
                 };
+                if (pubKey) {
+                    requestHeaders['X-PUBLIC-KEY'] = pubKey;
+                }
 
                 const response = await fetch(`${BASE_URL}/checkouts`, {
                     method: 'POST',
@@ -89,20 +99,24 @@ export const recurrente = {
         },
         retrieve: async (id: string, keys?: RecurrenteKeys) => {
             try {
-                const pubKey = keys?.publicKey || '';
-                const secKey = keys?.secretKey || '';
+                const pubKey = keys?.publicKey;
+                const secKey = keys?.secretKey;
 
-                if (!pubKey || !secKey) {
+                if (!secKey) {
                     return null;
+                }
+
+                const headers: Record<string, string> = {
+                    'Content-Type': 'application/json',
+                    'X-SECRET-KEY': secKey,
+                };
+                if (pubKey) {
+                    headers['X-PUBLIC-KEY'] = pubKey;
                 }
 
                 const response = await fetch(`${BASE_URL}/checkouts/${id}`, {
                     method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-PUBLIC-KEY': pubKey,
-                        'X-SECRET-KEY': secKey,
-                    },
+                    headers,
                 });
 
                 if (!response.ok) {

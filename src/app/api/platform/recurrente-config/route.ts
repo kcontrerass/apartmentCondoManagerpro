@@ -51,7 +51,7 @@ export async function GET() {
             hasPlatformRecurrenteWebhookInEnv();
 
         return apiOk({
-            publicKey: getPlatformRecurrentePublicKeyForDisplay(row?.publicKey),
+            publicKey: "",
             bankTransferInstructions: row?.bankTransferInstructions?.trim() ?? "",
             subscriptionPriceGtq: row?.subscriptionPriceGtq != null ? String(row.subscriptionPriceGtq) : "",
             subscriptionPeriodMonths: row?.subscriptionPeriodMonths ?? null,
@@ -114,17 +114,7 @@ export async function PUT(request: Request) {
 
         // Evitar borrar claves en BD si el formulario se envió vacío pero el origen real es .env
         // (o la petición previa no rellenó el campo) — misma resolución que al leer.
-        let publicKeyNext: string | null;
-        if (typeof body.publicKey === "string") {
-            const t = body.publicKey.trim();
-            if (t) {
-                publicKeyNext = t;
-            } else {
-                publicKeyNext = existing?.publicKey?.trim() || getPlatformRecurrentePublicKeyFromEnv() || null;
-            }
-        } else {
-            publicKeyNext = existing?.publicKey?.trim() || getPlatformRecurrentePublicKeyFromEnv() || null;
-        }
+        let publicKeyNext = existing?.publicKey ?? null;
 
         let secretKeyNext = existing?.secretKey ?? null;
         if (typeof body.secretKey === "string" && body.secretKey.trim() !== "") {

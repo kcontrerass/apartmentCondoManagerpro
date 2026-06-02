@@ -66,11 +66,14 @@ async function fetchJsonFromFeeRatesUrl(url: string): Promise<unknown> {
 export async function fetchRecurrenteAccountWithKeys(
     keys: RecurrenteKeys
 ): Promise<unknown | null> {
+    const headers: Record<string, string> = {
+        "X-SECRET-KEY": keys.secretKey,
+    };
+    if (keys.publicKey) {
+        headers["X-PUBLIC-KEY"] = keys.publicKey;
+    }
     const res = await fetch(`${BASE}/account`, {
-        headers: {
-            "X-PUBLIC-KEY": keys.publicKey,
-            "X-SECRET-KEY": keys.secretKey,
-        },
+        headers,
         next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
@@ -115,8 +118,8 @@ export async function resolveRecurrenteFeeConfig(keys: RecurrenteKeys | null): P
         feeUrlCache.set(url, { at: now, config: null });
     }
 
-    if (keys?.publicKey && keys.secretKey) {
-        const cacheKey = keys.publicKey.slice(0, 32);
+    if (keys?.secretKey) {
+        const cacheKey = (keys.publicKey || keys.secretKey).slice(0, 32);
         const now = Date.now();
         const hit = accountCache.get(cacheKey);
         const cacheValid = hit && now - hit.at < TTL_MS;
