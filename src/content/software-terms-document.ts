@@ -243,3 +243,11 @@ Teléfono: (PENDIENTE DE CONFIRMAR)
 Dirección: (PENDIENTE DE CONFIRMAR)`,
     },
 ];
+
+export function getDefaultTermsText(): string {
+    const meta = SOFTWARE_TERMS_META_LINES.join("\n");
+    const sections = SOFTWARE_TERMS_SECTIONS.map(
+        (s) => `${s.id}. ${s.title}\n\n${s.body}`
+    ).join("\n\n");
+    return `${SOFTWARE_TERMS_DOC_TITLE}\n\n${meta}\n\n${SOFTWARE_TERMS_PREAMBLE}\n\n${sections}`;
+}

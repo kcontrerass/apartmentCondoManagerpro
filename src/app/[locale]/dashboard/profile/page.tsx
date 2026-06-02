@@ -14,6 +14,8 @@ import { PWAInstallButton } from "@/components/pwa/PWAInstallButton";
 import { getTranslations } from "next-intl/server";
 import { roleCanResidentUseAirbnbSelfService } from "@/lib/complex-airbnb-guests";
 import { unitAllowsAirbnbGuestResident } from "@/lib/resident-type-eligibility";
+import { SuperAdminTermsForm } from "@/components/profile/SuperAdminTermsForm";
+import { getDefaultTermsText } from "@/content/software-terms-document";
 
 export default async function ProfilePage({
     params
@@ -50,6 +52,15 @@ export default async function ProfilePage({
 
     if (!user) {
         notFound();
+    }
+
+    let dbTerms = "";
+    if (user.role === Role.SUPER_ADMIN) {
+        const settings = await (prisma as any).platformRecurrenteSettings.findUnique({
+            where: { id: "default" },
+            select: { termsBody: true }
+        });
+        dbTerms = settings?.termsBody || getDefaultTermsText();
     }
 
     const complexName = user.role === 'RESIDENT'
@@ -180,6 +191,16 @@ export default async function ProfilePage({
                             </h3>
                             <PasswordForm />
                         </Card>
+
+                        {user.role === Role.SUPER_ADMIN && (
+                            <Card className="p-8">
+                                <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
+                                    <span className="material-symbols-outlined text-primary">description</span>
+                                    Términos y Condiciones de la Plataforma
+                                </h3>
+                                <SuperAdminTermsForm initialTerms={dbTerms} />
+                            </Card>
+                        )}
                     </div>
                 </div>
             </div>

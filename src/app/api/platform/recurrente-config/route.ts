@@ -31,6 +31,7 @@ export async function GET() {
             subscriptionPeriodMonths: number | null;
             subscriptionGraceDays: number | null;
             supportEmail: string | null;
+            termsBody: string | null;
         } | null = null;
         try {
             row = await prisma.platformRecurrenteSettings.findUnique({
@@ -56,6 +57,7 @@ export async function GET() {
             subscriptionPeriodMonths: row?.subscriptionPeriodMonths ?? null,
             subscriptionGraceDays: row?.subscriptionGraceDays ?? null,
             supportEmail: row?.supportEmail?.trim() ?? "",
+            termsBody: row?.termsBody ?? "",
             secretKeyConfigured,
             webhookSecretConfigured,
             keysActive: !!keys,
@@ -83,6 +85,7 @@ export async function PUT(request: Request) {
             subscriptionPeriodMonths?: number | string | null;
             subscriptionGraceDays?: number | string | null;
             supportEmail?: string | null;
+            termsBody?: string | null;
         };
 
         const existing = await prisma.platformRecurrenteSettings.findUnique({
@@ -192,6 +195,11 @@ export async function PUT(request: Request) {
             }
         }
 
+        let termsBodyNext = existing?.termsBody ?? null;
+        if (body.termsBody !== undefined) {
+            termsBodyNext = body.termsBody || null;
+        }
+
         await prisma.platformRecurrenteSettings.upsert({
             where: { id: "default" },
             create: {
@@ -204,6 +212,7 @@ export async function PUT(request: Request) {
                 subscriptionPeriodMonths: subscriptionPeriodNext,
                 subscriptionGraceDays: subscriptionGraceDaysNext,
                 supportEmail: supportEmailNext,
+                termsBody: termsBodyNext,
             },
             update: {
                 publicKey: publicKeyNext,
@@ -214,6 +223,7 @@ export async function PUT(request: Request) {
                 subscriptionPeriodMonths: subscriptionPeriodNext,
                 subscriptionGraceDays: subscriptionGraceDaysNext,
                 supportEmail: supportEmailNext,
+                termsBody: termsBodyNext,
             },
         });
 

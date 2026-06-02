@@ -11,12 +11,34 @@ type Props = {
     pageTitle: string;
     versionLine: string;
     langNotice?: string | null;
+    customTerms?: string | null;
 };
 
 /**
- * Texto legal único: Términos y Política de datos ADESSO-365 (contenido en `software-terms-document.ts`).
+ * Texto legal único: Términos y Política de datos ADESSO-365 (contenido en `software-terms-document.ts` o base de datos).
  */
-export function SoftwareTermsBody({ pageTitle, versionLine, langNotice }: Props) {
+export function SoftwareTermsBody({ pageTitle, versionLine, langNotice, customTerms }: Props) {
+    if (customTerms) {
+        return (
+            <>
+                {langNotice ? (
+                    <p className="text-sm text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 bg-white/60 dark:bg-slate-800/40">
+                        {langNotice}
+                    </p>
+                ) : null}
+
+                <header className="space-y-3">
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{pageTitle}</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{versionLine}</p>
+                </header>
+
+                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/30 px-6 py-6 text-sm leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                    {customTerms}
+                </div>
+            </>
+        );
+    }
+
     return (
         <>
             {langNotice ? (

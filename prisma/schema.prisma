@@ -119,6 +119,7 @@ model PlatformRecurrenteSettings {
   subscriptionGraceDays    Int?      @map("subscription_grace_days")
   /// Correo público de soporte (pie /página Soporte). Lo define el súper administrador en Cobros de plataforma.
   supportEmail             String?   @map("support_email") @db.VarChar(320)
+  termsBody                String?   @map("terms_body") @db.Text
   updatedAt                DateTime  @updatedAt @map("updated_at")
 
   @@map("platform_recurrente_settings")

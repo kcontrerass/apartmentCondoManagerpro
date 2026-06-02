@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { SOFTWARE_TERMS_AND_PRIVACY_VERSION } from '@/lib/software-terms';
 import { SoftwareTermsBody } from '@/components/legal/SoftwareTermsBody';
+import { prisma } from '@/lib/db';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -12,6 +13,11 @@ export default async function LegalTermsPage({ params }: Props) {
     const { locale } = await params;
     const t = await getTranslations({ locale, namespace: 'SoftwareTerms' });
     const tSub = await getTranslations({ locale, namespace: 'PlatformLegalDocs' });
+
+    const settings = await (prisma as any).platformRecurrenteSettings.findUnique({
+        where: { id: 'default' },
+        select: { termsBody: true }
+    });
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-background-dark text-slate-900 dark:text-slate-100">
@@ -33,6 +39,7 @@ export default async function LegalTermsPage({ params }: Props) {
                     pageTitle={t('pageTitle')}
                     versionLine={t('version', { version: SOFTWARE_TERMS_AND_PRIVACY_VERSION })}
                     langNotice={locale === 'en' ? t('langNotice') : null}
+                    customTerms={settings?.termsBody}
                 />
             </div>
         </div>
